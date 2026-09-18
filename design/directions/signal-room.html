@@ -1,0 +1,1138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Whetstone &middot; Signal Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap" rel="stylesheet">
+<style>
+/* ============ SIGNAL ROOM ============ */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{margin:0;background:var(--deck);color:var(--deck-ink);
+  font-family:"Bricolage Grotesque","Helvetica Neue",Arial,sans-serif;
+  font-variation-settings:'opsz' 14,'wdth' 100,'wght' 400;}
+:root{
+  --deck:#DAD5CB; --deck-ink:#2A261E; --deck-rule:#B9B2A4;
+  --stage:#17140E; --stage-ink:#F4F0E8; --stage-mute:#A8A08F; --stage-band-1:#1E1A13;
+  --stage-band-2:#282116; --stage-band-3:#33291A; --stage-ash:#100E09;
+  --fm:"Bricolage Grotesque","Helvetica Neue",Arial,sans-serif;
+  --fh:"Newsreader",Georgia,"Times New Roman",serif;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:64px; --s9:96px; --s10:144px;
+  --r0:0px; --r1:2px; --r2:4px; --r3:8px; --r4:14px;
+  --dur-micro:120ms; --dur-ctl:180ms; --dur-in:240ms; --dur-out:140ms;
+  --ease-in:cubic-bezier(.2,0,0,1); --ease-out:cubic-bezier(.4,0,1,1);
+  --shadow-overlay:0 18px 40px -18px rgba(20,18,13,.45);
+}
+.t-light{
+  --paper:#F2EFE8; --raised:#FCFAF6; --sunk:#E6E1D7;
+  --ink1:#14120D; --ink2:#4B463B; --ink3:#645E4E;
+  --rule:#D9D3C6; --edge:#807965;
+  --flare:#B8300F; --flare-mark:#E14425; --flare-on:#FFF8F4;
+  --btn:#14120D; --btn-ink:#FCFAF6; --focus:#C4340F; --focus-halo:#FCFAF6;
+}
+.t-dark{
+  --paper:#13110D; --raised:#1B1915; --sunk:#0C0B08;
+  --ink1:#F4F0E8; --ink2:#C6BFB1; --ink3:#9B9384;
+  --rule:#312D25; --edge:#7A7466;
+  --flare:#FF7551; --flare-mark:#FF7551; --flare-on:#1A0600;
+  --btn:#F4F0E8; --btn-ink:#13110D; --focus:#FF7551; --focus-halo:#13110D; --hover-fill:#282319;
+}
+
+/* ---------- deck chrome ---------- */
+.deck{max-width:1560px;margin:0 auto;padding:var(--s8) var(--s5) var(--s9)}
+.deckhead{border-bottom:2px solid var(--deck-ink);padding-bottom:var(--s5);margin-bottom:var(--s8)}
+.deckhead h1{margin:0;font-size:76px;line-height:.94;letter-spacing:-.035em;
+  font-variation-settings:'opsz' 96,'wdth' 86,'wght' 800;}
+.deckhead p{font-family:var(--fh);font-size:19px;line-height:1.55;max-width:64ch;margin:var(--s4) 0 0;
+  font-variation-settings:'opsz' 19,'wght' 400;}
+.deckmeta{display:flex;gap:var(--s5);flex-wrap:wrap;margin-top:var(--s5);font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+  font-variation-settings:'opsz' 12,'wdth' 100,'wght' 600;}
+.cap{display:flex;align-items:baseline;gap:var(--s4);margin:var(--s9) 0 var(--s4);border-top:1px solid var(--deck-rule);padding-top:var(--s3)}
+.cap .n{font-size:12px;letter-spacing:.08em;font-variation-settings:'opsz' 12,'wght' 700;text-transform:uppercase;white-space:nowrap}
+.cap .t{font-family:var(--fh);font-size:17px;font-variation-settings:'opsz' 17,'wght' 400;}
+.cap .t em{font-style:italic}
+.frame{width:1440px;max-width:100%;background:var(--paper);color:var(--ink1);overflow:hidden}
+.pair{display:flex;gap:var(--s5);align-items:flex-start;flex-wrap:wrap}
+.mob{width:390px;background:var(--paper);color:var(--ink1);overflow:hidden;flex:0 0 390px}
+
+/* ---------- primitives ---------- */
+.frame,.mob{font-family:var(--fm);font-variation-settings:'opsz' 15,'wdth' 100,'wght' 400;}
+.frame a,.mob a{color:inherit;text-decoration:none}
+.wrap{max-width:1200px;margin:0 auto;padding:0 var(--s7)}
+.g12{display:grid;grid-template-columns:repeat(12,1fr);gap:var(--s5)}
+.hair{border:0;border-top:1px solid var(--rule);margin:0}
+.strong-rule{border:0;border-top:2px solid var(--ink1);margin:0}
+
+h1,h2,h3,h4{margin:0;font-family:var(--fm)}
+.d1{font-size:clamp(56px,8.6vw,132px);line-height:.9;letter-spacing:-.04em;
+  font-variation-settings:'opsz' 96,'wdth' 87,'wght' 800;}
+.h2{font-size:44px;line-height:1.02;letter-spacing:-.028em;font-variation-settings:'opsz' 48,'wdth' 92,'wght' 750;}
+.h3{font-size:27px;line-height:1.12;letter-spacing:-.02em;font-variation-settings:'opsz' 32,'wdth' 96,'wght' 700;}
+.h4{font-size:19px;line-height:1.25;letter-spacing:-.01em;font-variation-settings:'opsz' 20,'wdth' 100,'wght' 700;}
+.lede{font-size:17px;line-height:1.5;color:var(--ink2);max-width:47ch;font-variation-settings:'opsz' 17,'wght' 400;}
+.ui{font-size:15px;line-height:1.5}
+.meta{font-size:13px;line-height:1.45;color:var(--ink3);font-variation-settings:'opsz' 13,'wght' 450;}
+.lab{font-size:11px;line-height:1.2;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);
+  font-variation-settings:'opsz' 12,'wdth' 100,'wght' 700;}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:'zero' 1}
+.prose{font-family:var(--fh);font-size:18px;line-height:1.6;color:var(--ink1);max-width:62ch;
+  font-variation-settings:'opsz' 18,'wght' 400;font-variant-numeric:proportional-nums}
+.prose.big{font-size:25px;line-height:1.4;font-variation-settings:'opsz' 30,'wght' 400;max-width:26ch}
+.prose.lg{font-size:21px;line-height:1.5;font-variation-settings:'opsz' 24,'wght' 400}
+.dim{color:var(--ink3)}
+.sec{color:var(--ink2)}
+
+/* ---------- buttons ---------- */
+.btn{display:inline-flex;align-items:center;gap:var(--s2);height:48px;padding:0 var(--s5);
+  border:1px solid var(--btn);border-radius:var(--r2);background:var(--btn);color:var(--btn-ink);
+  font-family:var(--fm);font-size:15px;font-variation-settings:'opsz' 15,'wdth' 100,'wght' 650;
+  letter-spacing:-.005em;cursor:pointer;transition:background var(--dur-micro) var(--ease-in),color var(--dur-micro) var(--ease-in),border-color var(--dur-micro) var(--ease-in);}
+.btn:hover,.btn.is-hover{background:var(--flare);border-color:var(--flare);color:var(--flare-on)}
+.btn:focus-visible,.btn.is-focus{outline:3px solid var(--focus);outline-offset:2px}
+.btn2{display:inline-flex;align-items:center;gap:var(--s2);height:48px;padding:0 var(--s5);
+  border:1px solid var(--edge);border-radius:var(--r2);background:transparent;color:var(--ink1);
+  font-family:var(--fm);font-size:15px;font-variation-settings:'opsz' 15,'wdth' 100,'wght' 650;cursor:pointer;
+  transition:border-color var(--dur-micro) var(--ease-in),background var(--dur-micro) var(--ease-in);}
+.btn2:hover,.btn2.is-hover{border-color:var(--ink1);background:var(--hover-fill)}
+.btn2:focus-visible,.btn2.is-focus{outline:3px solid var(--focus);outline-offset:2px}
+.btn.sm,.btn2.sm{height:36px;padding:0 var(--s3);font-size:13px}
+.btn .ar,.btn2 .ar{font-size:15px;transform:translateY(-1px)}
+.tlink{display:inline-flex;align-items:center;gap:6px;font-size:15px;font-variation-settings:'opsz' 15,'wght' 650;
+  border-bottom:2px solid var(--flare);padding-bottom:2px;color:var(--ink1)}
+
+/* ---------- chip / stamp / avatar ---------- */
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 var(--s2);border:1px solid var(--edge);
+  border-radius:var(--r1);font-size:12px;letter-spacing:.01em;color:var(--ink2);
+  font-variation-settings:'opsz' 12,'wdth' 100,'wght' 600;white-space:nowrap}
+.chip.live{border-color:var(--flare);color:var(--flare)}
+.chip.live::before{content:"";width:6px;height:6px;background:var(--flare-mark)}
+.stamp{display:inline-flex;align-items:center;gap:var(--s2);height:28px;padding:0 var(--s3);background:var(--ink1);color:var(--paper);
+  font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-variation-settings:'opsz' 12,'wght' 700;border-radius:var(--r1)}
+.av{width:34px;height:34px;border-radius:9999px;background:var(--sunk);border:1px solid var(--edge);color:var(--ink2);
+  display:inline-flex;align-items:center;justify-content:center;font-size:12px;letter-spacing:.02em;
+  font-variation-settings:'opsz' 12,'wght' 700;flex:0 0 auto}
+.av.lg{width:44px;height:44px;font-size:14px}
+.av.sm{width:26px;height:26px;font-size:10px}
+
+/* ---------- input ---------- */
+.field{display:flex;flex-direction:column;gap:6px;max-width:340px}
+.field label{font-size:13px;font-variation-settings:'opsz' 13,'wght' 650}
+.inp{height:48px;padding:0 var(--s3);background:var(--sunk);border:1px solid var(--edge);border-radius:var(--r2);
+  color:var(--ink1);font-family:var(--fm);font-size:16px;transition:border-color var(--dur-ctl) var(--ease-in)}
+.inp::placeholder{color:var(--ink3)}
+.inp:hover{border-color:var(--ink1)}
+.inp:focus-visible,.inp.is-focus{outline:3px solid var(--focus);outline-offset:2px;border-color:var(--ink1)}
+.inp.err,.inp[aria-invalid="true"]{border-color:var(--flare);border-width:2px}
+.errmsg{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--flare);font-variation-settings:'opsz' 13,'wght' 600}
+.errmsg::before{content:"!";width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;
+  border:1.5px solid var(--flare);border-radius:9999px;font-size:10px;font-variation-settings:'wght' 800}
+
+/* ---------- grit ladder ---------- */
+.ladder{display:inline-flex;align-items:flex-end;gap:3px;height:20px;vertical-align:-3px}
+.ladder i{display:block;width:5px;border:1px solid var(--edge);background:transparent}
+.ladder i:nth-child(1){height:6px}.ladder i:nth-child(2){height:9px}.ladder i:nth-child(3){height:12px}
+.ladder i:nth-child(4){height:16px}.ladder i:nth-child(5){height:20px}
+.ladder i.on{background:var(--ink2);border-color:var(--ink2)}
+.ladder i.cur{background:var(--flare);border-color:var(--flare)}
+.gritline{display:inline-flex;align-items:center;gap:var(--s2);font-size:13px;color:var(--ink2);
+  font-variation-settings:'opsz' 13,'wght' 600}
+.gritline b{font-variation-settings:'opsz' 13,'wght' 750;font-variant-numeric:tabular-nums;color:var(--ink1)}
+.sev{display:inline-flex;align-items:flex-end;gap:2px;height:11px;vertical-align:-1px}
+.sev i{display:block;width:4px;border:1px solid var(--edge)}
+.sev i:nth-child(1){height:5px}.sev i:nth-child(2){height:8px}.sev i:nth-child(3){height:11px}
+.sev.high i{background:var(--flare);border-color:var(--flare)}
+.sev.med i:nth-child(1),.sev.med i:nth-child(2){background:var(--ink2);border-color:var(--ink2)}
+.sev.low i:nth-child(1){background:var(--ink2);border-color:var(--ink2)}
+
+/* ---------- top bar ---------- */
+.top{display:flex;align-items:center;gap:var(--s5);height:72px;border-bottom:1px solid var(--rule);
+  max-width:1200px;margin:0 auto;padding:0 var(--s7)}
+.mark{display:flex;align-items:center;gap:var(--s2);font-size:19px;letter-spacing:-.02em;
+  font-variation-settings:'opsz' 20,'wdth' 92,'wght' 800}
+.mark .sq{width:14px;height:14px;background:var(--flare-mark)}
+.topnav{display:flex;gap:var(--s5);margin-left:var(--s6)}
+.topnav a{font-size:14px;color:var(--ink2);font-variation-settings:'opsz' 14,'wght' 550;padding-bottom:3px}
+.topnav a.cur{color:var(--ink1);border-bottom:2px solid var(--flare)}
+.search{margin-left:auto;display:flex;align-items:center;gap:var(--s2);height:38px;padding:0 var(--s3);width:250px;
+  border:1px solid var(--edge);border-radius:var(--r2);color:var(--ink3);font-size:13px;background:var(--sunk)}
+.kbd{margin-left:auto;display:inline-flex;gap:2px}
+.kbd span{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 4px;
+  border:1px solid var(--edge);border-radius:var(--r1);font-size:10px;color:var(--ink3)}
+
+/* ---------- hero ---------- */
+.hero{padding:var(--s9) 0 var(--s8)}
+.eyebrow{display:inline-flex;align-items:center;gap:var(--s2);height:30px;padding:0 var(--s3);
+  border:1px solid var(--edge);border-radius:var(--r1);font-size:12px;color:var(--ink2);
+  font-variation-settings:'opsz' 12,'wght' 600;margin-bottom:var(--s5)}
+.eyebrow .dot{width:7px;height:7px;background:var(--flare-mark)}
+.acts{display:flex;align-items:center;gap:var(--s4);margin-top:var(--s6)}
+.proofline{margin-top:var(--s5);font-size:13px;color:var(--ink3);max-width:44ch;line-height:1.5}
+
+/* ---------- feed rows (live proof) ---------- */
+.panel{border:1px solid var(--edge);background:var(--raised)}
+.panel-h{display:flex;align-items:center;gap:var(--s2);padding:var(--s3) var(--s4);border-bottom:1px solid var(--rule)}
+.panel-f{padding:var(--s3) var(--s4);border-top:1px solid var(--rule);font-size:12px;color:var(--ink3);line-height:1.45}
+.row{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:var(--s4);padding:var(--s4);align-items:start;
+  border-bottom:1px solid var(--rule);transition:background var(--dur-micro) var(--ease-in)}
+.row:last-child{border-bottom:0}
+.row:hover{background:var(--hover-fill)}
+.row.cur{box-shadow:inset 2px 0 0 0 var(--flare)}
+.thumb{width:56px;height:56px;background:var(--stage);position:relative;overflow:hidden}
+.thumb .bnd{position:absolute;left:0;right:0}
+.rt{display:flex;align-items:baseline;gap:var(--s2);flex-wrap:wrap}
+.rt .nm{font-size:16px;letter-spacing:-.012em;font-variation-settings:'opsz' 16,'wght' 700}
+.rt .kd{font-size:12px;color:var(--ink3)}
+.rask{font-family:var(--fh);font-size:15px;line-height:1.45;color:var(--ink2);margin-top:5px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  font-variation-settings:'opsz' 15,'wght' 400}
+.rmeta{display:flex;gap:var(--s4);align-items:center;margin-top:var(--s3);flex-wrap:wrap}
+.rright{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.rright .cnt{font-size:22px;line-height:1;font-variant-numeric:tabular-nums;font-variation-settings:'opsz' 24,'wdth' 96,'wght' 700}
+
+/* ---------- stat band ---------- */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);border-top:2px solid var(--ink1);border-bottom:1px solid var(--rule)}
+.stats div{padding:var(--s5) var(--s5) var(--s5) 0;border-right:1px solid var(--rule);
+  display:flex;flex-direction:column;justify-content:space-between;min-height:112px}
+.stats div:last-child{border-right:0}
+.stats .v{font-size:52px;line-height:.92;letter-spacing:-.035em;font-variant-numeric:tabular-nums;
+  font-variation-settings:'opsz' 60,'wdth' 88,'wght' 750}
+.stats .k{margin-top:var(--s5);font-size:13px;color:var(--ink2);line-height:1.35;max-width:21ch}
+.stats .hit .v{color:var(--flare)}
+
+/* ---------- how it works ---------- */
+.steps{display:grid;grid-template-columns:repeat(12,1fr);gap:var(--s5) var(--s5)}
+.step{grid-column:span 12;display:grid;grid-template-columns:44px 210px minmax(0,1fr);gap:var(--s5);
+  padding:var(--s5) 0;border-top:1px solid var(--rule);align-items:start}
+.step .i{font-size:15px;font-variant-numeric:tabular-nums;color:var(--flare);font-variation-settings:'opsz' 15,'wght' 700}
+.step dt{font-size:21px;letter-spacing:-.015em;font-variation-settings:'opsz' 21,'wdth' 98,'wght' 700}
+.step dd{margin:0}
+
+/* ---------- categories ---------- */
+.cats{border-top:2px solid var(--ink1)}
+.cat{display:grid;grid-template-columns:180px minmax(0,1fr) 110px;gap:var(--s5);padding:var(--s4) 0;
+  border-bottom:1px solid var(--rule);align-items:baseline}
+.cat .cn{font-size:19px;letter-spacing:-.012em;font-variation-settings:'opsz' 19,'wght' 700}
+
+/* ---------- project page ---------- */
+.projhead{padding:var(--s8) 0 var(--s6)}
+.ptitle{font-size:104px;line-height:.86;letter-spacing:-.045em;font-variation-settings:'opsz' 96,'wdth' 86,'wght' 800}
+.pkicker{font-size:104px;line-height:.92;letter-spacing:-.03em;color:var(--ink3);
+  font-variation-settings:'opsz' 96,'wdth' 86,'wght' 250}
+.byline{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap}
+
+/* stage composition */
+.comp{position:relative;height:560px;margin-top:var(--s7)}
+.slab{position:absolute;top:0;background:var(--stage);overflow:hidden}
+.t-dark .slab{box-shadow:inset 0 0 0 1px #3B352B}
+.slab .band{position:absolute;left:0;right:0}
+.slab .word{position:absolute;white-space:nowrap;font-size:190px;line-height:1;letter-spacing:.01em;
+  color:transparent;-webkit-text-stroke:1.5px var(--stage-mute);
+  font-variation-settings:'opsz' 96,'wdth' 88,'wght' 800}
+.slab .trunk{position:absolute;top:0;width:1px;background:#2E2719}
+.cut{position:absolute;top:0;bottom:0;width:2px;background:var(--flare-mark)}
+.cutlab{position:absolute;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--flare);
+  font-variation-settings:'opsz' 12,'wght' 700;white-space:nowrap}
+.ruler{position:relative;height:44px;margin-top:var(--s3);border-top:1px solid var(--rule)}
+.ruler .tk{position:absolute;top:0;width:1px;height:7px;background:var(--edge)}
+.ruler .tl{position:absolute;top:12px;font-size:11px;color:var(--ink3);font-variant-numeric:tabular-nums;
+  letter-spacing:.04em;transform:translateX(-50%)}
+.ruler .tk.on{background:var(--flare-mark);height:16px;width:2px}
+.stagemeta{position:absolute;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--stage-mute);
+  font-variation-settings:'opsz' 12,'wght' 650}
+
+/* the ask */
+.ask{border-top:2px solid var(--flare);padding-top:var(--s4)}
+.ask .q{font-family:var(--fh);font-size:34px;line-height:1.26;letter-spacing:-.008em;max-width:23ch;
+  font-variation-settings:'opsz' 40,'wght' 400}
+.ask .q i{font-style:italic}
+
+/* big grit rail */
+.rail{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--rule);margin-top:var(--s2)}
+.rail .cellwrap{border-right:1px solid var(--rule);padding:var(--s4) var(--s4) var(--s4) 0}
+.rail .cellwrap:last-child{border-right:0}
+.rail .cellwrap{display:flex;flex-direction:column;justify-content:flex-end}
+.rail .barbox{height:44px;display:flex;align-items:flex-end;margin-bottom:var(--s4)}
+.rail .bar{width:100%;height:10px;background:var(--sunk);border:1px solid var(--edge)}
+.rail .bar.done{background:var(--ink2);border-color:var(--ink2)}
+.rail .bar.here{background:var(--flare);border-color:var(--flare)}
+.rail .gv{font-size:26px;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;
+  font-variation-settings:'opsz' 28,'wdth' 92,'wght' 700}
+.rail .here-lab{color:var(--flare)}
+.rail .gw{font-size:13px;color:var(--ink3);margin-top:5px}
+
+/* disagreement */
+.dis{border-top:2px solid var(--ink1);padding-top:var(--s5)}
+.plot{position:relative;margin-top:var(--s6)}
+.brk{position:relative;height:26px;margin-bottom:var(--s2)}
+.brk .line{position:absolute;top:12px;height:1px;background:var(--ink1)}
+.brk .end{position:absolute;top:6px;width:1px;height:13px;background:var(--ink1)}
+.brk .lb{position:absolute;top:-4px;background:var(--paper);padding:0 var(--s2);font-size:13px;
+  font-variation-settings:'opsz' 12,'wght' 650;transform:translateX(-50%)}
+.cols{display:grid;grid-template-columns:repeat(5,1fr);align-items:end;border-bottom:2px solid var(--ink1);position:relative}
+.col{display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;gap:6px;
+  min-height:252px;padding:0 var(--s3) var(--s3) 0;border-right:1px dashed var(--rule);position:relative}
+.col:last-child{border-right:0}
+.tok{display:flex;align-items:center;gap:var(--s2);height:52px;padding:0 var(--s3) 0 6px;border:1px solid var(--edge);
+  background:var(--raised);border-radius:var(--r1);white-space:nowrap;overflow:hidden}
+.tok .av{width:34px;height:34px;font-size:11px;background:var(--paper)}
+.tok .tk-n{font-size:14px;font-variation-settings:'opsz' 14,'wght' 700}
+.tok .tk-k{font-size:12px;color:var(--ink3);margin-left:auto}
+.tok.m{border-color:var(--flare);border-width:2px;padding-left:5px}
+.col .empty{font-size:12px;color:var(--ink3);border-top:1px solid var(--edge);padding-top:8px;display:block;width:100%}
+.medlab{position:absolute;top:0;left:0;font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--flare);font-variation-settings:'opsz' 12,'wght' 700}
+.axlab{display:grid;grid-template-columns:repeat(5,1fr)}
+.axlab div{padding:var(--s4) var(--s3) 0 0;border-right:1px solid var(--rule)}
+.axlab div:last-child{border-right:0}
+.axlab .gv{font-size:28px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;font-variation-settings:'opsz' 28,'wdth' 94,'wght' 750}
+.axlab .cn{font-size:12px;color:var(--ink3);margin-top:5px;line-height:1.35}
+.axlab .hit .gv{color:var(--flare)}
+.medrule{position:absolute;top:-26px;bottom:0;width:2px;background:var(--flare)}
+
+/* feedback note */
+.note{border-top:1px solid var(--rule);padding:var(--s5) 0}
+.note.open{border-top:2px solid var(--ink1)}
+.nhead{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap}
+.nhead .nm{font-size:16px;font-variation-settings:'opsz' 16,'wght' 700}
+.nprov{display:flex;gap:var(--s5);flex-wrap:wrap;align-items:center;margin:var(--s4) 0 var(--s4);
+  padding:var(--s3) 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.prov{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink2);font-variation-settings:'opsz' 13,'wght' 550}
+.prov .k{color:var(--ink3)}
+.reply{margin-top:var(--s5);padding-left:var(--s5);border-left:2px solid var(--edge)}
+.shipped{display:flex;align-items:center;gap:var(--s3);margin-top:var(--s5);padding-top:var(--s4);border-top:1px solid var(--rule);flex-wrap:wrap}
+
+/* footer */
+.foot{border-top:1px solid var(--rule);margin-top:var(--s9)}
+.footin{max-width:1200px;margin:0 auto;padding:var(--s5) var(--s7);display:flex;align-items:center;gap:var(--s5);font-size:13px;color:var(--ink3);flex-wrap:wrap}
+
+/* ---------- mobile ---------- */
+.mtop{display:flex;align-items:center;gap:var(--s3);height:58px;padding:0 var(--s4);border-bottom:1px solid var(--rule)}
+.burger{margin-left:auto;width:22px;display:flex;flex-direction:column;gap:5px}
+.burger i{display:block;height:2px;background:var(--ink1)}
+.mwrap{padding:0 var(--s4)}
+.md1{font-size:52px;line-height:.92;letter-spacing:-.035em;font-variation-settings:'opsz' 60,'wdth' 87,'wght' 800}
+.mstats{display:grid;grid-template-columns:1fr 1fr;border-top:2px solid var(--ink1)}
+.mstats div{padding:var(--s3) var(--s3) var(--s3) 0;border-bottom:1px solid var(--rule);border-right:1px solid var(--rule)}
+.mstats div:nth-child(2n){border-right:0;padding-left:var(--s3)}
+.mstats .v{font-size:30px;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums;font-variation-settings:'opsz' 32,'wdth' 90,'wght' 750}
+.mstats .k{font-size:11px;color:var(--ink2);margin-top:3px;line-height:1.3}
+.mrow{display:grid;grid-template-columns:44px minmax(0,1fr);gap:var(--s3);padding:var(--s4) 0;border-bottom:1px solid var(--rule)}
+.mrow .thumb{width:44px;height:44px}
+.mcols{display:grid;grid-template-columns:repeat(5,1fr);align-items:end;border-bottom:2px solid var(--ink1);position:relative}
+.mcol{min-height:120px;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;padding-right:3px;border-right:1px dashed var(--rule)}
+.mcol:last-child{border-right:0}
+.mtok{height:26px;border:1px solid var(--edge);background:var(--raised);border-radius:var(--r1);display:flex;
+  align-items:center;justify-content:center;font-size:10px;font-variation-settings:'opsz' 11,'wght' 700}
+.mtok.m{border-color:var(--flare);border-width:2px}
+.maxlab{display:grid;grid-template-columns:repeat(5,1fr);margin-top:6px}
+.maxlab .gv{font-size:12px;font-variant-numeric:tabular-nums;font-variation-settings:'opsz' 12,'wght' 700}
+.maxlab .cn{font-size:9px;color:var(--ink3);letter-spacing:.02em}
+.maxlab .hit .gv{color:var(--flare)}
+
+/* ---------- plates ---------- */
+.plate{background:var(--paper);color:var(--ink1);padding:var(--s7);flex:1 1 680px;min-width:670px}
+.plate h4{margin-bottom:var(--s4)}
+.prow{display:flex;gap:var(--s4);align-items:center;flex-wrap:wrap;margin-bottom:var(--s5)}
+.pstate{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.spec{background:var(--paper);color:var(--ink1);padding:var(--s8) var(--s7);margin-top:var(--s8)}
+.spec h3{margin-bottom:var(--s5)}
+.spec h4{margin:var(--s7) 0 var(--s3)}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);
+  font-variation-settings:'opsz' 12,'wght' 700;padding:var(--s2) var(--s3) var(--s2) 0;border-bottom:1px solid var(--ink1)}
+td{padding:7px var(--s3) 7px 0;border-bottom:1px solid var(--rule);vertical-align:top;color:var(--ink2)}
+td b{color:var(--ink1);font-variation-settings:'opsz' 13,'wght' 700}
+.sw{display:inline-block;width:26px;height:14px;border:1px solid var(--edge);vertical-align:-2px;margin-right:var(--s2)}
+.pass{color:var(--ink1);font-variation-settings:'opsz' 13,'wght' 650}
+@media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important;animation-duration:1ms!important}}
+</style>
+</head>
+<body>
+<div class="deck">
+  <header class="deckhead">
+    <h1>Signal&nbsp;Room</h1>
+    <p>Ink on warm paper, one saturated flare, and a stage that is always night. Whetstone is a room where signals
+      come back from people who looked at your work, so the product is built out of type, rule and drawn
+      composition rather than cards, and the one accent is spent only where a person is waiting for an answer.</p>
+    <div class="deckmeta"><span>Bricolage Grotesque + Newsreader</span><span>Two themes</span>
+      <span>WCAG 2.2 AA measured</span><span>1440 and 390</span></div>
+  </header>
+
+  <div class="cap"><span class="n">Screen 1 &middot; light</span><span class="t"><strong>The homepage.</strong> Logged out. Basebox composition: eyebrow, tight headline, narrow measure, two ranked actions, and a hero second element that is the real feed rather than an illustration.</span></div>
+  <div class="frame-hold">
+<div class="frame t-light">
+  <header class="top"><span class="mark"><span class="sq"></span>Whetstone</span><nav class="topnav"><a href="#" class="">Discover</a><a href="#" class="">Open asks</a><a href="#" class="">Reviewers</a><a href="#" class="">How it works</a></nav><span class="search"><span>Search projects and asks</span><span class="kbd"><span>&#8984;</span><span>K</span></span></span><a href="#" class="ui sec">Sign in</a><button class="btn sm">Post a project</button></header>
+  <div class="wrap">
+    <section class="hero g12">
+      <div style="grid-column:span 7">
+        <span class="eyebrow"><span class="dot"></span>24 open asks, written by the people who built the thing</span>
+        <h1 class="d1">Ship<br>sharper.</h1>
+        <p class="lede" style="margin-top:28px">Post the build. Name the questions you need answered. Get notes
+          back carrying a category, a severity and the version they were written against.</p>
+        <div class="acts">
+          <button class="btn">Post a project <span class="ar">&#8594;</span></button>
+          <a class="tlink" href="#">Read the open asks <span class="ar">&#8594;</span></a>
+        </div>
+        <p class="proofline">Free to post. Reviewing someone else&rsquo;s project is how you get read faster.</p>
+      </div>
+      <div style="grid-column:span 5;padding-top:52px">
+        <div class="panel">
+          <div class="panel-h"><span class="lab" style="color:var(--ink1)">The feed, right now</span>
+            <span class="chip live" style="margin-left:auto">live</span></div>
+          <article class="row"><span class="thumb"><span style="position:absolute;bottom:0;left:8px;width:5px;height:14px;background:#4A4234"></span><span style="position:absolute;bottom:0;left:18px;width:5px;height:26px;background:#6B6150"></span><span style="position:absolute;bottom:0;left:28px;width:5px;height:38px;background:var(--flare-mark)"></span><span style="position:absolute;bottom:0;left:38px;width:5px;height:20px;background:#4A4234"></span></span><div><div class="rt"><span class="nm">Brinehollow</span><span class="kd">Game</span></div><p class="rask">The tutorial is 90 seconds and 40 per cent of testers quit inside it. I need to know which beat loses them.</p><div class="rmeta"><span class="gritline"><span class="ladder" role="img" aria-label="grit 1000 of 8000, beta"><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i><i class=""></i></span><b class="num">1000</b><span>beta</span></span><span class="meta">asked by Mira Solvang</span></div></div><div class="rright"><span class="cnt num">24</span><span class="lab">notes</span></div></article><article class="row"><span class="thumb"><span class="bnd" style="top:0px;height:56px;background:#171510"></span><span style="position:absolute;left:10px;right:10px;top:10px;height:1px;background:#4A4234"></span><span style="position:absolute;left:10px;right:10px;top:18px;height:1px;background:#4A4234"></span><span style="position:absolute;left:10px;right:10px;bottom:0;height:14px;background:var(--flare-mark)"></span></span><div><div class="rt"><span class="nm">Ferryman</span><span class="kd">Mobile app</span></div><p class="rask">Version 3 moves the line picker into a bottom sheet. Tell me honestly whether the new placement reads as obvious, or as hidden.</p><div class="rmeta"><span class="gritline"><span class="ladder" role="img" aria-label="grit 8000 of 8000, shipped"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i></span><b class="num">8000</b><span>shipped</span></span><span class="meta">asked by Adaeze Obi</span></div></div><div class="rright"><span class="cnt num">9</span><span class="lab">notes</span></div></article><article class="row"><span class="thumb"><span class="bnd" style="top:0px;height:26px;background:#241E15"></span><span class="bnd" style="top:26px;height:5px;background:#33291A"></span><span class="bnd" style="top:32px;height:2px;background:#C4340F"></span><span class="bnd" style="top:35px;height:2px;background:var(--flare-mark)"></span><span class="bnd" style="top:38px;height:56px;background:var(--stage-ash)"></span></span><div><div class="rt"><span class="nm">Ashfall</span><span class="kd">Video</span></div><p class="rask">Does the cut at 1:12 read as intentional, or as a mistake? Watch it once at full size before you read anything else.</p><div class="rmeta"><span class="gritline"><span class="ladder" role="img" aria-label="grit 3000 of 8000, release candidate"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i></span><b class="num">3000</b><span>release candidate</span></span><span class="meta">asked by Kwame Mensah</span></div></div><div class="rright"><span class="cnt num">5</span><span class="lab">notes</span></div></article>
+          <div class="panel-f">Three of the twenty four projects taking feedback today, shown exactly as the
+            product shows them. The serif line is the creator&rsquo;s own question.</div>
+        </div>
+      </div>
+    </section>
+    <div class="stats"><div><div class="v num">24</div><div class="k">projects taking feedback right now</div></div><div><div class="v num">171</div><div class="k">reviews written by 28 people</div></div><div><div class="v num">233</div><div class="k">separate points raised inside them</div></div><div class="hit"><div class="v num">6</div><div class="k">of those marked shipped by the creator</div></div></div>
+  </div>
+
+  <div class="wrap" style="padding-top:96px">
+    <div class="g12" style="align-items:end">
+      <h2 class="h2" style="grid-column:span 7">Work that is still<br>moving.</h2>
+      <p class="meta" style="grid-column:9/13;max-width:30ch">Sorted by the grit step it is standing on, not by
+        how new it is. A concept and a release candidate need different questions.</p>
+    </div>
+    <div style="margin-top:32px;border-top:2px solid var(--ink1)"><article class="row cur"><span class="thumb"><span class="bnd" style="top:0px;height:26px;background:#241E15"></span><span class="bnd" style="top:26px;height:5px;background:#33291A"></span><span class="bnd" style="top:32px;height:2px;background:#C4340F"></span><span class="bnd" style="top:35px;height:2px;background:var(--flare-mark)"></span><span class="bnd" style="top:38px;height:56px;background:var(--stage-ash)"></span></span><div><div class="rt"><span class="nm">Ashfall</span><span class="kd">Video</span></div><p class="rask">Does the cut at 1:12 read as intentional, or as a mistake? Watch it once at full size before you read anything else.</p><div class="rmeta"><span class="gritline"><span class="ladder" role="img" aria-label="grit 3000 of 8000, release candidate"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i></span><b class="num">3000</b><span>release candidate</span></span><span class="meta">asked by Kwame Mensah</span></div></div><div class="rright"><span class="cnt num">5</span><span class="lab">notes</span></div></article><article class="row"><span class="thumb"><span style="position:absolute;bottom:0;left:8px;width:5px;height:14px;background:#4A4234"></span><span style="position:absolute;bottom:0;left:18px;width:5px;height:26px;background:#6B6150"></span><span style="position:absolute;bottom:0;left:28px;width:5px;height:38px;background:var(--flare-mark)"></span><span style="position:absolute;bottom:0;left:38px;width:5px;height:20px;background:#4A4234"></span></span><div><div class="rt"><span class="nm">Brinehollow</span><span class="kd">Game</span></div><p class="rask">The tutorial is 90 seconds and 40 per cent of testers quit inside it. I need to know which beat loses them.</p><div class="rmeta"><span class="gritline"><span class="ladder" role="img" aria-label="grit 1000 of 8000, beta"><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i><i class=""></i></span><b class="num">1000</b><span>beta</span></span><span class="meta">asked by Mira Solvang</span></div></div><div class="rright"><span class="cnt num">24</span><span class="lab">notes</span></div></article><article class="row"><span class="thumb"><span class="bnd" style="top:12px;height:1px;background:#332C1F"></span><span class="bnd" style="top:24px;height:1px;background:#332C1F"></span><span class="bnd" style="top:36px;height:1px;background:#332C1F"></span><span class="bnd" style="top:48px;height:1px;background:#332C1F"></span><span style="position:absolute;top:0;bottom:0;left:14px;width:1px;background:#332C1F"></span><span style="position:absolute;top:0;bottom:0;left:28px;width:1px;background:#332C1F"></span><span style="position:absolute;top:0;bottom:0;left:42px;width:1px;background:#332C1F"></span><span style="position:absolute;top:23px;left:27px;width:3px;height:3px;background:var(--flare-mark)"></span></span><div><div class="rt"><span class="nm">Kestrel Deck</span><span class="kd">Hardware</span></div><p class="rask">The hinge is rated for 20 000 cycles and I think that is the wrong number. Tell me what you would trade for a lighter one.</p><div class="rmeta"><span class="gritline"><span class="ladder" role="img" aria-label="grit 3000 of 8000, release candidate"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i></span><b class="num">3000</b><span>release candidate</span></span><span class="meta">asked by Jonas Reidar</span></div></div><div class="rright"><span class="cnt num">9</span><span class="lab">notes</span></div></article><article class="row"><span class="thumb"><span class="bnd" style="top:0px;height:19px;background:#1C1A14"></span><span class="bnd" style="top:19px;height:2px;background:#8A8270"></span><span class="bnd" style="top:21px;height:56px;background:#15130E"></span><span class="bnd" style="top:34px;height:1px;background:#57503F"></span><span class="bnd" style="top:44px;height:1px;background:#3A352A"></span><span style="position:absolute;top:22px;left:39px;width:1px;height:15px;background:var(--flare-mark)"></span></span><div><div class="rt"><span class="nm">Six Minutes on the Ice</span><span class="kd">Video</span></div><p class="rask">It runs six minutes and the middle two are quiet on purpose. Tell me the exact moment you checked how long was left.</p><div class="rmeta"><span class="gritline"><span class="ladder" role="img" aria-label="grit 400 of 8000, prototype"><i class="on"></i><i class="cur"></i><i class=""></i><i class=""></i><i class=""></i></span><b class="num">400</b><span>prototype</span></span><span class="meta">asked by Lena Fjeld</span></div></div><div class="rright"><span class="cnt num">11</span><span class="lab">notes</span></div></article></div>
+  </div>
+
+  <div class="wrap" style="padding-top:144px">
+    <div class="g12">
+      <div style="grid-column:span 3">
+        <h2 class="h2">How it<br>works.</h2>
+        <p class="meta" style="margin-top:24px;max-width:26ch">Four moves. The fourth is the one nobody else does.</p>
+      </div>
+      <div style="grid-column:5/13"><div class="step"><div class="i num">01</div><dt>Post the build</dt><dd class="prose" style="font-size:17px;max-width:58ch">A link, a cut, a draft or a build, plus the grit step it is standing on. The step decides which questions the composer puts in front of a reviewer.</dd></div><div class="step"><div class="i num">02</div><dt>Name the asks</dt><dd class="prose" style="font-size:17px;max-width:58ch">You write the questions. A reviewer reads them before they open the work, so the note comes back about the part you are unsure of, not the part that is easiest to comment on.</dd></div><div class="step"><div class="i num">03</div><dt>Read the disagreement</dt><dd class="prose" style="font-size:17px;max-width:58ch">Every note carries a category, a severity and the version it was written against. Where reviewers split, Whetstone draws the split. It never averages people into a number nobody said.</dd></div><div class="step"><div class="i num">04</div><dt>Ship it, and say so</dt><dd class="prose" style="font-size:17px;max-width:58ch">Turn a note into a change, move it to shipped, and the reviewer who raised it is told. Six people have had that message so far.</dd></div></div>
+    </div>
+  </div>
+
+  <div class="wrap" style="padding-top:96px">
+    <div class="g12" style="align-items:end;margin-bottom:32px">
+      <h3 class="h3" style="grid-column:span 6">Every note lands in one of five categories.</h3>
+      <p class="meta" style="grid-column:8/13">233 points raised across 171 reviews. A note without a category
+        cannot be filed, which is why the inbox groups instead of scrolls.</p>
+    </div>
+    <div class="cats"><div class="cat"><div class="cn">Fun</div><div class="prose" style="font-size:17px;max-width:52ch">Did it hold you, and where exactly did it stop holding you.</div><div class="meta num" style="text-align:right">41 raised</div></div><div class="cat"><div class="cn">Balance</div><div class="prose" style="font-size:17px;max-width:52ch">Too hard, too slow, too generous, too thin. Say which.</div><div class="meta num" style="text-align:right">38 raised</div></div><div class="cat"><div class="cn">Controls</div><div class="prose" style="font-size:17px;max-width:52ch">Did your hands know what to do without being told twice.</div><div class="meta num" style="text-align:right">52 raised</div></div><div class="cat"><div class="cn">Onboarding</div><div class="prose" style="font-size:17px;max-width:52ch">The first ninety seconds, described by someone living them.</div><div class="meta num" style="text-align:right">61 raised</div></div><div class="cat"><div class="cn">Performance</div><div class="prose" style="font-size:17px;max-width:52ch">Where it stuttered, on what, and what you were doing at the time.</div><div class="meta num" style="text-align:right">41 raised</div></div></div>
+  </div>
+
+  <div class="wrap" style="padding-top:144px;padding-bottom:96px">
+    <div class="g12" style="align-items:center">
+      <div style="grid-column:span 7">
+        <h2 class="h2">Post the thing you<br>are about to ship.</h2>
+        <div class="acts"><button class="btn">Post a project <span class="ar">&#8594;</span></button>
+          <a class="tlink" href="#">Read the open asks <span class="ar">&#8594;</span></a></div>
+      </div>
+      <p class="prose" style="grid-column:9/13;font-size:19px">It takes about five minutes: the build, the step it
+        is on, and the questions you actually want answered.</p>
+    </div>
+  </div>
+
+  <footer class="foot"><div class="footin"><span class="mark" style="font-size:15px"><span class="sq"
+    style="width:10px;height:10px"></span>Whetstone</span><a href="#">How it works</a><a href="#">For reviewers</a>
+    <a href="#">Ask for help</a><span style="margin-left:auto">&copy; 2026</span></div></footer>
+</div></div>
+
+  <div class="cap"><span class="n">Screen 1 &middot; dark</span><span class="t"><strong>The same homepage, night room.</strong> The palette inverts, the stage thumbnails do not. Ink becomes paper and the primary button flips with it.</span></div>
+  <div class="frame-hold">
+<div class="frame t-dark">
+  <header class="top"><span class="mark"><span class="sq"></span>Whetstone</span><nav class="topnav"><a href="#" class="">Discover</a><a href="#" class="">Open asks</a><a href="#" class="">Reviewers</a><a href="#" class="">How it works</a></nav><span class="search"><span>Search projects and asks</span><span class="kbd"><span>&#8984;</span><span>K</span></span></span><a href="#" class="ui sec">Sign in</a><button class="btn sm">Post a project</button></header>
+  <div class="wrap">
+    <section class="hero g12">
+      <div style="grid-column:span 7">
+        <span class="eyebrow"><span class="dot"></span>24 open asks, written by the people who built the thing</span>
+        <h1 class="d1">Ship<br>sharper.</h1>
+        <p class="lede" style="margin-top:28px">Post the build. Name the questions you need answered. Get notes
+          back carrying a category, a severity and the version they were written against.</p>
+        <div class="acts">
+          <button class="btn">Post a project <span class="ar">&#8594;</span></button>
+          <a class="tlink" href="#">Read the open asks <span class="ar">&#8594;</span></a>
+        </div>
+        <p class="proofline">Free to post. Reviewing someone else&rsquo;s project is how you get read faster.</p>
+      </div>
+      <div style="grid-column:span 5;padding-top:52px">
+        <div class="panel">
+          <div class="panel-h"><span class="lab" style="color:var(--ink1)">The feed, right now</span>
+            <span class="chip live" style="margin-left:auto">live</span></div>
+          <article class="row"><span class="thumb"><span style="position:absolute;bottom:0;left:8px;width:5px;height:14px;background:#4A4234"></span><span style="position:absolute;bottom:0;left:18px;width:5px;height:26px;background:#6B6150"></span><span style="position:absolute;bottom:0;left:28px;width:5px;height:38px;background:var(--flare-mark)"></span><span style="position:absolute;bottom:0;left:38px;width:5px;height:20px;background:#4A4234"></span></span><div><div class="rt"><span class="nm">Brinehollow</span><span class="kd">Game</span></div><p class="rask">The tutorial is 90 seconds and 40 per cent of testers quit inside it. I need to know which beat loses them.</p><div class="rmeta"><span class="gritline"><span class="ladder" role="img" aria-label="grit 1000 of 8000, beta"><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i><i class=""></i></span><b class="num">1000</b><span>beta</span></span><span class="meta">asked by Mira Solvang</span></div></div><div class="rright"><span class="cnt num">24</span><span class="lab">notes</span></div></article><article class="row"><span class="thumb"><span class="bnd" style="top:0px;height:56px;background:#171510"></span><span style="position:absolute;left:10px;right:10px;top:10px;height:1px;background:#4A4234"></span><span style="position:absolute;left:10px;right:10px;top:18px;height:1px;background:#4A4234"></span><span style="position:absolute;left:10px;right:10px;bottom:0;height:14px;background:var(--flare-mark)"></span></span><div><div class="rt"><span class="nm">Ferryman</span><span class="kd">Mobile app</span></div><p class="rask">Version 3 moves the line picker into a bottom sheet. Tell me honestly whether the new placement reads as obvious, or as hidden.</p><div class="rmeta"><span class="gritline"><span class="ladder" role="img" aria-label="grit 8000 of 8000, shipped"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i></span><b class="num">8000</b><span>shipped</span></span><span class="meta">asked by Adaeze Obi</span></div></div><div class="rright"><span class="cnt num">9</span><span class="lab">notes</span></div></article><article class="row"><span class="thumb"><span class="bnd" style="top:0px;height:26px;background:#241E15"></span><span class="bnd" style="top:26px;height:5px;background:#33291A"></span><span class="bnd" style="top:32px;height:2px;background:#C4340F"></span><span class="bnd" style="top:35px;height:2px;background:var(--flare-mark)"></span><span class="bnd" style="top:38px;height:56px;background:var(--stage-ash)"></span></span><div><div class="rt"><span class="nm">Ashfall</span><span class="kd">Video</span></div><p class="rask">Does the cut at 1:12 read as intentional, or as a mistake? Watch it once at full size before you read anything else.</p><div class="rmeta"><span class="gritline"><span class="ladder" role="img" aria-label="grit 3000 of 8000, release candidate"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i></span><b class="num">3000</b><span>release candidate</span></span><span class="meta">asked by Kwame Mensah</span></div></div><div class="rright"><span class="cnt num">5</span><span class="lab">notes</span></div></article>
+          <div class="panel-f">Three of the twenty four projects taking feedback today, shown exactly as the
+            product shows them. The serif line is the creator&rsquo;s own question.</div>
+        </div>
+      </div>
+    </section>
+    <div class="stats"><div><div class="v num">24</div><div class="k">projects taking feedback right now</div></div><div><div class="v num">171</div><div class="k">reviews written by 28 people</div></div><div><div class="v num">233</div><div class="k">separate points raised inside them</div></div><div class="hit"><div class="v num">6</div><div class="k">of those marked shipped by the creator</div></div></div>
+  </div>
+
+  <div class="wrap" style="padding-top:96px">
+    <div class="g12" style="align-items:end">
+      <h2 class="h2" style="grid-column:span 7">Work that is still<br>moving.</h2>
+      <p class="meta" style="grid-column:9/13;max-width:30ch">Sorted by the grit step it is standing on, not by
+        how new it is. A concept and a release candidate need different questions.</p>
+    </div>
+    <div style="margin-top:32px;border-top:2px solid var(--ink1)"><article class="row cur"><span class="thumb"><span class="bnd" style="top:0px;height:26px;background:#241E15"></span><span class="bnd" style="top:26px;height:5px;background:#33291A"></span><span class="bnd" style="top:32px;height:2px;background:#C4340F"></span><span class="bnd" style="top:35px;height:2px;background:var(--flare-mark)"></span><span class="bnd" style="top:38px;height:56px;background:var(--stage-ash)"></span></span><div><div class="rt"><span class="nm">Ashfall</span><span class="kd">Video</span></div><p class="rask">Does the cut at 1:12 read as intentional, or as a mistake? Watch it once at full size before you read anything else.</p><div class="rmeta"><span class="gritline"><span class="ladder" role="img" aria-label="grit 3000 of 8000, release candidate"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i></span><b class="num">3000</b><span>release candidate</span></span><span class="meta">asked by Kwame Mensah</span></div></div><div class="rright"><span class="cnt num">5</span><span class="lab">notes</span></div></article><article class="row"><span class="thumb"><span style="position:absolute;bottom:0;left:8px;width:5px;height:14px;background:#4A4234"></span><span style="position:absolute;bottom:0;left:18px;width:5px;height:26px;background:#6B6150"></span><span style="position:absolute;bottom:0;left:28px;width:5px;height:38px;background:var(--flare-mark)"></span><span style="position:absolute;bottom:0;left:38px;width:5px;height:20px;background:#4A4234"></span></span><div><div class="rt"><span class="nm">Brinehollow</span><span class="kd">Game</span></div><p class="rask">The tutorial is 90 seconds and 40 per cent of testers quit inside it. I need to know which beat loses them.</p><div class="rmeta"><span class="gritline"><span class="ladder" role="img" aria-label="grit 1000 of 8000, beta"><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i><i class=""></i></span><b class="num">1000</b><span>beta</span></span><span class="meta">asked by Mira Solvang</span></div></div><div class="rright"><span class="cnt num">24</span><span class="lab">notes</span></div></article><article class="row"><span class="thumb"><span class="bnd" style="top:12px;height:1px;background:#332C1F"></span><span class="bnd" style="top:24px;height:1px;background:#332C1F"></span><span class="bnd" style="top:36px;height:1px;background:#332C1F"></span><span class="bnd" style="top:48px;height:1px;background:#332C1F"></span><span style="position:absolute;top:0;bottom:0;left:14px;width:1px;background:#332C1F"></span><span style="position:absolute;top:0;bottom:0;left:28px;width:1px;background:#332C1F"></span><span style="position:absolute;top:0;bottom:0;left:42px;width:1px;background:#332C1F"></span><span style="position:absolute;top:23px;left:27px;width:3px;height:3px;background:var(--flare-mark)"></span></span><div><div class="rt"><span class="nm">Kestrel Deck</span><span class="kd">Hardware</span></div><p class="rask">The hinge is rated for 20 000 cycles and I think that is the wrong number. Tell me what you would trade for a lighter one.</p><div class="rmeta"><span class="gritline"><span class="ladder" role="img" aria-label="grit 3000 of 8000, release candidate"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i></span><b class="num">3000</b><span>release candidate</span></span><span class="meta">asked by Jonas Reidar</span></div></div><div class="rright"><span class="cnt num">9</span><span class="lab">notes</span></div></article><article class="row"><span class="thumb"><span class="bnd" style="top:0px;height:19px;background:#1C1A14"></span><span class="bnd" style="top:19px;height:2px;background:#8A8270"></span><span class="bnd" style="top:21px;height:56px;background:#15130E"></span><span class="bnd" style="top:34px;height:1px;background:#57503F"></span><span class="bnd" style="top:44px;height:1px;background:#3A352A"></span><span style="position:absolute;top:22px;left:39px;width:1px;height:15px;background:var(--flare-mark)"></span></span><div><div class="rt"><span class="nm">Six Minutes on the Ice</span><span class="kd">Video</span></div><p class="rask">It runs six minutes and the middle two are quiet on purpose. Tell me the exact moment you checked how long was left.</p><div class="rmeta"><span class="gritline"><span class="ladder" role="img" aria-label="grit 400 of 8000, prototype"><i class="on"></i><i class="cur"></i><i class=""></i><i class=""></i><i class=""></i></span><b class="num">400</b><span>prototype</span></span><span class="meta">asked by Lena Fjeld</span></div></div><div class="rright"><span class="cnt num">11</span><span class="lab">notes</span></div></article></div>
+  </div>
+
+  <div class="wrap" style="padding-top:144px">
+    <div class="g12">
+      <div style="grid-column:span 3">
+        <h2 class="h2">How it<br>works.</h2>
+        <p class="meta" style="margin-top:24px;max-width:26ch">Four moves. The fourth is the one nobody else does.</p>
+      </div>
+      <div style="grid-column:5/13"><div class="step"><div class="i num">01</div><dt>Post the build</dt><dd class="prose" style="font-size:17px;max-width:58ch">A link, a cut, a draft or a build, plus the grit step it is standing on. The step decides which questions the composer puts in front of a reviewer.</dd></div><div class="step"><div class="i num">02</div><dt>Name the asks</dt><dd class="prose" style="font-size:17px;max-width:58ch">You write the questions. A reviewer reads them before they open the work, so the note comes back about the part you are unsure of, not the part that is easiest to comment on.</dd></div><div class="step"><div class="i num">03</div><dt>Read the disagreement</dt><dd class="prose" style="font-size:17px;max-width:58ch">Every note carries a category, a severity and the version it was written against. Where reviewers split, Whetstone draws the split. It never averages people into a number nobody said.</dd></div><div class="step"><div class="i num">04</div><dt>Ship it, and say so</dt><dd class="prose" style="font-size:17px;max-width:58ch">Turn a note into a change, move it to shipped, and the reviewer who raised it is told. Six people have had that message so far.</dd></div></div>
+    </div>
+  </div>
+
+  <div class="wrap" style="padding-top:96px">
+    <div class="g12" style="align-items:end;margin-bottom:32px">
+      <h3 class="h3" style="grid-column:span 6">Every note lands in one of five categories.</h3>
+      <p class="meta" style="grid-column:8/13">233 points raised across 171 reviews. A note without a category
+        cannot be filed, which is why the inbox groups instead of scrolls.</p>
+    </div>
+    <div class="cats"><div class="cat"><div class="cn">Fun</div><div class="prose" style="font-size:17px;max-width:52ch">Did it hold you, and where exactly did it stop holding you.</div><div class="meta num" style="text-align:right">41 raised</div></div><div class="cat"><div class="cn">Balance</div><div class="prose" style="font-size:17px;max-width:52ch">Too hard, too slow, too generous, too thin. Say which.</div><div class="meta num" style="text-align:right">38 raised</div></div><div class="cat"><div class="cn">Controls</div><div class="prose" style="font-size:17px;max-width:52ch">Did your hands know what to do without being told twice.</div><div class="meta num" style="text-align:right">52 raised</div></div><div class="cat"><div class="cn">Onboarding</div><div class="prose" style="font-size:17px;max-width:52ch">The first ninety seconds, described by someone living them.</div><div class="meta num" style="text-align:right">61 raised</div></div><div class="cat"><div class="cn">Performance</div><div class="prose" style="font-size:17px;max-width:52ch">Where it stuttered, on what, and what you were doing at the time.</div><div class="meta num" style="text-align:right">41 raised</div></div></div>
+  </div>
+
+  <div class="wrap" style="padding-top:144px;padding-bottom:96px">
+    <div class="g12" style="align-items:center">
+      <div style="grid-column:span 7">
+        <h2 class="h2">Post the thing you<br>are about to ship.</h2>
+        <div class="acts"><button class="btn">Post a project <span class="ar">&#8594;</span></button>
+          <a class="tlink" href="#">Read the open asks <span class="ar">&#8594;</span></a></div>
+      </div>
+      <p class="prose" style="grid-column:9/13;font-size:19px">It takes about five minutes: the build, the step it
+        is on, and the questions you actually want answered.</p>
+    </div>
+  </div>
+
+  <footer class="foot"><div class="footin"><span class="mark" style="font-size:15px"><span class="sq"
+    style="width:10px;height:10px"></span>Whetstone</span><a href="#">How it works</a><a href="#">For reviewers</a>
+    <a href="#">Ask for help</a><span style="margin-left:auto">&copy; 2026</span></div></footer>
+</div></div>
+
+  <div class="cap"><span class="n">Screen 2 &middot; light</span><span class="t"><strong>The project page.</strong> Giats composition: the media is one scene sliced into three offset slabs, and the gap between the first two <em>is</em> the cut at 1:12 the creator is asking about.</span></div>
+  <div class="frame-hold">
+<div class="frame t-light">
+  <header class="top"><span class="mark"><span class="sq"></span>Whetstone</span><nav class="topnav"><a href="#" class="cur">Discover</a><a href="#" class="">Open asks</a><a href="#" class="">Reviewers</a><a href="#" class="">How it works</a></nav><span class="search"><span>Search projects and asks</span><span class="kbd"><span>&#8984;</span><span>K</span></span></span><a href="#" class="ui sec">Notes</a><span class="av" aria-label="Kwame Mensah">KM</span></header>
+  <div class="wrap">
+    <section class="projhead g12">
+      <div style="grid-column:span 8">
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:20px">
+          <span class="chip live">open for feedback</span><span class="chip">Video</span>
+          <span class="meta">posted 9 days ago &middot; delivery Friday</span>
+        </div>
+        <h1 class="ptitle">Ashfall<br><span class="pkicker">one take</span></h1>
+        <div style="margin-top:26px"><span class="gritline"><span class="ladder" role="img" aria-label="grit 3000 of 8000, release candidate"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i></span><b class="num">3000</b><span>release candidate &middot; grit 3000</span></span></div>
+      </div>
+      <div style="grid-column:9/13;padding-top:96px">
+        <p class="prose lg" style="max-width:26ch;font-size:24px">A one take music video shot at the edge of a controlled burn.</p>
+        <div class="byline" style="margin-top:20px"><span class="av lg">KM</span>
+          <span><span class="ui" style="font-variation-settings:'wght' 700">Kwame Mensah</span>
+          <span class="meta" style="display:block">Director. 7 projects, 3 shipped.</span></span></div>
+      </div>
+    </section>
+    <div class="comp"><div class="slab" style="left:0px;top:0px;width:334px;height:490px"><span class="band" style="top:20px;height:90px;background:#1D1912"></span><span class="band" style="top:110px;height:62px;background:#231E16"></span><span class="band" style="top:172px;height:44px;background:#2A2318"></span><span class="band" style="top:216px;height:34px;background:#2E2517"></span><span class="band" style="top:250px;height:26px;background:#3C2D18"></span><span class="band" style="top:276px;height:18px;background:#5E3113"></span><span class="band" style="top:294px;height:12px;background:#8C3512"></span><span class="band" style="top:306px;height:8px;background:#C4340F"></span><span class="band" style="top:314px;height:7px;background:#E14425"></span><span class="band" style="top:321px;height:5px;background:#FF7551"></span><span class="band" style="top:326px;height:4px;background:#FFA482"></span><span class="band" style="top:330px;height:160px;background:var(--stage-ash)"></span><span class="band" style="top:339px;height:3px;background:#7A2E12"></span><span class="band" style="top:350px;height:2px;background:#4A250F"></span><span class="band" style="top:364px;height:1px;background:#33291A"></span><span class="band" style="top:386px;height:1px;background:#2B2317"></span><span class="band" style="top:414px;height:1px;background:#2B2317"></span><span class="band" style="top:448px;height:1px;background:#2B2317"></span><span class="band" style="top:488px;height:1px;background:#2B2317"></span><span class="trunk" style="left:236px;height:332px;width:3px"></span><span class="trunk" style="left:258px;height:332px;width:2px"></span><span class="trunk" style="left:300px;height:332px;width:2px"></span><span class="trunk" style="left:318px;height:332px;width:1px"></span><span class="word" style="left:20px;top:92px;font-size:190px;-webkit-text-stroke-width:1.5px">ASHFALL</span></div><div class="slab" style="left:358px;top:56px;width:468px;height:486px"><span class="band" style="top:-36px;height:90px;background:#1D1912"></span><span class="band" style="top:54px;height:62px;background:#231E16"></span><span class="band" style="top:116px;height:44px;background:#2A2318"></span><span class="band" style="top:160px;height:34px;background:#2E2517"></span><span class="band" style="top:194px;height:26px;background:#3C2D18"></span><span class="band" style="top:220px;height:18px;background:#5E3113"></span><span class="band" style="top:238px;height:12px;background:#8C3512"></span><span class="band" style="top:250px;height:8px;background:#C4340F"></span><span class="band" style="top:258px;height:7px;background:#E14425"></span><span class="band" style="top:265px;height:5px;background:#FF7551"></span><span class="band" style="top:270px;height:4px;background:#FFA482"></span><span class="band" style="top:274px;height:212px;background:var(--stage-ash)"></span><span class="band" style="top:283px;height:3px;background:#7A2E12"></span><span class="band" style="top:294px;height:2px;background:#4A250F"></span><span class="band" style="top:308px;height:1px;background:#33291A"></span><span class="band" style="top:330px;height:1px;background:#2B2317"></span><span class="band" style="top:358px;height:1px;background:#2B2317"></span><span class="band" style="top:392px;height:1px;background:#2B2317"></span><span class="band" style="top:432px;height:1px;background:#2B2317"></span><span class="trunk" style="left:398px;height:276px;width:2px"></span><span class="trunk" style="left:424px;height:276px;width:3px"></span><span class="trunk" style="left:441px;height:276px;width:1px"></span><span class="word" style="left:-338px;top:36px;font-size:190px;-webkit-text-stroke-width:1.5px">ASHFALL</span><span class="stagemeta" style="left:24px;top:416px">one take</span><span class="stagemeta" style="left:24px;top:438px">3:50 · no cuts but one</span></div><div class="slab" style="left:850px;top:24px;width:254px;height:410px"><span class="band" style="top:-4px;height:90px;background:#1D1912"></span><span class="band" style="top:86px;height:62px;background:#231E16"></span><span class="band" style="top:148px;height:44px;background:#2A2318"></span><span class="band" style="top:192px;height:34px;background:#2E2517"></span><span class="band" style="top:226px;height:26px;background:#3C2D18"></span><span class="band" style="top:252px;height:18px;background:#5E3113"></span><span class="band" style="top:270px;height:12px;background:#8C3512"></span><span class="band" style="top:282px;height:8px;background:#C4340F"></span><span class="band" style="top:290px;height:7px;background:#E14425"></span><span class="band" style="top:297px;height:5px;background:#FF7551"></span><span class="band" style="top:302px;height:4px;background:#FFA482"></span><span class="band" style="top:306px;height:104px;background:var(--stage-ash)"></span><span class="band" style="top:315px;height:3px;background:#7A2E12"></span><span class="band" style="top:326px;height:2px;background:#4A250F"></span><span class="band" style="top:340px;height:1px;background:#33291A"></span><span class="band" style="top:362px;height:1px;background:#2B2317"></span><span class="band" style="top:390px;height:1px;background:#2B2317"></span><span class="trunk" style="left:94px;height:308px;width:2px"></span><span class="trunk" style="left:112px;height:308px;width:1px"></span><span class="word" style="left:-830px;top:68px;font-size:190px;-webkit-text-stroke-width:1.5px">ASHFALL</span><span class="stagemeta" style="left:20px;top:20px">dusk</span><span class="stagemeta" style="left:20px;top:40px">managed burn</span><span class="stagemeta" style="left:20px;top:60px">crew of five</span></div><span class="cut" style="left:346px"></span><span class="cutlab" style="left:354px;top:-2px">the cut</span></div>
+    <div class="ruler"><span class="tk" style="left:0.00%"></span><span class="tl" style="left:0.00%">0:00</span><span class="tk" style="left:13.04%"></span><span class="tl" style="left:13.04%">0:30</span><span class="tk" style="left:26.09%"></span><span class="tl" style="left:26.09%">1:00</span><span class="tk" style="left:39.13%"></span><span class="tl" style="left:39.13%">1:30</span><span class="tk" style="left:52.17%"></span><span class="tl" style="left:52.17%">2:00</span><span class="tk" style="left:65.22%"></span><span class="tl" style="left:65.22%">2:30</span><span class="tk" style="left:78.26%"></span><span class="tl" style="left:78.26%">3:00</span><span class="tk" style="left:91.30%"></span><span class="tl" style="left:91.30%">3:30</span><span class="tk on" style="left:31.30%"></span><span class="tl" style="left:31.30%;color:var(--flare);top:22px;font-variation-settings:'wght' 700">1:12 the cut</span></div>
+
+    <section class="g12" style="padding-top:96px">
+      <div style="grid-column:span 7">
+        <div class="ask">
+          <div class="lab" style="color:var(--flare);margin-bottom:14px">The ask &middot; answer this one</div>
+          <p class="q">Does the cut at 1:12 read as intentional, or as a mistake? <i>Watch it once at full size
+            before you read anything else.</i></p>
+        </div>
+      </div>
+      <div style="grid-column:9/13">
+        <div class="lab" style="margin-bottom:14px">About this build</div>
+        <p class="prose" style="font-size:17px">Three minutes fifty, one take, shot at dusk beside a managed burn
+          with a crew of five and a fire service liaison who was not enjoying himself. Locked cut, delivery Friday.
+          Graded warm on purpose, which is the opposite of what I usually argue for.</p>
+      </div>
+    </section>
+
+    <section style="padding-top:96px">
+      <div style="display:flex;align-items:baseline;gap:16px">
+        <h3 class="h3">Grit 3000</h3>
+        <span class="meta">Ashfall says how finished it is before anyone reviews it, so nobody sends a concept
+          the notes a release candidate needs.</span>
+      </div>
+      <div class="rail"><div class="cellwrap"><div class="barbox"><div class="bar done" style="height:8px"></div></div><div class="gv num">120</div><div class="gw">concept</div><div class="gw" style="margin-top:2px">an idea written down</div></div><div class="cellwrap"><div class="barbox"><div class="bar done" style="height:14px"></div></div><div class="gv num">400</div><div class="gw">prototype</div><div class="gw" style="margin-top:2px">something runs</div></div><div class="cellwrap"><div class="barbox"><div class="bar done" style="height:22px"></div></div><div class="gv num">1000</div><div class="gw">beta</div><div class="gw" style="margin-top:2px">a stranger can use it unattended</div></div><div class="cellwrap"><div class="barbox"><div class="bar here" style="height:34px"></div></div><div class="gv num here-lab">3000</div><div class="gw">release candidate</div><div class="gw" style="margin-top:2px">ship shaped, looking for the defect</div></div><div class="cellwrap"><div class="barbox"><div class="bar " style="height:44px"></div></div><div class="gv num">8000</div><div class="gw">shipped</div><div class="gw" style="margin-top:2px">out in the world</div></div></div>
+    </section>
+
+    <section class="g12" style="padding-top:96px">
+      <div style="grid-column:span 8">
+        <div class="dis">
+          <div style="display:flex;align-items:baseline;gap:16px">
+            <h3 class="h2" style="font-size:38px">Where five<br>reviewers put it</h3>
+            <div style="margin-left:auto;text-align:right">
+              <div class="lab" style="color:var(--ink1)">axis</div>
+              <div class="h4" style="margin-top:6px">Clarity of story</div>
+              <div class="meta" style="max-width:34ch;margin-top:4px">Can you follow the through line
+                without rewinding?</div>
+            </div>
+          </div>
+          <div class="plot"><div class="brk"><span class="end" style="left:40%"></span><span class="end" style="left:calc(100% - 2px)"></span><span class="line" style="left:40%;right:0"></span><span class="lb" style="left:70%">spread: 3 steps, 1000 to 8000</span></div><div class="cols"><div class="col"><span class="empty">nobody</span></div><div class="col"><span class="empty">nobody</span></div><div class="col"><span class="tok"><span class="av">IR</span><span class="tk-n">Ivo R.</span><span class="tk-k">reader</span></span></div><div class="col" style="background:var(--sunk);box-shadow:inset 2px 0 0 0 var(--flare)"><span class="medlab">median sits here</span><span class="tok m"><span class="av">SK</span><span class="tk-n">Suvi K.</span><span class="tk-k">expert</span></span><span class="tok m"><span class="av">DO</span><span class="tk-n">Dana O.</span><span class="tk-k">maker</span></span><span class="tok m"><span class="av">TM</span><span class="tk-n">Teo M.</span><span class="tk-k">maker</span></span></div><div class="col"><span class="tok"><span class="av">PN</span><span class="tk-n">Priya N.</span><span class="tk-k">expert</span></span></div></div><div class="axlab"><div class=""><div class="gv num">120</div><div class="cn">concept</div><div class="cn">no reviewer</div></div><div class=""><div class="gv num">400</div><div class="cn">prototype</div><div class="cn">no reviewer</div></div><div class=""><div class="gv num">1000</div><div class="cn">beta</div><div class="cn">1 reviewer</div></div><div class="hit"><div class="gv num">3000</div><div class="cn">release candidate</div><div class="cn">3 reviewers</div></div><div class=""><div class="gv num">8000</div><div class="cn">shipped</div><div class="cn">1 reviewer</div></div></div></div>
+        </div>
+      </div>
+      <div style="grid-column:10/13;padding-top:186px">
+        <p class="prose" style="font-size:19px">Five reviewers, split across three steps. Three call it a release
+          candidate, one says it is still in beta, one says it is already shipped.</p>
+        <p class="meta" style="margin-top:20px">Not averaged. The mean reads 3600, which is a position nobody
+          holds, and it hides both of the people worth reading.</p>
+        <p class="meta" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--rule)">
+          The two outliers wrote the two longest notes. That is usually the case.</p>
+      </div>
+    </section>
+
+    <section class="g12" style="padding-top:96px;padding-bottom:96px">
+      <div style="grid-column:span 8">
+        <div style="display:flex;align-items:baseline;gap:16px;border-bottom:2px solid var(--ink1);padding-bottom:12px">
+          <h3 class="h3">Notes</h3><span class="meta num">5 notes &middot; 3 categories &middot; 2 versions</span>
+          <span class="chip" style="margin-left:auto">newest first</span>
+        </div>
+        
+    <article class="note open">
+      <div class="nhead"><span class="av">SK</span><span class="nm">Suvi Kallio</span>
+        <span class="chip">expert reviewer</span><span class="meta">4 days ago</span>
+        <span class="chip" style="margin-left:auto">written against&nbsp;v3</span></div>
+      <div class="nprov">
+        <span class="prov"><span class="k">category</span><b>Onboarding</b></span>
+        <span class="prov"><span class="k">severity</span><span class="sev high"><i></i><i></i><i></i></span><b>high</b></span>
+        <span class="prov"><span class="k">grit when written</span><span class="ladder" role="img" aria-label="grit 3000 of 8000, release candidate"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i></span><b class="num">3000</b></span>
+        <span class="prov"><span class="k">status</span><b>answered and shipped</b></span>
+      </div>
+      <p class="prose">Quit at the tutorial the first time, stayed the second. First attempt I closed it at about
+        forty seconds. The meter started moving before I understood it was a timer, so I read it as a score I was
+        losing.</p>
+      <div class="reply">
+        <div class="nhead" style="gap:10px"><span class="av sm">KM</span>
+          <span class="nm" style="font-size:14px">Kwame Mensah</span>
+          <span class="chip" style="height:22px">creator</span><span class="meta">replied 3 days ago</span></div>
+        <p class="prose" style="font-size:17px;margin-top:10px">You are right that it reads as a score. The meter
+          now names itself the first time it moves, and it holds until you have looked at it once.</p>
+      </div>
+      <div class="shipped"><span class="stamp">Shipped in v4</span>
+        <span class="meta">Suvi was told the day it went out, 11&nbsp;March. This is 1 of the 6 notes on Whetstone
+          that have been marked shipped.</span></div>
+    </article>
+    <article class="note">
+      <div class="nhead"><span class="av">DO</span><span class="nm">Dana Oyelaran</span>
+        <span class="chip">maker</span><span class="meta">6 days ago</span>
+        <span class="chip" style="margin-left:auto">written against&nbsp;v3</span></div>
+      <div class="nprov">
+        <span class="prov"><span class="k">category</span><b>Balance</b></span>
+        <span class="prov"><span class="k">severity</span><span class="sev med"><i></i><i></i><i></i></span><b>medium</b></span>
+        <span class="prov"><span class="k">grit when written</span><span class="ladder" role="img" aria-label="grit 3000 of 8000, release candidate"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i></span><b class="num">3000</b></span>
+        <span class="prov"><span class="k">status</span><b>open</b></span>
+      </div>
+      <p class="prose">The middle stretch is where I started noticing the frame rather than the fire. Not a fault.
+        It is just where my attention went, and you asked.</p>
+    </article>
+    <article class="note">
+      <div class="nhead"><span class="av">IR</span><span class="nm">Ivo Renner</span>
+        <span class="chip">reader</span><span class="meta">2 days ago</span>
+        <span class="chip" style="margin-left:auto">written against&nbsp;v4</span></div>
+      <div class="nprov">
+        <span class="prov"><span class="k">category</span><b>Fun</b></span>
+        <span class="prov"><span class="k">severity</span><span class="sev low"><i></i><i></i><i></i></span><b>low</b></span>
+        <span class="prov"><span class="k">grit when written</span><span class="ladder" role="img" aria-label="grit 1000 of 8000, beta"><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i><i class=""></i></span><b class="num">1000</b></span>
+        <span class="prov"><span class="k">status</span><b>open</b></span>
+      </div>
+      <p class="prose">I read the cut as a mistake the first time and as a choice the second. That is probably your
+        answer, and I would not change it.</p>
+    </article>
+      </div>
+      <div style="grid-column:10/13">
+        <div class="panel" style="padding:20px"><div class="lab" style="color:var(--ink1)">Before you read the thread</div><p class="prose" style="font-size:16px;margin:10px 0 16px">Five notes are hidden. A reviewer who reads the thread first tends to write the thread back. Record what you noticed on Ashfall, and these open.</p><button class="btn sm" style="width:100%;justify-content:center">Write my first impression</button><button class="btn2 sm" style="width:100%;justify-content:center;margin-top:8px">Skip, and show me the notes</button><p class="meta" style="margin-top:12px;font-size:12px">Skipping is recorded, not punished.</p></div>
+        <div style="margin-top:32px">
+          <div class="lab" style="margin-bottom:10px">Notes by category</div>
+          <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--rule)"><span class="ui">Fun</span><span class="meta num">0</span></div><div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--rule)"><span class="ui">Balance</span><span class="meta num">1</span></div><div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--rule)"><span class="ui">Controls</span><span class="meta num">0</span></div><div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--rule)"><span class="ui">Onboarding</span><span class="meta num">3</span></div><div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--rule)"><span class="ui">Performance</span><span class="meta num">1</span></div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <footer class="foot"><div class="footin"><span class="mark" style="font-size:15px"><span class="sq"
+    style="width:10px;height:10px"></span>Whetstone</span><a href="#">Discover</a><a href="#">Ask for help</a>
+    <span style="margin-left:auto">&copy; 2026</span></div></footer>
+</div></div>
+
+  <div class="cap"><span class="n">Screen 2 &middot; dark</span><span class="t"><strong>The project page, night room.</strong> Same page, same stage. The disagreement plot keeps its flare median rule in both themes.</span></div>
+  <div class="frame-hold">
+<div class="frame t-dark">
+  <header class="top"><span class="mark"><span class="sq"></span>Whetstone</span><nav class="topnav"><a href="#" class="cur">Discover</a><a href="#" class="">Open asks</a><a href="#" class="">Reviewers</a><a href="#" class="">How it works</a></nav><span class="search"><span>Search projects and asks</span><span class="kbd"><span>&#8984;</span><span>K</span></span></span><a href="#" class="ui sec">Notes</a><span class="av" aria-label="Kwame Mensah">KM</span></header>
+  <div class="wrap">
+    <section class="projhead g12">
+      <div style="grid-column:span 8">
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:20px">
+          <span class="chip live">open for feedback</span><span class="chip">Video</span>
+          <span class="meta">posted 9 days ago &middot; delivery Friday</span>
+        </div>
+        <h1 class="ptitle">Ashfall<br><span class="pkicker">one take</span></h1>
+        <div style="margin-top:26px"><span class="gritline"><span class="ladder" role="img" aria-label="grit 3000 of 8000, release candidate"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i></span><b class="num">3000</b><span>release candidate &middot; grit 3000</span></span></div>
+      </div>
+      <div style="grid-column:9/13;padding-top:96px">
+        <p class="prose lg" style="max-width:26ch;font-size:24px">A one take music video shot at the edge of a controlled burn.</p>
+        <div class="byline" style="margin-top:20px"><span class="av lg">KM</span>
+          <span><span class="ui" style="font-variation-settings:'wght' 700">Kwame Mensah</span>
+          <span class="meta" style="display:block">Director. 7 projects, 3 shipped.</span></span></div>
+      </div>
+    </section>
+    <div class="comp"><div class="slab" style="left:0px;top:0px;width:334px;height:490px"><span class="band" style="top:20px;height:90px;background:#1D1912"></span><span class="band" style="top:110px;height:62px;background:#231E16"></span><span class="band" style="top:172px;height:44px;background:#2A2318"></span><span class="band" style="top:216px;height:34px;background:#2E2517"></span><span class="band" style="top:250px;height:26px;background:#3C2D18"></span><span class="band" style="top:276px;height:18px;background:#5E3113"></span><span class="band" style="top:294px;height:12px;background:#8C3512"></span><span class="band" style="top:306px;height:8px;background:#C4340F"></span><span class="band" style="top:314px;height:7px;background:#E14425"></span><span class="band" style="top:321px;height:5px;background:#FF7551"></span><span class="band" style="top:326px;height:4px;background:#FFA482"></span><span class="band" style="top:330px;height:160px;background:var(--stage-ash)"></span><span class="band" style="top:339px;height:3px;background:#7A2E12"></span><span class="band" style="top:350px;height:2px;background:#4A250F"></span><span class="band" style="top:364px;height:1px;background:#33291A"></span><span class="band" style="top:386px;height:1px;background:#2B2317"></span><span class="band" style="top:414px;height:1px;background:#2B2317"></span><span class="band" style="top:448px;height:1px;background:#2B2317"></span><span class="band" style="top:488px;height:1px;background:#2B2317"></span><span class="trunk" style="left:236px;height:332px;width:3px"></span><span class="trunk" style="left:258px;height:332px;width:2px"></span><span class="trunk" style="left:300px;height:332px;width:2px"></span><span class="trunk" style="left:318px;height:332px;width:1px"></span><span class="word" style="left:20px;top:92px;font-size:190px;-webkit-text-stroke-width:1.5px">ASHFALL</span></div><div class="slab" style="left:358px;top:56px;width:468px;height:486px"><span class="band" style="top:-36px;height:90px;background:#1D1912"></span><span class="band" style="top:54px;height:62px;background:#231E16"></span><span class="band" style="top:116px;height:44px;background:#2A2318"></span><span class="band" style="top:160px;height:34px;background:#2E2517"></span><span class="band" style="top:194px;height:26px;background:#3C2D18"></span><span class="band" style="top:220px;height:18px;background:#5E3113"></span><span class="band" style="top:238px;height:12px;background:#8C3512"></span><span class="band" style="top:250px;height:8px;background:#C4340F"></span><span class="band" style="top:258px;height:7px;background:#E14425"></span><span class="band" style="top:265px;height:5px;background:#FF7551"></span><span class="band" style="top:270px;height:4px;background:#FFA482"></span><span class="band" style="top:274px;height:212px;background:var(--stage-ash)"></span><span class="band" style="top:283px;height:3px;background:#7A2E12"></span><span class="band" style="top:294px;height:2px;background:#4A250F"></span><span class="band" style="top:308px;height:1px;background:#33291A"></span><span class="band" style="top:330px;height:1px;background:#2B2317"></span><span class="band" style="top:358px;height:1px;background:#2B2317"></span><span class="band" style="top:392px;height:1px;background:#2B2317"></span><span class="band" style="top:432px;height:1px;background:#2B2317"></span><span class="trunk" style="left:398px;height:276px;width:2px"></span><span class="trunk" style="left:424px;height:276px;width:3px"></span><span class="trunk" style="left:441px;height:276px;width:1px"></span><span class="word" style="left:-338px;top:36px;font-size:190px;-webkit-text-stroke-width:1.5px">ASHFALL</span><span class="stagemeta" style="left:24px;top:416px">one take</span><span class="stagemeta" style="left:24px;top:438px">3:50 · no cuts but one</span></div><div class="slab" style="left:850px;top:24px;width:254px;height:410px"><span class="band" style="top:-4px;height:90px;background:#1D1912"></span><span class="band" style="top:86px;height:62px;background:#231E16"></span><span class="band" style="top:148px;height:44px;background:#2A2318"></span><span class="band" style="top:192px;height:34px;background:#2E2517"></span><span class="band" style="top:226px;height:26px;background:#3C2D18"></span><span class="band" style="top:252px;height:18px;background:#5E3113"></span><span class="band" style="top:270px;height:12px;background:#8C3512"></span><span class="band" style="top:282px;height:8px;background:#C4340F"></span><span class="band" style="top:290px;height:7px;background:#E14425"></span><span class="band" style="top:297px;height:5px;background:#FF7551"></span><span class="band" style="top:302px;height:4px;background:#FFA482"></span><span class="band" style="top:306px;height:104px;background:var(--stage-ash)"></span><span class="band" style="top:315px;height:3px;background:#7A2E12"></span><span class="band" style="top:326px;height:2px;background:#4A250F"></span><span class="band" style="top:340px;height:1px;background:#33291A"></span><span class="band" style="top:362px;height:1px;background:#2B2317"></span><span class="band" style="top:390px;height:1px;background:#2B2317"></span><span class="trunk" style="left:94px;height:308px;width:2px"></span><span class="trunk" style="left:112px;height:308px;width:1px"></span><span class="word" style="left:-830px;top:68px;font-size:190px;-webkit-text-stroke-width:1.5px">ASHFALL</span><span class="stagemeta" style="left:20px;top:20px">dusk</span><span class="stagemeta" style="left:20px;top:40px">managed burn</span><span class="stagemeta" style="left:20px;top:60px">crew of five</span></div><span class="cut" style="left:346px"></span><span class="cutlab" style="left:354px;top:-2px">the cut</span></div>
+    <div class="ruler"><span class="tk" style="left:0.00%"></span><span class="tl" style="left:0.00%">0:00</span><span class="tk" style="left:13.04%"></span><span class="tl" style="left:13.04%">0:30</span><span class="tk" style="left:26.09%"></span><span class="tl" style="left:26.09%">1:00</span><span class="tk" style="left:39.13%"></span><span class="tl" style="left:39.13%">1:30</span><span class="tk" style="left:52.17%"></span><span class="tl" style="left:52.17%">2:00</span><span class="tk" style="left:65.22%"></span><span class="tl" style="left:65.22%">2:30</span><span class="tk" style="left:78.26%"></span><span class="tl" style="left:78.26%">3:00</span><span class="tk" style="left:91.30%"></span><span class="tl" style="left:91.30%">3:30</span><span class="tk on" style="left:31.30%"></span><span class="tl" style="left:31.30%;color:var(--flare);top:22px;font-variation-settings:'wght' 700">1:12 the cut</span></div>
+
+    <section class="g12" style="padding-top:96px">
+      <div style="grid-column:span 7">
+        <div class="ask">
+          <div class="lab" style="color:var(--flare);margin-bottom:14px">The ask &middot; answer this one</div>
+          <p class="q">Does the cut at 1:12 read as intentional, or as a mistake? <i>Watch it once at full size
+            before you read anything else.</i></p>
+        </div>
+      </div>
+      <div style="grid-column:9/13">
+        <div class="lab" style="margin-bottom:14px">About this build</div>
+        <p class="prose" style="font-size:17px">Three minutes fifty, one take, shot at dusk beside a managed burn
+          with a crew of five and a fire service liaison who was not enjoying himself. Locked cut, delivery Friday.
+          Graded warm on purpose, which is the opposite of what I usually argue for.</p>
+      </div>
+    </section>
+
+    <section style="padding-top:96px">
+      <div style="display:flex;align-items:baseline;gap:16px">
+        <h3 class="h3">Grit 3000</h3>
+        <span class="meta">Ashfall says how finished it is before anyone reviews it, so nobody sends a concept
+          the notes a release candidate needs.</span>
+      </div>
+      <div class="rail"><div class="cellwrap"><div class="barbox"><div class="bar done" style="height:8px"></div></div><div class="gv num">120</div><div class="gw">concept</div><div class="gw" style="margin-top:2px">an idea written down</div></div><div class="cellwrap"><div class="barbox"><div class="bar done" style="height:14px"></div></div><div class="gv num">400</div><div class="gw">prototype</div><div class="gw" style="margin-top:2px">something runs</div></div><div class="cellwrap"><div class="barbox"><div class="bar done" style="height:22px"></div></div><div class="gv num">1000</div><div class="gw">beta</div><div class="gw" style="margin-top:2px">a stranger can use it unattended</div></div><div class="cellwrap"><div class="barbox"><div class="bar here" style="height:34px"></div></div><div class="gv num here-lab">3000</div><div class="gw">release candidate</div><div class="gw" style="margin-top:2px">ship shaped, looking for the defect</div></div><div class="cellwrap"><div class="barbox"><div class="bar " style="height:44px"></div></div><div class="gv num">8000</div><div class="gw">shipped</div><div class="gw" style="margin-top:2px">out in the world</div></div></div>
+    </section>
+
+    <section class="g12" style="padding-top:96px">
+      <div style="grid-column:span 8">
+        <div class="dis">
+          <div style="display:flex;align-items:baseline;gap:16px">
+            <h3 class="h2" style="font-size:38px">Where five<br>reviewers put it</h3>
+            <div style="margin-left:auto;text-align:right">
+              <div class="lab" style="color:var(--ink1)">axis</div>
+              <div class="h4" style="margin-top:6px">Clarity of story</div>
+              <div class="meta" style="max-width:34ch;margin-top:4px">Can you follow the through line
+                without rewinding?</div>
+            </div>
+          </div>
+          <div class="plot"><div class="brk"><span class="end" style="left:40%"></span><span class="end" style="left:calc(100% - 2px)"></span><span class="line" style="left:40%;right:0"></span><span class="lb" style="left:70%">spread: 3 steps, 1000 to 8000</span></div><div class="cols"><div class="col"><span class="empty">nobody</span></div><div class="col"><span class="empty">nobody</span></div><div class="col"><span class="tok"><span class="av">IR</span><span class="tk-n">Ivo R.</span><span class="tk-k">reader</span></span></div><div class="col" style="background:var(--sunk);box-shadow:inset 2px 0 0 0 var(--flare)"><span class="medlab">median sits here</span><span class="tok m"><span class="av">SK</span><span class="tk-n">Suvi K.</span><span class="tk-k">expert</span></span><span class="tok m"><span class="av">DO</span><span class="tk-n">Dana O.</span><span class="tk-k">maker</span></span><span class="tok m"><span class="av">TM</span><span class="tk-n">Teo M.</span><span class="tk-k">maker</span></span></div><div class="col"><span class="tok"><span class="av">PN</span><span class="tk-n">Priya N.</span><span class="tk-k">expert</span></span></div></div><div class="axlab"><div class=""><div class="gv num">120</div><div class="cn">concept</div><div class="cn">no reviewer</div></div><div class=""><div class="gv num">400</div><div class="cn">prototype</div><div class="cn">no reviewer</div></div><div class=""><div class="gv num">1000</div><div class="cn">beta</div><div class="cn">1 reviewer</div></div><div class="hit"><div class="gv num">3000</div><div class="cn">release candidate</div><div class="cn">3 reviewers</div></div><div class=""><div class="gv num">8000</div><div class="cn">shipped</div><div class="cn">1 reviewer</div></div></div></div>
+        </div>
+      </div>
+      <div style="grid-column:10/13;padding-top:186px">
+        <p class="prose" style="font-size:19px">Five reviewers, split across three steps. Three call it a release
+          candidate, one says it is still in beta, one says it is already shipped.</p>
+        <p class="meta" style="margin-top:20px">Not averaged. The mean reads 3600, which is a position nobody
+          holds, and it hides both of the people worth reading.</p>
+        <p class="meta" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--rule)">
+          The two outliers wrote the two longest notes. That is usually the case.</p>
+      </div>
+    </section>
+
+    <section class="g12" style="padding-top:96px;padding-bottom:96px">
+      <div style="grid-column:span 8">
+        <div style="display:flex;align-items:baseline;gap:16px;border-bottom:2px solid var(--ink1);padding-bottom:12px">
+          <h3 class="h3">Notes</h3><span class="meta num">5 notes &middot; 3 categories &middot; 2 versions</span>
+          <span class="chip" style="margin-left:auto">newest first</span>
+        </div>
+        
+    <article class="note open">
+      <div class="nhead"><span class="av">SK</span><span class="nm">Suvi Kallio</span>
+        <span class="chip">expert reviewer</span><span class="meta">4 days ago</span>
+        <span class="chip" style="margin-left:auto">written against&nbsp;v3</span></div>
+      <div class="nprov">
+        <span class="prov"><span class="k">category</span><b>Onboarding</b></span>
+        <span class="prov"><span class="k">severity</span><span class="sev high"><i></i><i></i><i></i></span><b>high</b></span>
+        <span class="prov"><span class="k">grit when written</span><span class="ladder" role="img" aria-label="grit 3000 of 8000, release candidate"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i></span><b class="num">3000</b></span>
+        <span class="prov"><span class="k">status</span><b>answered and shipped</b></span>
+      </div>
+      <p class="prose">Quit at the tutorial the first time, stayed the second. First attempt I closed it at about
+        forty seconds. The meter started moving before I understood it was a timer, so I read it as a score I was
+        losing.</p>
+      <div class="reply">
+        <div class="nhead" style="gap:10px"><span class="av sm">KM</span>
+          <span class="nm" style="font-size:14px">Kwame Mensah</span>
+          <span class="chip" style="height:22px">creator</span><span class="meta">replied 3 days ago</span></div>
+        <p class="prose" style="font-size:17px;margin-top:10px">You are right that it reads as a score. The meter
+          now names itself the first time it moves, and it holds until you have looked at it once.</p>
+      </div>
+      <div class="shipped"><span class="stamp">Shipped in v4</span>
+        <span class="meta">Suvi was told the day it went out, 11&nbsp;March. This is 1 of the 6 notes on Whetstone
+          that have been marked shipped.</span></div>
+    </article>
+    <article class="note">
+      <div class="nhead"><span class="av">DO</span><span class="nm">Dana Oyelaran</span>
+        <span class="chip">maker</span><span class="meta">6 days ago</span>
+        <span class="chip" style="margin-left:auto">written against&nbsp;v3</span></div>
+      <div class="nprov">
+        <span class="prov"><span class="k">category</span><b>Balance</b></span>
+        <span class="prov"><span class="k">severity</span><span class="sev med"><i></i><i></i><i></i></span><b>medium</b></span>
+        <span class="prov"><span class="k">grit when written</span><span class="ladder" role="img" aria-label="grit 3000 of 8000, release candidate"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i></span><b class="num">3000</b></span>
+        <span class="prov"><span class="k">status</span><b>open</b></span>
+      </div>
+      <p class="prose">The middle stretch is where I started noticing the frame rather than the fire. Not a fault.
+        It is just where my attention went, and you asked.</p>
+    </article>
+    <article class="note">
+      <div class="nhead"><span class="av">IR</span><span class="nm">Ivo Renner</span>
+        <span class="chip">reader</span><span class="meta">2 days ago</span>
+        <span class="chip" style="margin-left:auto">written against&nbsp;v4</span></div>
+      <div class="nprov">
+        <span class="prov"><span class="k">category</span><b>Fun</b></span>
+        <span class="prov"><span class="k">severity</span><span class="sev low"><i></i><i></i><i></i></span><b>low</b></span>
+        <span class="prov"><span class="k">grit when written</span><span class="ladder" role="img" aria-label="grit 1000 of 8000, beta"><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i><i class=""></i></span><b class="num">1000</b></span>
+        <span class="prov"><span class="k">status</span><b>open</b></span>
+      </div>
+      <p class="prose">I read the cut as a mistake the first time and as a choice the second. That is probably your
+        answer, and I would not change it.</p>
+    </article>
+      </div>
+      <div style="grid-column:10/13">
+        <div class="panel" style="padding:20px"><div class="lab" style="color:var(--ink1)">Before you read the thread</div><p class="prose" style="font-size:16px;margin:10px 0 16px">Five notes are hidden. A reviewer who reads the thread first tends to write the thread back. Record what you noticed on Ashfall, and these open.</p><button class="btn sm" style="width:100%;justify-content:center">Write my first impression</button><button class="btn2 sm" style="width:100%;justify-content:center;margin-top:8px">Skip, and show me the notes</button><p class="meta" style="margin-top:12px;font-size:12px">Skipping is recorded, not punished.</p></div>
+        <div style="margin-top:32px">
+          <div class="lab" style="margin-bottom:10px">Notes by category</div>
+          <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--rule)"><span class="ui">Fun</span><span class="meta num">0</span></div><div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--rule)"><span class="ui">Balance</span><span class="meta num">1</span></div><div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--rule)"><span class="ui">Controls</span><span class="meta num">0</span></div><div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--rule)"><span class="ui">Onboarding</span><span class="meta num">3</span></div><div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--rule)"><span class="ui">Performance</span><span class="meta num">1</span></div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <footer class="foot"><div class="footin"><span class="mark" style="font-size:15px"><span class="sq"
+    style="width:10px;height:10px"></span>Whetstone</span><a href="#">Discover</a><a href="#">Ask for help</a>
+    <span style="margin-left:auto">&copy; 2026</span></div></footer>
+</div></div>
+
+  <div class="cap"><span class="n">390px</span><span class="t"><strong>Mobile, laid out for the hand.</strong> Not a squeezed desktop: the stats reflow into a ruled 2 by 2, the feed row moves its grit ladder under the ask, the slab composition drops to two panels and keeps the cut, and the reviewer plot keeps all five steps with initials only.</span></div>
+  <div class="pair">
+    
+<div class="mob t-light">
+  <header class="mtop"><span class="mark" style="font-size:16px"><span class="sq" style="width:11px;height:11px"></span>Whetstone</span><button class="btn sm">Post</button><span class="burger"><i></i><i></i></span></header>
+  <div class="mwrap" style="padding-top:36px">
+    <span class="eyebrow" style="font-size:11px;height:26px">24 open asks</span>
+    <h1 class="md1">Ship<br>sharper.</h1>
+    <p class="lede" style="font-size:16px;margin-top:18px">Post the build. Name the questions you need answered.
+      Get notes back carrying a category, a severity and the version they were written against.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:24px">
+      <button class="btn" style="justify-content:center">Post a project</button>
+      <button class="btn2" style="justify-content:center">Read the open asks</button>
+    </div>
+  </div>
+  <div class="mwrap" style="padding-top:36px">
+    <div class="mstats">
+      <div><div class="v num">24</div><div class="k">projects taking feedback</div></div>
+      <div><div class="v num">171</div><div class="k">reviews by 28 people</div></div>
+      <div><div class="v num">233</div><div class="k">points raised inside them</div></div>
+      <div style="color:var(--flare)"><div class="v num">6</div><div class="k" style="color:var(--ink2)">marked shipped by the creator</div></div>
+    </div>
+  </div>
+  <div class="mwrap" style="padding-top:36px;padding-bottom:32px">
+    <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink1);padding-bottom:10px">
+      <h2 class="h4">Still moving</h2><span class="meta" style="margin-left:auto">sorted by grit</span></div>
+    <article class="mrow"><span class="thumb"><span class="bnd" style="top:0px;height:21px;background:#241E15"></span><span class="bnd" style="top:21px;height:4px;background:#33291A"></span><span class="bnd" style="top:25px;height:2px;background:#C4340F"></span><span class="bnd" style="top:27px;height:2px;background:var(--flare-mark)"></span><span class="bnd" style="top:29px;height:44px;background:var(--stage-ash)"></span></span><div><div class="rt"><span class="nm" style="font-size:15px">Ashfall</span><span class="kd">Video</span></div><p class="rask" style="font-size:14px">Does the cut at 1:12 read as intentional, or as a mistake? Watch it once at full size before you read anything else.</p><div class="rmeta" style="margin-top:10px;gap:12px"><span class="gritline"><span class="ladder" role="img" aria-label="grit 3000 of 8000, release candidate"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i></span><b class="num">3000</b><span>release candidate</span></span><span class="meta num">5 notes</span></div></div></article><article class="mrow"><span class="thumb"><span style="position:absolute;bottom:0;left:8px;width:5px;height:14px;background:#4A4234"></span><span style="position:absolute;bottom:0;left:18px;width:5px;height:26px;background:#6B6150"></span><span style="position:absolute;bottom:0;left:28px;width:5px;height:38px;background:var(--flare-mark)"></span><span style="position:absolute;bottom:0;left:38px;width:5px;height:20px;background:#4A4234"></span></span><div><div class="rt"><span class="nm" style="font-size:15px">Brinehollow</span><span class="kd">Game</span></div><p class="rask" style="font-size:14px">The tutorial is 90 seconds and 40 per cent of testers quit inside it. I need to know which beat loses them.</p><div class="rmeta" style="margin-top:10px;gap:12px"><span class="gritline"><span class="ladder" role="img" aria-label="grit 1000 of 8000, beta"><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i><i class=""></i></span><b class="num">1000</b><span>beta</span></span><span class="meta num">24 notes</span></div></div></article><article class="mrow"><span class="thumb"><span class="bnd" style="top:0px;height:44px;background:#171510"></span><span style="position:absolute;left:10px;right:10px;top:10px;height:1px;background:#4A4234"></span><span style="position:absolute;left:10px;right:10px;top:18px;height:1px;background:#4A4234"></span><span style="position:absolute;left:10px;right:10px;bottom:0;height:14px;background:var(--flare-mark)"></span></span><div><div class="rt"><span class="nm" style="font-size:15px">Ferryman</span><span class="kd">Mobile app</span></div><p class="rask" style="font-size:14px">Version 3 moves the line picker into a bottom sheet. Tell me honestly whether the new placement reads as obvious, or as hidden.</p><div class="rmeta" style="margin-top:10px;gap:12px"><span class="gritline"><span class="ladder" role="img" aria-label="grit 8000 of 8000, shipped"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i></span><b class="num">8000</b><span>shipped</span></span><span class="meta num">9 notes</span></div></div></article>
+    <a class="tlink" href="#" style="margin-top:20px">All 24 open asks <span class="ar">&#8594;</span></a>
+  </div>
+</div>
+    
+<div class="mob t-dark">
+  <header class="mtop"><span class="mark" style="font-size:16px"><span class="sq" style="width:11px;height:11px"></span>Whetstone</span><button class="btn sm">Post</button><span class="burger"><i></i><i></i></span></header>
+  <div class="mwrap" style="padding-top:36px">
+    <span class="eyebrow" style="font-size:11px;height:26px">24 open asks</span>
+    <h1 class="md1">Ship<br>sharper.</h1>
+    <p class="lede" style="font-size:16px;margin-top:18px">Post the build. Name the questions you need answered.
+      Get notes back carrying a category, a severity and the version they were written against.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:24px">
+      <button class="btn" style="justify-content:center">Post a project</button>
+      <button class="btn2" style="justify-content:center">Read the open asks</button>
+    </div>
+  </div>
+  <div class="mwrap" style="padding-top:36px">
+    <div class="mstats">
+      <div><div class="v num">24</div><div class="k">projects taking feedback</div></div>
+      <div><div class="v num">171</div><div class="k">reviews by 28 people</div></div>
+      <div><div class="v num">233</div><div class="k">points raised inside them</div></div>
+      <div style="color:var(--flare)"><div class="v num">6</div><div class="k" style="color:var(--ink2)">marked shipped by the creator</div></div>
+    </div>
+  </div>
+  <div class="mwrap" style="padding-top:36px;padding-bottom:32px">
+    <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink1);padding-bottom:10px">
+      <h2 class="h4">Still moving</h2><span class="meta" style="margin-left:auto">sorted by grit</span></div>
+    <article class="mrow"><span class="thumb"><span class="bnd" style="top:0px;height:21px;background:#241E15"></span><span class="bnd" style="top:21px;height:4px;background:#33291A"></span><span class="bnd" style="top:25px;height:2px;background:#C4340F"></span><span class="bnd" style="top:27px;height:2px;background:var(--flare-mark)"></span><span class="bnd" style="top:29px;height:44px;background:var(--stage-ash)"></span></span><div><div class="rt"><span class="nm" style="font-size:15px">Ashfall</span><span class="kd">Video</span></div><p class="rask" style="font-size:14px">Does the cut at 1:12 read as intentional, or as a mistake? Watch it once at full size before you read anything else.</p><div class="rmeta" style="margin-top:10px;gap:12px"><span class="gritline"><span class="ladder" role="img" aria-label="grit 3000 of 8000, release candidate"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i></span><b class="num">3000</b><span>release candidate</span></span><span class="meta num">5 notes</span></div></div></article><article class="mrow"><span class="thumb"><span style="position:absolute;bottom:0;left:8px;width:5px;height:14px;background:#4A4234"></span><span style="position:absolute;bottom:0;left:18px;width:5px;height:26px;background:#6B6150"></span><span style="position:absolute;bottom:0;left:28px;width:5px;height:38px;background:var(--flare-mark)"></span><span style="position:absolute;bottom:0;left:38px;width:5px;height:20px;background:#4A4234"></span></span><div><div class="rt"><span class="nm" style="font-size:15px">Brinehollow</span><span class="kd">Game</span></div><p class="rask" style="font-size:14px">The tutorial is 90 seconds and 40 per cent of testers quit inside it. I need to know which beat loses them.</p><div class="rmeta" style="margin-top:10px;gap:12px"><span class="gritline"><span class="ladder" role="img" aria-label="grit 1000 of 8000, beta"><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i><i class=""></i></span><b class="num">1000</b><span>beta</span></span><span class="meta num">24 notes</span></div></div></article><article class="mrow"><span class="thumb"><span class="bnd" style="top:0px;height:44px;background:#171510"></span><span style="position:absolute;left:10px;right:10px;top:10px;height:1px;background:#4A4234"></span><span style="position:absolute;left:10px;right:10px;top:18px;height:1px;background:#4A4234"></span><span style="position:absolute;left:10px;right:10px;bottom:0;height:14px;background:var(--flare-mark)"></span></span><div><div class="rt"><span class="nm" style="font-size:15px">Ferryman</span><span class="kd">Mobile app</span></div><p class="rask" style="font-size:14px">Version 3 moves the line picker into a bottom sheet. Tell me honestly whether the new placement reads as obvious, or as hidden.</p><div class="rmeta" style="margin-top:10px;gap:12px"><span class="gritline"><span class="ladder" role="img" aria-label="grit 8000 of 8000, shipped"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i></span><b class="num">8000</b><span>shipped</span></span><span class="meta num">9 notes</span></div></div></article>
+    <a class="tlink" href="#" style="margin-top:20px">All 24 open asks <span class="ar">&#8594;</span></a>
+  </div>
+</div>
+    
+<div class="mob t-light">
+  <header class="mtop"><span class="mark" style="font-size:16px"><span class="sq" style="width:11px;height:11px"></span>Whetstone</span><span class="av sm">KM</span><span class="burger"><i></i><i></i></span></header>
+  <div class="mwrap" style="padding-top:28px">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px">
+      <span class="chip live">open for feedback</span><span class="chip">Video</span></div>
+    <h1 class="md1" style="font-size:46px">Ashfall</h1>
+    <p class="prose" style="font-size:18px;margin-top:12px">A one take music video shot at the edge of a
+      controlled burn.</p>
+    <div class="byline" style="margin-top:14px"><span class="av sm">KM</span>
+      <span class="meta">Kwame Mensah</span><span style="margin-left:auto"><span class="gritline"><span class="ladder" role="img" aria-label="grit 3000 of 8000, release candidate"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i></span><b class="num">3000</b><span>release candidate</span></span></span></div>
+    <div class="comp" style="height:288px"><div class="slab" style="left:0px;top:0px;width:103px;height:270px"><span class="band" style="top:-114px;height:90px;background:#1D1912"></span><span class="band" style="top:-24px;height:62px;background:#231E16"></span><span class="band" style="top:38px;height:44px;background:#2A2318"></span><span class="band" style="top:82px;height:34px;background:#2E2517"></span><span class="band" style="top:116px;height:26px;background:#3C2D18"></span><span class="band" style="top:142px;height:18px;background:#5E3113"></span><span class="band" style="top:160px;height:12px;background:#8C3512"></span><span class="band" style="top:172px;height:8px;background:#C4340F"></span><span class="band" style="top:180px;height:7px;background:#E14425"></span><span class="band" style="top:187px;height:5px;background:#FF7551"></span><span class="band" style="top:192px;height:4px;background:#FFA482"></span><span class="band" style="top:196px;height:74px;background:var(--stage-ash)"></span><span class="band" style="top:205px;height:3px;background:#7A2E12"></span><span class="band" style="top:216px;height:2px;background:#4A250F"></span><span class="band" style="top:230px;height:1px;background:#33291A"></span><span class="band" style="top:252px;height:1px;background:#2B2317"></span><span class="trunk" style="left:72px;height:198px;width:2px"></span><span class="trunk" style="left:88px;height:198px;width:2px"></span><span class="word" style="left:8px;top:44px;font-size:92px;-webkit-text-stroke-width:1.0px">ASHFALL</span></div><div class="slab" style="left:121px;top:30px;width:237px;height:250px"><span class="band" style="top:-144px;height:90px;background:#1D1912"></span><span class="band" style="top:-54px;height:62px;background:#231E16"></span><span class="band" style="top:8px;height:44px;background:#2A2318"></span><span class="band" style="top:52px;height:34px;background:#2E2517"></span><span class="band" style="top:86px;height:26px;background:#3C2D18"></span><span class="band" style="top:112px;height:18px;background:#5E3113"></span><span class="band" style="top:130px;height:12px;background:#8C3512"></span><span class="band" style="top:142px;height:8px;background:#C4340F"></span><span class="band" style="top:150px;height:7px;background:#E14425"></span><span class="band" style="top:157px;height:5px;background:#FF7551"></span><span class="band" style="top:162px;height:4px;background:#FFA482"></span><span class="band" style="top:166px;height:84px;background:var(--stage-ash)"></span><span class="band" style="top:175px;height:3px;background:#7A2E12"></span><span class="band" style="top:186px;height:2px;background:#4A250F"></span><span class="band" style="top:200px;height:1px;background:#33291A"></span><span class="band" style="top:222px;height:1px;background:#2B2317"></span><span class="word" style="left:-113px;top:14px;font-size:92px;-webkit-text-stroke-width:1.0px">ASHFALL</span><span class="stagemeta" style="left:14px;top:214px;font-size:10px">one take &middot; 3:50</span></div><span class="cut" style="left:112px"></span></div>
+    <div style="position:relative;height:30px;margin-top:8px;border-top:1px solid var(--rule)">
+      <span class="tk" style="position:absolute;top:0;left:0;width:1px;height:6px;background:var(--edge)"></span>
+      <span style="position:absolute;top:9px;left:0;font-size:10px;color:var(--ink3)" class="num">0:00</span>
+      <span style="position:absolute;top:0;left:31.3%;width:2px;height:14px;background:var(--flare-mark)"></span>
+      <span style="position:absolute;top:16px;left:31.3%;transform:translateX(-50%);font-size:10px;color:var(--flare);font-variation-settings:'wght' 700">1:12 the cut</span>
+      <span style="position:absolute;top:9px;right:0;font-size:10px;color:var(--ink3)" class="num">3:50</span>
+    </div>
+  </div>
+  <div class="mwrap" style="padding-top:36px">
+    <div class="ask">
+      <div class="lab" style="color:var(--flare);margin-bottom:10px">The ask</div>
+      <p class="q" style="font-size:22px;max-width:none">Does the cut at 1:12 read as intentional, or as a
+        mistake? <i>Watch it once at full size before you read anything else.</i></p>
+    </div>
+  </div>
+  <div class="mwrap" style="padding-top:36px">
+    <div class="dis">
+      <h3 class="h4">Where five reviewers put it</h3>
+      <p class="meta" style="margin:6px 0 18px">Clarity of story</p>
+      <div class="mcols"><div class="mcol"></div><div class="mcol"></div><div class="mcol"><span class="mtok">IR</span></div><div class="mcol" style="background:var(--sunk);box-shadow:inset 2px 0 0 0 var(--flare)"><span class="mtok m">SK</span><span class="mtok m">DO</span><span class="mtok m">TM</span></div><div class="mcol"><span class="mtok">PN</span></div></div><div class="maxlab"><div class=""><div class="gv num">120</div><div class="cn">concept</div></div><div class=""><div class="gv num">400</div><div class="cn">prototype</div></div><div class=""><div class="gv num">1000</div><div class="cn">beta</div></div><div class="hit"><div class="gv num">3000</div><div class="cn">release</div></div><div class=""><div class="gv num">8000</div><div class="cn">shipped</div></div></div>
+      <p class="prose" style="font-size:17px;margin-top:20px">Five reviewers, split across three steps. Three call
+        it a release candidate, one says beta, one says shipped.</p>
+      <p class="meta" style="margin-top:10px">Not averaged. The mean reads 3600 and nobody said 3600.</p>
+    </div>
+  </div>
+  <div class="mwrap" style="padding-top:36px;padding-bottom:32px">
+    <article class="note open">
+      <div class="nhead"><span class="av sm">SK</span><span class="nm" style="font-size:15px">Suvi Kallio</span>
+        <span class="chip" style="height:22px">expert</span></div>
+      <div class="nprov" style="gap:10px;margin:10px 0 12px">
+        <span class="prov"><span class="k">Onboarding</span></span>
+        <span class="prov"><span class="sev high"><i></i><i></i><i></i></span><b>high</b></span>
+        <span class="prov"><span class="k">v3</span></span>
+        <span class="prov"><span class="k">4 days ago</span></span>
+      </div>
+      <p class="prose" style="font-size:17px">Quit at the tutorial the first time, stayed the second. The meter
+        started moving before I understood it was a timer, so I read it as a score I was losing.</p>
+      <div class="reply" style="padding-left:14px">
+        <span class="meta">Kwame replied</span>
+        <p class="prose" style="font-size:16px;margin-top:6px">The meter now names itself the first time it moves.</p>
+      </div>
+      <div class="shipped"><span class="stamp">Shipped in v4</span></div>
+    </article>
+  </div>
+</div>
+    
+<div class="mob t-dark">
+  <header class="mtop"><span class="mark" style="font-size:16px"><span class="sq" style="width:11px;height:11px"></span>Whetstone</span><span class="av sm">KM</span><span class="burger"><i></i><i></i></span></header>
+  <div class="mwrap" style="padding-top:28px">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px">
+      <span class="chip live">open for feedback</span><span class="chip">Video</span></div>
+    <h1 class="md1" style="font-size:46px">Ashfall</h1>
+    <p class="prose" style="font-size:18px;margin-top:12px">A one take music video shot at the edge of a
+      controlled burn.</p>
+    <div class="byline" style="margin-top:14px"><span class="av sm">KM</span>
+      <span class="meta">Kwame Mensah</span><span style="margin-left:auto"><span class="gritline"><span class="ladder" role="img" aria-label="grit 3000 of 8000, release candidate"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i></span><b class="num">3000</b><span>release candidate</span></span></span></div>
+    <div class="comp" style="height:288px"><div class="slab" style="left:0px;top:0px;width:103px;height:270px"><span class="band" style="top:-114px;height:90px;background:#1D1912"></span><span class="band" style="top:-24px;height:62px;background:#231E16"></span><span class="band" style="top:38px;height:44px;background:#2A2318"></span><span class="band" style="top:82px;height:34px;background:#2E2517"></span><span class="band" style="top:116px;height:26px;background:#3C2D18"></span><span class="band" style="top:142px;height:18px;background:#5E3113"></span><span class="band" style="top:160px;height:12px;background:#8C3512"></span><span class="band" style="top:172px;height:8px;background:#C4340F"></span><span class="band" style="top:180px;height:7px;background:#E14425"></span><span class="band" style="top:187px;height:5px;background:#FF7551"></span><span class="band" style="top:192px;height:4px;background:#FFA482"></span><span class="band" style="top:196px;height:74px;background:var(--stage-ash)"></span><span class="band" style="top:205px;height:3px;background:#7A2E12"></span><span class="band" style="top:216px;height:2px;background:#4A250F"></span><span class="band" style="top:230px;height:1px;background:#33291A"></span><span class="band" style="top:252px;height:1px;background:#2B2317"></span><span class="trunk" style="left:72px;height:198px;width:2px"></span><span class="trunk" style="left:88px;height:198px;width:2px"></span><span class="word" style="left:8px;top:44px;font-size:92px;-webkit-text-stroke-width:1.0px">ASHFALL</span></div><div class="slab" style="left:121px;top:30px;width:237px;height:250px"><span class="band" style="top:-144px;height:90px;background:#1D1912"></span><span class="band" style="top:-54px;height:62px;background:#231E16"></span><span class="band" style="top:8px;height:44px;background:#2A2318"></span><span class="band" style="top:52px;height:34px;background:#2E2517"></span><span class="band" style="top:86px;height:26px;background:#3C2D18"></span><span class="band" style="top:112px;height:18px;background:#5E3113"></span><span class="band" style="top:130px;height:12px;background:#8C3512"></span><span class="band" style="top:142px;height:8px;background:#C4340F"></span><span class="band" style="top:150px;height:7px;background:#E14425"></span><span class="band" style="top:157px;height:5px;background:#FF7551"></span><span class="band" style="top:162px;height:4px;background:#FFA482"></span><span class="band" style="top:166px;height:84px;background:var(--stage-ash)"></span><span class="band" style="top:175px;height:3px;background:#7A2E12"></span><span class="band" style="top:186px;height:2px;background:#4A250F"></span><span class="band" style="top:200px;height:1px;background:#33291A"></span><span class="band" style="top:222px;height:1px;background:#2B2317"></span><span class="word" style="left:-113px;top:14px;font-size:92px;-webkit-text-stroke-width:1.0px">ASHFALL</span><span class="stagemeta" style="left:14px;top:214px;font-size:10px">one take &middot; 3:50</span></div><span class="cut" style="left:112px"></span></div>
+    <div style="position:relative;height:30px;margin-top:8px;border-top:1px solid var(--rule)">
+      <span class="tk" style="position:absolute;top:0;left:0;width:1px;height:6px;background:var(--edge)"></span>
+      <span style="position:absolute;top:9px;left:0;font-size:10px;color:var(--ink3)" class="num">0:00</span>
+      <span style="position:absolute;top:0;left:31.3%;width:2px;height:14px;background:var(--flare-mark)"></span>
+      <span style="position:absolute;top:16px;left:31.3%;transform:translateX(-50%);font-size:10px;color:var(--flare);font-variation-settings:'wght' 700">1:12 the cut</span>
+      <span style="position:absolute;top:9px;right:0;font-size:10px;color:var(--ink3)" class="num">3:50</span>
+    </div>
+  </div>
+  <div class="mwrap" style="padding-top:36px">
+    <div class="ask">
+      <div class="lab" style="color:var(--flare);margin-bottom:10px">The ask</div>
+      <p class="q" style="font-size:22px;max-width:none">Does the cut at 1:12 read as intentional, or as a
+        mistake? <i>Watch it once at full size before you read anything else.</i></p>
+    </div>
+  </div>
+  <div class="mwrap" style="padding-top:36px">
+    <div class="dis">
+      <h3 class="h4">Where five reviewers put it</h3>
+      <p class="meta" style="margin:6px 0 18px">Clarity of story</p>
+      <div class="mcols"><div class="mcol"></div><div class="mcol"></div><div class="mcol"><span class="mtok">IR</span></div><div class="mcol" style="background:var(--sunk);box-shadow:inset 2px 0 0 0 var(--flare)"><span class="mtok m">SK</span><span class="mtok m">DO</span><span class="mtok m">TM</span></div><div class="mcol"><span class="mtok">PN</span></div></div><div class="maxlab"><div class=""><div class="gv num">120</div><div class="cn">concept</div></div><div class=""><div class="gv num">400</div><div class="cn">prototype</div></div><div class=""><div class="gv num">1000</div><div class="cn">beta</div></div><div class="hit"><div class="gv num">3000</div><div class="cn">release</div></div><div class=""><div class="gv num">8000</div><div class="cn">shipped</div></div></div>
+      <p class="prose" style="font-size:17px;margin-top:20px">Five reviewers, split across three steps. Three call
+        it a release candidate, one says beta, one says shipped.</p>
+      <p class="meta" style="margin-top:10px">Not averaged. The mean reads 3600 and nobody said 3600.</p>
+    </div>
+  </div>
+  <div class="mwrap" style="padding-top:36px;padding-bottom:32px">
+    <article class="note open">
+      <div class="nhead"><span class="av sm">SK</span><span class="nm" style="font-size:15px">Suvi Kallio</span>
+        <span class="chip" style="height:22px">expert</span></div>
+      <div class="nprov" style="gap:10px;margin:10px 0 12px">
+        <span class="prov"><span class="k">Onboarding</span></span>
+        <span class="prov"><span class="sev high"><i></i><i></i><i></i></span><b>high</b></span>
+        <span class="prov"><span class="k">v3</span></span>
+        <span class="prov"><span class="k">4 days ago</span></span>
+      </div>
+      <p class="prose" style="font-size:17px">Quit at the tutorial the first time, stayed the second. The meter
+        started moving before I understood it was a timer, so I read it as a score I was losing.</p>
+      <div class="reply" style="padding-left:14px">
+        <span class="meta">Kwame replied</span>
+        <p class="prose" style="font-size:16px;margin-top:6px">The meter now names itself the first time it moves.</p>
+      </div>
+      <div class="shipped"><span class="stamp">Shipped in v4</span></div>
+    </article>
+  </div>
+</div>
+  </div>
+
+  <div class="cap"><span class="n">Components</span><span class="t"><strong>Every state, both themes.</strong> Hover and focus states are shown side by side as static classes, and they are also live if you tab through this page.</span></div>
+  <div class="pair">
+    
+<div class="plate t-light">
+  <div class="lab" style="color:var(--ink1);margin-bottom:24px">Day room</div>
+  <div class="prow">
+    <div class="pstate"><button class="btn">Post a project</button><span class="meta">rest</span></div>
+    <div class="pstate"><button class="btn is-hover">Post a project</button><span class="meta">hover</span></div>
+    <div class="pstate"><button class="btn is-focus">Post a project</button><span class="meta">focus visible</span></div>
+  </div>
+  <div class="prow">
+    <div class="pstate"><button class="btn2">Read the open asks</button><span class="meta">rest</span></div>
+    <div class="pstate"><button class="btn2 is-hover">Read the open asks</button><span class="meta">hover</span></div>
+    <div class="pstate"><button class="btn2 is-focus">Read the open asks</button><span class="meta">focus visible</span></div>
+  </div>
+  <hr class="hair" style="margin:8px 0 24px">
+  <div class="prow" style="align-items:flex-start">
+    <div class="field">
+      <label for="ask-t-light">What do you want answered?</label>
+      <input class="inp" id="ask-t-light" value="Does the cut read as intentional?" aria-describedby="h-t-light">
+      <span class="meta" id="h-t-light">One question per ask. Reviewers answer the first one first.</span>
+    </div>
+    <div class="field">
+      <label for="grit-t-light">Grit step</label>
+      <input class="inp err" id="grit-t-light" value="2200" aria-invalid="true" aria-describedby="e-t-light">
+      <span class="errmsg" id="e-t-light">2200 is not a step. Use 120, 400, 1000, 3000 or 8000.</span>
+    </div>
+    <div class="field" style="max-width:200px">
+      <label for="f-t-light">Focused input</label>
+      <input class="inp is-focus" id="f-t-light" value="Ashfall">
+      <span class="meta">focus visible</span>
+    </div>
+  </div>
+  <hr class="hair" style="margin:8px 0 24px">
+  <div class="prow">
+    <div class="pstate"><span class="chip">expert reviewer</span><span class="meta">chip</span></div>
+    <div class="pstate"><span class="chip live">open for feedback</span><span class="meta">chip, live</span></div>
+    <div class="pstate"><span class="stamp">Shipped in v4</span><span class="meta">stamp</span></div>
+    <div class="pstate"><span class="av">SK</span><span class="meta">avatar</span></div>
+    <div class="pstate"><span class="av lg">KM</span><span class="meta">avatar, large</span></div>
+  </div>
+  <div class="prow" style="margin-bottom:0">
+    <div class="pstate"><span class="gritline"><span class="ladder" role="img" aria-label="grit 3000 of 8000, release candidate"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i></span><b class="num">3000</b><span>release candidate</span></span><span class="meta">grit ladder</span></div>
+    <div class="pstate"><span class="gritline"><span class="sev high"><i></i><i></i><i></i></span><b>high</b></span><span class="meta">severity</span></div>
+  </div>
+</div>
+    
+<div class="plate t-dark">
+  <div class="lab" style="color:var(--ink1);margin-bottom:24px">Night room</div>
+  <div class="prow">
+    <div class="pstate"><button class="btn">Post a project</button><span class="meta">rest</span></div>
+    <div class="pstate"><button class="btn is-hover">Post a project</button><span class="meta">hover</span></div>
+    <div class="pstate"><button class="btn is-focus">Post a project</button><span class="meta">focus visible</span></div>
+  </div>
+  <div class="prow">
+    <div class="pstate"><button class="btn2">Read the open asks</button><span class="meta">rest</span></div>
+    <div class="pstate"><button class="btn2 is-hover">Read the open asks</button><span class="meta">hover</span></div>
+    <div class="pstate"><button class="btn2 is-focus">Read the open asks</button><span class="meta">focus visible</span></div>
+  </div>
+  <hr class="hair" style="margin:8px 0 24px">
+  <div class="prow" style="align-items:flex-start">
+    <div class="field">
+      <label for="ask-t-dark">What do you want answered?</label>
+      <input class="inp" id="ask-t-dark" value="Does the cut read as intentional?" aria-describedby="h-t-dark">
+      <span class="meta" id="h-t-dark">One question per ask. Reviewers answer the first one first.</span>
+    </div>
+    <div class="field">
+      <label for="grit-t-dark">Grit step</label>
+      <input class="inp err" id="grit-t-dark" value="2200" aria-invalid="true" aria-describedby="e-t-dark">
+      <span class="errmsg" id="e-t-dark">2200 is not a step. Use 120, 400, 1000, 3000 or 8000.</span>
+    </div>
+    <div class="field" style="max-width:200px">
+      <label for="f-t-dark">Focused input</label>
+      <input class="inp is-focus" id="f-t-dark" value="Ashfall">
+      <span class="meta">focus visible</span>
+    </div>
+  </div>
+  <hr class="hair" style="margin:8px 0 24px">
+  <div class="prow">
+    <div class="pstate"><span class="chip">expert reviewer</span><span class="meta">chip</span></div>
+    <div class="pstate"><span class="chip live">open for feedback</span><span class="meta">chip, live</span></div>
+    <div class="pstate"><span class="stamp">Shipped in v4</span><span class="meta">stamp</span></div>
+    <div class="pstate"><span class="av">SK</span><span class="meta">avatar</span></div>
+    <div class="pstate"><span class="av lg">KM</span><span class="meta">avatar, large</span></div>
+  </div>
+  <div class="prow" style="margin-bottom:0">
+    <div class="pstate"><span class="gritline"><span class="ladder" role="img" aria-label="grit 3000 of 8000, release candidate"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i class=""></i></span><b class="num">3000</b><span>release candidate</span></span><span class="meta">grit ladder</span></div>
+    <div class="pstate"><span class="gritline"><span class="sev high"><i></i><i></i><i></i></span><b>high</b></span><span class="meta">severity</span></div>
+  </div>
+</div>
+  </div>
+
+  <div class="cap"><span class="n">Spec</span><span class="t"><strong>The numbers.</strong> Colour with measured ratios, type, spacing, radius, borders, shadow and motion.</span></div>
+  
+<div class="spec t-light">
+  <h3 class="h3">The system, stated</h3>
+  <p class="prose" style="font-size:17px;margin-top:10px">Every ratio below is computed from the hex pairs in this
+    file, not estimated. Body text floor 4.5:1, non text and control boundaries 3:1, both themes.</p>
+  <h4>Colour, light theme (day room)</h4><table><tr><th>Token</th><th>Hex</th><th>Role</th><th>on ground #F2EFE8</th><th>on raised #FCFAF6</th><th>on sunk #E6E1D7</th><th>Verdict</th></tr><tr><td><span class='sw' style='background:#F2EFE8'></span><b>--surface-paper</b></td><td>#F2EFE8</td><td>page ground</td><td colspan='4'>step ratio to ground: 1.000</td></tr><tr><td><span class='sw' style='background:#FCFAF6'></span><b>--surface-raised</b></td><td>#FCFAF6</td><td>panel, row, note</td><td colspan='4'>step ratio to ground: 1.107</td></tr><tr><td><span class='sw' style='background:#E6E1D7'></span><b>--surface-sunk</b></td><td>#E6E1D7</td><td>input well, median column</td><td colspan='4'>step ratio to ground: 1.144</td></tr><tr><td><span class='sw' style='background:#14120D'></span><b>--ink-1</b></td><td>#14120D</td><td>Headings, project titles, body UI, primary values</td><td class='pass'>16.30</td><td class='pass'>17.95</td><td class='pass'>14.36</td><td>AA 4.5 floor: pass</td></tr><tr><td><span class='sw' style='background:#4B463B'></span><b>--ink-2</b></td><td>#4B463B</td><td>Secondary UI, row subtitles, lede, reply text</td><td class='pass'>8.17</td><td class='pass'>9.00</td><td class='pass'>7.20</td><td>AA 4.5 floor: pass</td></tr><tr><td><span class='sw' style='background:#645E4E'></span><b>--ink-3</b></td><td>#645E4E</td><td>Metadata, timestamps, counts, captions, placeholders</td><td class='pass'>5.62</td><td class='pass'>6.19</td><td class='pass'>4.95</td><td>AA 4.5 floor: pass</td></tr><tr><td><span class='sw' style='background:#B8300F'></span><b>--flare</b></td><td>#B8300F</td><td>The one accent: live state, median rule, severity, errors, the ask rule</td><td class='pass'>5.27</td><td class='pass'>5.81</td><td class='pass'>4.65</td><td>AA 4.5 floor: pass</td></tr><tr><td><span class='sw' style='background:#E14425'></span><b>--flare-mark</b></td><td>#E14425</td><td>Accent geometry only: ticks, ember band, wordmark square, 6px dots</td><td class='pass'>3.62</td><td class='pass'>3.98</td><td class='pass'>3.19</td><td>AA non text 3.0 floor: pass</td></tr><tr><td><span class='sw' style='background:#807965'></span><b>--edge</b></td><td>#807965</td><td>Every control and panel boundary: inputs, chips, buttons, panels</td><td class='pass'>3.78</td><td class='pass'>4.16</td><td class='pass'>3.33</td><td>AA non text 3.0 floor: pass</td></tr><tr><td><span class='sw' style='background:#D9D3C6'></span><b>--rule</b></td><td>#D9D3C6</td><td>Decorative hairline. Never the sole boundary of a control</td><td class='pass'>1.30</td><td class='pass'>1.43</td><td class='pass'>1.14</td><td>decorative only, 1.43 max</td></tr></table>
+  <h4>Colour, dark theme (night room)</h4><table><tr><th>Token</th><th>Hex</th><th>Role</th><th>on ground #13110D</th><th>on raised #1B1915</th><th>on sunk #0C0B08</th><th>Verdict</th></tr><tr><td><span class='sw' style='background:#13110D'></span><b>--surface-paper</b></td><td>#13110D</td><td>page ground</td><td colspan='4'>step ratio to ground: 1.000</td></tr><tr><td><span class='sw' style='background:#1B1915'></span><b>--surface-raised</b></td><td>#1B1915</td><td>panel, row, note</td><td colspan='4'>step ratio to ground: 1.728</td></tr><tr><td><span class='sw' style='background:#0C0B08'></span><b>--surface-sunk</b></td><td>#0C0B08</td><td>input well, median column</td><td colspan='4'>step ratio to ground: 1.697</td></tr><tr><td><span class='sw' style='background:#F4F0E8'></span><b>--ink-1</b></td><td>#F4F0E8</td><td>Headings, project titles, body UI, primary values</td><td class='pass'>16.59</td><td class='pass'>15.44</td><td class='pass'>17.32</td><td>AA 4.5 floor: pass</td></tr><tr><td><span class='sw' style='background:#C6BFB1'></span><b>--ink-2</b></td><td>#C6BFB1</td><td>Secondary UI, row subtitles, lede, reply text</td><td class='pass'>10.32</td><td class='pass'>9.60</td><td class='pass'>10.77</td><td>AA 4.5 floor: pass</td></tr><tr><td><span class='sw' style='background:#9B9384'></span><b>--ink-3</b></td><td>#9B9384</td><td>Metadata, timestamps, counts, captions, placeholders</td><td class='pass'>6.20</td><td class='pass'>5.77</td><td class='pass'>6.47</td><td>AA 4.5 floor: pass</td></tr><tr><td><span class='sw' style='background:#FF7551'></span><b>--flare</b></td><td>#FF7551</td><td>The one accent: live state, median rule, severity, errors, the ask rule</td><td class='pass'>7.11</td><td class='pass'>6.62</td><td class='pass'>7.42</td><td>AA 4.5 floor: pass</td></tr><tr><td><span class='sw' style='background:#FF7551'></span><b>--flare-mark</b></td><td>#FF7551</td><td>Accent geometry only: ticks, ember band, wordmark square, 6px dots</td><td class='pass'>7.11</td><td class='pass'>6.62</td><td class='pass'>7.42</td><td>AA non text 3.0 floor: pass</td></tr><tr><td><span class='sw' style='background:#7A7466'></span><b>--edge</b></td><td>#7A7466</td><td>Every control and panel boundary: inputs, chips, buttons, panels</td><td class='pass'>4.06</td><td class='pass'>3.78</td><td class='pass'>4.23</td><td>AA non text 3.0 floor: pass</td></tr><tr><td><span class='sw' style='background:#312D25'></span><b>--rule</b></td><td>#312D25</td><td>Decorative hairline. Never the sole boundary of a control</td><td class='pass'>1.38</td><td class='pass'>1.28</td><td class='pass'>1.44</td><td>decorative only, 1.44 max</td></tr></table>
+  <h4>Ink on fills, and mark on ground</h4><table><tr><th>Pair</th><th>Fill</th><th>On it</th><th>Ratio</th><th>Verdict</th></tr><tr><td><b>Primary button, light</b></td><td>#14120D fill</td><td>#FCFAF6 label</td><td class='pass'>17.95</td><td>pass</td></tr><tr><td><b>Primary button, dark</b></td><td>#F4F0E8 fill</td><td>#13110D label</td><td class='pass'>16.59</td><td>pass</td></tr><tr><td><b>Hover / accent fill, light</b></td><td>#B8300F fill</td><td>#FFF8F4 label</td><td class='pass'>5.76</td><td>pass</td></tr><tr><td><b>Hover / accent fill, dark</b></td><td>#FF7551 fill</td><td>#1A0600 label</td><td class='pass'>7.40</td><td>pass</td></tr><tr><td><b>Shipped stamp, light</b></td><td>#14120D fill</td><td>#F2EFE8 label</td><td class='pass'>16.30</td><td>pass</td></tr><tr><td><b>Shipped stamp, dark</b></td><td>#F4F0E8 fill</td><td>#13110D label</td><td class='pass'>16.59</td><td>pass</td></tr><tr><td><b>Stage panel, both themes</b></td><td>#17140E fill</td><td>#F4F0E8 label</td><td class='pass'>16.17</td><td>pass</td></tr><tr><td><b>Stage panel, both themes</b></td><td>#17140E fill</td><td>#A8A08F meta</td><td class='pass'>7.08</td><td>pass</td></tr><tr><td><b>Ember band on stage</b></td><td>#17140E fill</td><td>#FF7551 mark</td><td class='pass'>6.93</td><td>pass</td></tr><tr><td><b>Accent fill vs light ground</b></td><td>#B8300F</td><td>#F2EFE8 ground</td><td class='pass'>5.27</td><td>pass</td></tr><tr><td><b>Accent fill vs dark ground</b></td><td>#FF7551</td><td>#13110D ground</td><td class='pass'>7.11</td><td>pass</td></tr></table>
+
+  <h4>Type</h4>
+  <table>
+    <tr><th>Stack</th><th colspan="5">Value and job</th></tr>
+    <tr><td><b>--fm</b></td><td colspan="5">"Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif.
+      Variable: opsz 12&ndash;96, wdth 75&ndash;100, wght 200&ndash;800. Every machine word: nav, buttons, labels,
+      counts, headings, all numerals. Tabular figures with <code>zero</code> slashed on for grit values.</td></tr>
+    <tr><td><b>--fh</b></td><td colspan="5">"Newsreader", Georgia, "Times New Roman", serif. Variable: opsz
+      6&ndash;72, wght 200&ndash;800, true italic. Only ever the words a human wrote: the ask, the about text,
+      note bodies, creator replies. A serif line in a row means there is a person in there.</td></tr>
+  </table>
+  <table style="margin-top:24px">
+    <tr><th>Step</th><th>Size</th><th>Line height</th><th>Tracking</th><th>Variation settings</th><th>Use</th></tr>
+    <tr><td><b>display</b></td><td>clamp(3.5rem, 8.6vw, 8.25rem) / up to 132px</td><td>0.90</td><td>-0.040em</td><td>opsz 96, wdth 87, wght 800</td><td>Landing headline only</td></tr><tr><td><b>project title</b></td><td>6.5rem / 104px</td><td>0.86</td><td>-0.045em</td><td>opsz 96, wdth 86, wght 800</td><td>Project page h1, paired with a wght 250 kicker</td></tr><tr><td><b>h2</b></td><td>2.75rem / 44px</td><td>1.02</td><td>-0.028em</td><td>opsz 48, wdth 92, wght 750</td><td>Section heads</td></tr><tr><td><b>h3</b></td><td>1.6875rem / 27px</td><td>1.12</td><td>-0.020em</td><td>opsz 32, wdth 96, wght 700</td><td>Block heads, the disagreement head</td></tr><tr><td><b>h4</b></td><td>1.1875rem / 19px</td><td>1.25</td><td>-0.010em</td><td>opsz 20, wdth 100, wght 700</td><td>Note titles, category names</td></tr><tr><td><b>lede</b></td><td>1.0625rem / 17px</td><td>1.50</td><td>0</td><td>opsz 17, wght 400</td><td>Hero sub, 47ch measure</td></tr><tr><td><b>ui</b></td><td>0.9375rem / 15px</td><td>1.50</td><td>0</td><td>opsz 15, wght 400</td><td>Buttons, nav, row titles, inputs at 16px</td></tr><tr><td><b>meta</b></td><td>0.8125rem / 13px</td><td>1.45</td><td>0</td><td>opsz 13, wght 450</td><td>Timestamps, counts, captions</td></tr><tr><td><b>label</b></td><td>0.6875rem / 11px</td><td>1.20</td><td>+0.090em</td><td>opsz 12, wght 700, uppercase</td><td>Section labels and the shipped stamp only</td></tr><tr><td><b>prose</b></td><td>1.125rem / 18px</td><td>1.60</td><td>0</td><td>Newsreader opsz 18, wght 400</td><td>Every word a human wrote. 62ch</td></tr><tr><td><b>prose ask</b></td><td>2.125rem / 34px</td><td>1.26</td><td>-0.008em</td><td>Newsreader opsz 40, wght 400 + italic</td><td>The creator's question. 23ch</td></tr>
+  </table>
+  <p class="meta" style="margin-top:12px">Six steps maximum on any one surface. Body is one weight, 400. Headings
+    clear body by 300 units or more. Width axis, not colour, carries headline emphasis. Measure: 62ch prose,
+    47ch UI paragraphs, 72ch absolute ceiling.</p>
+
+  <h4>Spacing, radius, borders, shadow, motion</h4>
+  <table>
+    <tr><th>Scale</th><th colspan="5">Values</th></tr>
+    <tr><td><b>space</b></td><td colspan="5">4 &middot; 8 &middot; 12 &middot; 16 &middot; 24 &middot; 32 &middot;
+      48 &middot; 64 &middot; 96 &middot; 144px. Section rhythm alternates 96 / 144 / 96 / 64 so no two neighbours
+      breathe the same. Internal padding of a container never exceeds its external spacing.</td></tr>
+    <tr><td><b>radius</b></td><td colspan="5">0px panels, rails, stage slabs, table cells &middot; 2px chips,
+      stamps, tokens, thumbnails &middot; 4px buttons and inputs &middot; 8px reserved for popovers &middot;
+      14px reserved for the composer dialog &middot; 9999px on avatars only. No pill buttons anywhere.</td></tr>
+    <tr><td><b>border</b></td><td colspan="5">1px in every state. Width never changes on hover or focus, only
+      colour: --edge to --ink-1. Error is the one exception and steps to 2px --flare, always with a text message.
+      Maximum one containment level: no bordered box inside a bordered box.</td></tr>
+    <tr><td><b>shadow</b></td><td colspan="5">None on panels, rows, notes or the stage. One token exists,
+      <code>0 18px 40px -18px rgba(20,18,13,.45)</code>, and it is spent only on the composer dialog and popovers.
+      Elevation is carried by rules and ground steps.</td></tr>
+    <tr><td><b>motion</b></td><td colspan="5">120ms colour and hover &middot; 180ms control state &middot; 240ms
+      entrance &middot; 140ms exit, always shorter than its entrance. Entrance
+      <code>cubic-bezier(.2,0,0,1)</code>, exit <code>cubic-bezier(.4,0,1,1)</code>. Nothing over 240ms, no
+      scroll triggered reveals, no parallax, no counters. Every duration collapses to 1ms under
+      <code>prefers-reduced-motion</code>.</td></tr>
+    <tr><td><b>targets</b></td><td colspan="5">48px primary controls, 36px compact controls, 8px minimum gap
+      between adjacent targets. SC 2.5.8 passes with margin.</td></tr>
+  </table>
+
+  <h4>Rules that hold the thing together</h4>
+  <table>
+    <tr><td><b>One accent</b></td><td colspan="5">The system is ink, paper and flare. No second hue exists, in
+      either theme. Severity, status and sentiment are drawn with stepped marks plus a written word, so every
+      state survives greyscale. Flare covers under 2% of either screen.</td></tr>
+    <tr><td><b>The stage is always night</b></td><td colspan="5">#17140E in both themes. Project media never
+      inverts, so a project looks the same to everyone who links to it.</td></tr>
+    <tr><td><b>Nothing is a grey box</b></td><td colspan="5">Where there is no photograph there is a drawn
+      composition: posterised bands, hairline trunks, an outline word sliced across the offset slabs, and a
+      timecode ruler whose flare tick sits at the exact second the creator asked about.</td></tr>
+  </table>
+</div>
+</div>
+</body>
+</html>

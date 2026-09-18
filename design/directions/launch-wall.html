@@ -1,0 +1,1602 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Whetstone · Salon Hang</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Newsreader:ital,opsz,wght@0,6..72,200..700;1,6..72,200..600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   WHETSTONE · direction: SALON HANG
+   A gallery wall that happens to list launches.
+   Size in the layout carries information. Weight carries emphasis.
+   ============================================================ */
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:#0A0C09;color:#8A968A;
+  font-family:"Bricolage Grotesque","Helvetica Neue",Arial,sans-serif;
+  font-variation-settings:'opsz' 14,'wdth' 100,'wght' 400;
+  min-width:1520px;}
+img{max-width:100%}
+h1,h2,h3,h4,p,dl,dd,dt,ul,ol,figure,blockquote{margin:0;padding:0}
+ul,ol{list-style:none}
+a{color:inherit}
+button{font:inherit;color:inherit;background:none;border:0}
+
+/* ---------- THEME TOKENS ---------- */
+.screen{
+  /* type scale */
+  --t-2xs:.6875rem; --t-xs:.75rem;  --t-sm:.8125rem; --t-base:.9375rem;
+  --t-md:1.25rem;   --t-lg:1.75rem; --t-xl:2.5rem;   --t-2xl:3.75rem;
+  --t-prose:1.0625rem; --t-prose-lg:1.375rem; --t-ask:1.75rem;
+  /* spacing */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px; --s-6:32px;
+  --s-7:48px; --s-8:64px; --s-9:96px; --s-10:144px; --s-11:192px;
+  /* radius */
+  --r-0:0px; --r-1:2px; --r-2:4px; --r-3:10px; --r-full:999px;
+  /* motion */
+  --e-out:cubic-bezier(.2,0,0,1); --d-1:120ms; --d-2:180ms; --d-3:240ms;
+  /* stage is the inverted band; identical object in both themes */
+  --stage:#101410; --stage-1:#ECEFE9; --stage-2:#A7B2A3; --stage-3:#8A968A;
+  --stage-rule:#2C332B; --stage-edge:#6C786E; --stage-mark:#CBE33F;
+}
+.screen[data-t="light"]{
+  --paper:#ECEFE9; --panel:#F6F8F3; --sunk:#E1E5DC; --rule:#CCD3C7; --edge:#6C786E;
+  --ink-1:#101410; --ink-2:#3A453C; --ink-3:#59655B;
+  --mark:#CBE33F; --mark-ink:#101410; --mark-line:#4C5A0E;
+  --ember:#A1381A; --ember-ink:#ECEFE9; --pine:#1C5C3E; --pine-ink:#ECEFE9;
+  --btn:#101410; --btn-ink:#ECEFE9; --focus:#4C5A0E;
+  --art-frame:#CCD3C7;
+}
+.screen[data-t="dark"]{
+  --paper:#0F130E; --panel:#171C15; --sunk:#090C08; --rule:#2B3228; --edge:#77836F;
+  --ink-1:#E9EDE2; --ink-2:#B5BFB0; --ink-3:#8C9788;
+  --mark:#D3EC55; --mark-ink:#0F130E; --mark-line:#D3EC55;
+  --ember:#F2977A; --ember-ink:#0F130E; --pine:#83D2A0; --pine-ink:#0F130E;
+  --btn:#D3EC55; --btn-ink:#0F130E; --focus:#D3EC55;
+  --stage:#1F2620; --stage-1:#E9EDE2; --stage-2:#B5BFB0; --stage-3:#8C9788;
+  --stage-rule:#343D33; --stage-edge:#77836F; --stage-mark:#D3EC55;
+  --art-frame:#2B3228;
+}
+
+/* ---------- PROOF SHELL (not part of the product) ---------- */
+.sheet{padding:64px 48px 120px;max-width:1536px;margin:0 auto}
+.sheet-head{border-bottom:1px solid #23271F;padding-bottom:28px;margin-bottom:56px;
+  display:flex;align-items:flex-end;justify-content:space-between;gap:48px}
+.sheet-head h1{font-size:34px;color:#ECEFE9;font-variation-settings:'opsz' 34,'wght' 700;letter-spacing:-.02em;line-height:1}
+.sheet-head h1 span{font-variation-settings:'opsz' 34,'wght' 200;color:#8A968A}
+.sheet-head p{font-size:13px;line-height:1.6;max-width:56ch;color:#8A968A}
+.cap{display:flex;align-items:baseline;gap:14px;margin:0 0 18px;color:#8A968A;font-size:12px;letter-spacing:.09em;text-transform:uppercase;font-variation-settings:'wght' 600}
+.cap b{color:#CBE33F;font-variation-settings:'wght' 700}
+.cap i{font-style:normal;letter-spacing:0;text-transform:none;font-size:12.5px;color:#6E7A6E}
+.plate{margin:0 0 80px}
+.row2{display:flex;gap:40px;align-items:flex-start}
+.screen{position:relative;overflow:hidden}
+.desk{width:1440px}
+.mob{width:390px;border:1px solid #23271F}
+.screen{background:var(--paper);color:var(--ink-1);
+  font-variation-settings:'opsz' 14,'wdth' 100,'wght' 400}
+
+/* ---------- PRIMITIVES ---------- */
+.wrap{width:1296px;margin:0 auto}
+.g12{display:grid;grid-template-columns:repeat(12,1fr);gap:32px}
+.hr{height:1px;background:var(--rule);border:0}
+
+.micro{font-size:var(--t-2xs);letter-spacing:.1em;text-transform:uppercase;
+  font-variation-settings:'wght' 600;color:var(--ink-3)}
+.tag{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--edge);
+  border-radius:var(--r-1);padding:5px 10px 5px;font-size:var(--t-2xs);
+  letter-spacing:.09em;text-transform:uppercase;font-variation-settings:'wght' 600;color:var(--ink-2)}
+.tag .dotmark{width:6px;height:6px;background:var(--mark);border:1px solid var(--mark-line);display:block}
+.meta{font-size:var(--t-xs);color:var(--ink-3);line-height:1.5;font-variant-numeric:tabular-nums}
+.prose{font-family:"Newsreader",Georgia,"Times New Roman",serif;
+  font-variation-settings:'opsz' 17,'wght' 400;font-size:var(--t-prose);line-height:1.62;
+  color:var(--ink-2);font-variant-numeric:oldstyle-nums proportional-nums}
+.prose.lg{font-size:var(--t-prose-lg);line-height:1.52;color:var(--ink-1);font-variation-settings:'opsz' 24,'wght' 400}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:'zero' 1}
+
+.h-d{font-variation-settings:'opsz' 96,'wdth' 100,'wght' 750;
+  font-size:8.25rem;line-height:.92;letter-spacing:-.04em}
+.h-d .lt{font-variation-settings:'opsz' 96,'wdth' 100,'wght' 200;letter-spacing:-.028em}
+.h1{font-size:var(--t-2xl);line-height:1.02;letter-spacing:-.035em;font-variation-settings:'opsz' 60,'wght' 730}
+.h1 .lt{font-variation-settings:'opsz' 60,'wght' 200}
+.h2{font-size:var(--t-xl);line-height:1.06;letter-spacing:-.03em;font-variation-settings:'opsz' 40,'wght' 720}
+.h2 .lt{font-variation-settings:'opsz' 40,'wght' 200}
+.h3{font-size:var(--t-lg);line-height:1.14;letter-spacing:-.022em;font-variation-settings:'opsz' 28,'wght' 700}
+.h4{font-size:var(--t-md);line-height:1.25;letter-spacing:-.015em;font-variation-settings:'opsz' 20,'wght' 700}
+.lead{font-size:1.0625rem;line-height:1.55;color:var(--ink-2);max-width:46ch}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;height:48px;
+  padding:0 22px;border-radius:var(--r-2);font-size:var(--t-base);
+  font-variation-settings:'wght' 650;letter-spacing:-.005em;cursor:pointer;
+  background:var(--btn);color:var(--btn-ink);border:1px solid var(--btn);
+  transition:transform var(--d-1) var(--e-out),background var(--d-2) var(--e-out),border-color var(--d-2) var(--e-out)}
+.btn:hover,.btn.is-hover{background:transparent;color:var(--ink-1);border-color:var(--ink-1)}
+.btn:focus-visible,.btn.is-focus{outline:2px solid var(--focus);outline-offset:3px}
+.btn-2{background:transparent;color:var(--ink-1);border:1px solid var(--edge)}
+.btn-2:hover,.btn-2.is-hover{border-color:var(--ink-1);background:var(--panel)}
+.btn-2:focus-visible,.btn-2.is-focus{outline:2px solid var(--focus);outline-offset:3px;border-color:var(--ink-1)}
+.btn-sm{height:36px;padding:0 14px;font-size:var(--t-sm)}
+.btn-stage{background:var(--stage-mark);color:#101410;border-color:var(--stage-mark)}
+.btn-stage:hover{background:transparent;color:var(--stage-mark)}
+.btn-stage-2{background:transparent;color:var(--stage-1);border:1px solid var(--stage-edge)}
+.btn-stage-2:hover{border-color:var(--stage-1)}
+
+/* chips + tokens */
+.chip{display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 9px;
+  border:1px solid var(--edge);border-radius:var(--r-1);font-size:var(--t-2xs);
+  letter-spacing:.06em;text-transform:uppercase;font-variation-settings:'wght' 650;color:var(--ink-2)}
+.chip.on{background:var(--mark);border-color:var(--mark-line);color:var(--mark-ink)}
+.chip.ember{border-color:var(--ember);color:var(--ember)}
+.chip.ember b{width:7px;height:7px;background:var(--ember);display:block}
+.chip.pine{border-color:var(--pine);color:var(--pine)}
+.tok{display:inline-flex;align-items:baseline;gap:6px;font-size:var(--t-xs);color:var(--ink-3);
+  border:1px solid var(--rule);border-radius:var(--r-1);padding:3px 8px;font-variant-numeric:tabular-nums}
+.tok b{font-variation-settings:'wght' 650;color:var(--ink-1);letter-spacing:-.005em}
+.tok.hi{border-color:var(--ember)}
+.tok.hi b{color:var(--ember)}
+
+.av{width:32px;height:32px;border-radius:var(--r-full);background:var(--sunk);
+  border:1px solid var(--edge);display:inline-flex;align-items:center;justify-content:center;
+  font-size:var(--t-2xs);letter-spacing:.04em;font-variation-settings:'wght' 700;color:var(--ink-2);flex:none}
+.av.lg{width:44px;height:44px;font-size:var(--t-xs)}
+.av.sm{width:24px;height:24px;font-size:9px}
+
+/* the grit measure: a stepped wedge, five bars, the reached ones inked */
+.grit{display:inline-flex;align-items:flex-end;gap:9px;line-height:1}
+.gbars{display:flex;align-items:flex-end;gap:2px;height:16px}
+.gbars i{width:3px;background:transparent;border:1px solid var(--edge);display:block}
+.gbars i:nth-child(1){height:5px}.gbars i:nth-child(2){height:8px}
+.gbars i:nth-child(3){height:11px}.gbars i:nth-child(4){height:14px}
+.gbars i:nth-child(5){height:17px}
+.gbars i.on{background:var(--ink-1);border-color:var(--ink-1)}
+.gbars i.cur{background:var(--ink-1);border-color:var(--ink-1);outline:1px solid var(--mark-line);outline-offset:2px}
+.gn{font-size:var(--t-sm);font-variation-settings:'wght' 700;font-variant-numeric:tabular-nums;
+  font-feature-settings:'zero' 1;letter-spacing:-.01em;color:var(--ink-1)}
+.gw{font-size:var(--t-xs);color:var(--ink-3)}
+
+/* nav */
+.nav{height:72px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--rule)}
+.mark{display:flex;align-items:center;gap:10px;font-size:1.0625rem;
+  font-variation-settings:'opsz' 17,'wght' 700;letter-spacing:-.025em;color:var(--ink-1)}
+.mark span{width:11px;height:11px;background:var(--mark);border:1px solid var(--mark-line);display:block}
+.nav nav{display:flex;gap:28px;font-size:var(--t-base);color:var(--ink-2)}
+.nav nav a{text-decoration:none}
+.nav nav a:hover{color:var(--ink-1);text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}
+.nav-r{display:flex;align-items:center;gap:18px}
+.kbd{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 10px;border:1px solid var(--rule);
+  border-radius:var(--r-2);font-size:var(--t-sm);color:var(--ink-3)}
+.kbd b{border:1px solid var(--rule);border-radius:var(--r-1);padding:1px 5px;font-size:10px;font-variation-settings:'wght' 600}
+</style>
+</head>
+<body>
+<div class="sheet">
+<div class="sheet-head">
+  <h1><span>direction</span> Salon&nbsp;Hang</h1>
+  <p>A gallery wall that happens to list launches. Projects are hung at different sizes, and the size is data: the bigger the piece, the less answered its ask. Off-white limestone ground, near-black ink, one citron marker that only ever means “this is the thing being asked”.</p>
+</div>
+<style>
+/* ---------- HOMEPAGE ---------- */
+.hero{position:relative;padding:88px 0 120px}
+.hero-l{grid-column:1/span 7}
+.hero .h-d{margin:26px 0 0;color:var(--ink-1)}
+.hero .lead{margin:30px 0 0}
+.acts{display:flex;align-items:center;gap:14px;margin-top:36px}
+.stats{grid-column:1/span 7;display:grid;grid-template-columns:repeat(4,1fr);gap:32px;margin-top:64px}
+.stat{border-top:1px solid var(--ink-1);padding-top:12px}
+.stat b{display:block;font-size:2.125rem;line-height:1;letter-spacing:-.035em;
+  font-variation-settings:'opsz' 34,'wght' 730;font-variant-numeric:tabular-nums;color:var(--ink-1)}
+.stat span{display:block;margin-top:8px;font-size:var(--t-xs);color:var(--ink-3);line-height:1.45;max-width:17ch}
+.proof{position:absolute;top:196px;right:0;width:552px;background:var(--panel);
+  border-top:1px solid var(--ink-1);border-left:1px solid var(--rule);border-bottom:1px solid var(--rule);
+  padding:20px 72px 20px 28px}
+.proof-h{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:14px}
+.prow{display:grid;grid-template-columns:auto 1fr;gap:16px;padding:18px 0;border-top:1px solid var(--rule);align-items:start}
+.pth{width:52px;height:52px;border:1px solid var(--rule);background:var(--sunk);overflow:hidden}
+.prow h4{font-size:var(--t-base);font-variation-settings:'opsz' 15,'wght' 700;letter-spacing:-.015em;color:var(--ink-1)}
+.prow .prose{font-size:.9375rem;line-height:1.5;margin-top:5px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.prow-f{display:flex;align-items:center;gap:16px;margin-top:11px}
+.proof-c{padding-top:14px;border-top:1px solid var(--rule)}
+
+/* the wall */
+.wall-s{padding:0 0 128px}
+.wall-h{display:grid;grid-template-columns:repeat(12,1fr);gap:32px;align-items:end;
+  border-top:1px solid var(--ink-1);padding-top:28px;margin-bottom:56px}
+.wall-h h2{grid-column:1/span 6}
+.wall-h .legend{grid-column:8/span 5;padding-bottom:8px}
+.wall{display:grid;grid-template-columns:repeat(12,1fr);gap:32px}
+.tile{display:flex;flex-direction:column;min-width:0}
+.cover{border:1px solid var(--art-frame);background:var(--sunk);overflow:hidden;
+  position:relative;flex:none}
+.cover svg{display:block;width:100%;height:100%;color:var(--ink-1)}
+.tile-b{padding-top:14px}
+.tile-h{display:flex;align-items:baseline;gap:12px;justify-content:space-between}
+.tile h3{font-size:var(--t-md);letter-spacing:-.02em;font-variation-settings:'opsz' 20,'wght' 700;color:var(--ink-1)}
+.tile .prose{margin-top:10px;font-size:var(--t-prose);max-width:44ch;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tile-f{display:flex;align-items:flex-end;gap:20px;margin-top:16px;flex-wrap:wrap}
+.t-xl{grid-column:1/span 5;grid-row:1/span 2}
+.t-xl .cover{height:422px}
+.t-xl h3{font-size:3rem;letter-spacing:-.035em;font-variation-settings:'opsz' 48,'wght' 730;line-height:1}
+.t-xl .prose{font-size:1.25rem;line-height:1.5;max-width:36ch;-webkit-line-clamp:3;color:var(--ink-1)}
+.t-md{grid-column:6/span 4;grid-row:1}
+.t-md .cover{height:214px}
+.t-sm{grid-column:10/span 3;grid-row:1}
+.t-sm .cover{height:132px}
+.t-sm2{grid-column:6/span 3;grid-row:2}
+.t-sm2 .cover{height:104px}
+.t-sm3{grid-column:10/span 3;grid-row:2}
+.t-sm3 .cover{height:104px}
+.t-xs{grid-column:1/span 3;grid-row:3;flex-direction:row;gap:16px;align-items:center}
+.t-xs .cover{width:76px;height:76px;flex:none}
+.t-xs .tile-b{padding-top:0}
+.t-sm .prose,.t-sm2 .prose,.t-sm3 .prose{display:none}
+.wall-more{grid-column:5/span 5;grid-row:3;display:flex;align-items:center;
+  border-top:1px solid var(--rule);padding-top:16px;gap:20px;align-self:start}
+
+/* how it works */
+.hiw{padding:0 0 128px}
+.hiw dl{border-top:1px solid var(--ink-1)}
+.hiw .pair{display:grid;grid-template-columns:repeat(12,1fr);gap:32px;
+  padding:34px 0;border-bottom:1px solid var(--rule)}
+.hiw dt{grid-column:1/span 4;display:flex;gap:18px;align-items:baseline}
+.hiw dt b{font-size:var(--t-lg);letter-spacing:-.02em;font-variation-settings:'opsz' 28,'wght' 700;color:var(--ink-1)}
+.hiw dt i{font-style:normal;font-size:var(--t-2xs);color:var(--ink-3);font-variant-numeric:tabular-nums;
+  border:1px solid var(--rule);padding:2px 6px;line-height:1.2}
+.hiw dd{grid-column:6/span 6;font-size:var(--t-base);line-height:1.6;color:var(--ink-2);max-width:58ch}
+.hiw dd em{font-style:normal;color:var(--mark-ink);font-variation-settings:'wght' 650;
+  box-shadow:inset 0 -.42em 0 var(--mark)}
+
+/* anatomy of a note */
+.anat{padding:0 0 128px}
+.anat-g{display:grid;grid-template-columns:repeat(12,1fr);gap:32px;border-top:1px solid var(--ink-1);padding-top:34px}
+.anat-h{grid-column:1/span 4}
+.anat-b{grid-column:6/span 7}
+.arow{display:grid;grid-template-columns:112px 1fr;gap:32px;padding:22px 0;border-bottom:1px solid var(--rule)}
+.arow:first-child{border-top:1px solid var(--rule)}
+.arow-v{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.arow p{font-size:var(--t-xs);color:var(--ink-3);margin-top:10px;max-width:56ch;line-height:1.5}
+
+/* closing stage */
+.stage{background:var(--stage);color:var(--stage-1);padding:104px 0 96px;
+  border-top:1px solid var(--stage-rule)}
+.stage-g{display:grid;grid-template-columns:repeat(12,1fr);gap:32px;align-items:end}
+.stage h2{grid-column:1/span 7;color:var(--stage-1)}
+.stage .side{grid-column:9/span 4;padding-bottom:10px}
+.stage .side p{font-size:var(--t-base);line-height:1.6;color:var(--stage-2);max-width:34ch}
+.stage .acts{grid-column:1/span 7;margin-top:44px}
+.foot{display:flex;align-items:center;justify-content:space-between;gap:32px;
+  padding:26px 0 40px;font-size:var(--t-sm);color:var(--ink-3)}
+.foot ul{display:flex;gap:24px}
+.foot a{text-decoration:none}.foot a:hover{text-decoration:underline;text-underline-offset:3px}
+</style>
+
+<div class="plate">
+<div class="cap"><b>Screen 1</b> Homepage, logged out <i>1440 · light</i></div>
+<div class="screen desk" data-t="light">
+
+  <div class="wrap"><header class="nav">
+    <a class="mark" href="#" aria-label="Whetstone, home"><span></span>Whetstone</a>
+    <nav><a href="#">Open asks</a><a href="#">How it works</a><a href="#">For reviewers</a></nav>
+    <div class="nav-r"><a href="#" style="font-size:.9375rem;text-decoration:none">Sign in</a>
+      <a class="btn btn-sm" href="#">Post a project</a></div>
+  </header></div>
+
+  <section class="hero">
+    <div class="wrap g12">
+      <div class="hero-l">
+        <span class="tag"><span class="dotmark"></span>24 projects open for feedback right now</span>
+        <h1 class="h-d"><span class="lt">Ship</span><br>sharper.</h1>
+        <p class="lead">Post the build. Name the questions you need answered. Get notes back carrying a category, a severity and the version they were written against.</p>
+        <div class="acts">
+          <a class="btn" href="#">Post a project</a>
+          <a class="btn btn-2" href="#">Read the open asks</a>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><b class="num">24</b><span>projects taking feedback</span></div>
+        <div class="stat"><b class="num">171</b><span>reviews written by 28 people</span></div>
+        <div class="stat"><b class="num">233</b><span>separate points raised inside them</span></div>
+        <div class="stat"><b class="num">6</b><span>marked shipped by the creator</span></div>
+      </div>
+    </div>
+
+    <aside class="proof">
+      <div class="proof-h"><span class="micro">The feed, rendered live</span><span class="meta">3 of 24</span></div>
+
+      <article class="prow">
+        <div class="pth"><svg viewBox="0 0 52 52" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1"><path d="M6 40h40M6 32h40M6 24h40M6 16h40"/><path d="M14 8v36M26 8v36M38 8v36"/></g><rect x="26" y="24" width="12" height="8" fill="currentColor"/></svg></div>
+        <div>
+          <h4>Brinehollow</h4>
+          <p class="prose">The tutorial is 90 seconds and 40 per cent of testers quit inside it. I need to know which beat loses them.</p>
+          <div class="prow-f">
+            <span class="grit" role="img" aria-label="Grit 1000, beta"><span class="gbars" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="cur"></i><i></i><i></i></span><span class="gn num">1000</span><span class="gw">beta</span></span>
+            <span class="meta">Game · 24 notes</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="prow">
+        <div class="pth"><svg viewBox="0 0 52 52" aria-hidden="true"><g fill="currentColor"><rect x="8" y="34" width="8" height="10"/><rect x="18" y="28" width="8" height="16"/><rect x="28" y="20" width="8" height="24"/><rect x="38" y="12" width="8" height="32"/></g></svg></div>
+        <div>
+          <h4>Ferryman</h4>
+          <p class="prose">Version 3 moves the line picker into a bottom sheet. Tell me honestly whether the new placement reads as obvious, or as hidden.</p>
+          <div class="prow-f">
+            <span class="grit" role="img" aria-label="Grit 8000, shipped"><span class="gbars" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i></span><span class="gn num">8000</span><span class="gw">shipped</span></span>
+            <span class="meta">Mobile app · 9 notes</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="prow">
+        <div class="pth"><svg viewBox="0 0 52 52" aria-hidden="true"><g fill="none" stroke="currentColor"><circle cx="26" cy="26" r="18"/><circle cx="26" cy="26" r="11"/><circle cx="26" cy="26" r="4"/><path d="M26 4v44"/></g></svg></div>
+        <div>
+          <h4>Kestrel Deck</h4>
+          <p class="prose">The hinge is rated for 20 000 cycles and I think that is the wrong number. If you have carried the unit for a week, tell me what you heard.</p>
+          <div class="prow-f">
+            <span class="grit" role="img" aria-label="Grit 3000, release candidate"><span class="gbars" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i></i></span><span class="gn num">3000</span><span class="gw">release candidate</span></span>
+            <span class="meta">Hardware · 9 notes</span>
+          </div>
+        </div>
+      </article>
+
+      <p class="proof-c meta">One project at each stage, with the question its creator actually wants answered.</p>
+    </aside>
+  </section>
+  <section class="wall-s"><div class="wrap">
+    <div class="wall-h">
+      <h2 class="h2"><span class="lt">On the wall</span><br>this week.</h2>
+      <p class="legend meta" style="font-size:.9375rem;line-height:1.55;max-width:40ch">Size is how much the ask still needs answering: how new it is, how few people have read it, and how far apart the ones who have still are. The big ones need you most.</p>
+    </div>
+
+    <div class="wall">
+      <article class="tile t-xl">
+        <div class="cover">
+          <svg viewBox="0 0 400 200" preserveAspectRatio="none" aria-hidden="true">
+            <rect width="400" height="200" fill="#0C0F0B"/>
+            <rect y="60" width="400" height="32" fill="#14170F"/><rect y="92" width="400" height="26" fill="#1E2013"/>
+            <rect y="118" width="400" height="18" fill="#2C2A17"/><rect y="136" width="400" height="12" fill="#45361C"/>
+            <rect y="148" width="400" height="8" fill="#6E4720"/><rect y="156" width="400" height="6" fill="#A1381A"/>
+            <rect y="162" width="400" height="2" fill="#E8B072"/><rect y="164" width="400" height="36" fill="#14150E"/>
+            <g fill="#0A0B08"><rect x="24" y="132" width="2" height="32"/><rect x="52" y="140" width="2" height="24"/><rect x="96" y="126" width="2" height="38"/><rect x="140" y="144" width="2" height="20"/><rect x="188" y="134" width="2" height="30"/><rect x="232" y="148" width="2" height="16"/><rect x="286" y="128" width="2" height="36"/><rect x="332" y="142" width="2" height="22"/><rect x="368" y="136" width="2" height="28"/></g>
+            <g fill="#ECEFE9" opacity=".05"><rect y="0" width="400" height="1"/><rect y="6" width="400" height="1"/><rect y="12" width="400" height="1"/><rect y="18" width="400" height="1"/><rect y="24" width="400" height="1"/><rect y="30" width="400" height="1"/><rect y="36" width="400" height="1"/><rect y="42" width="400" height="1"/><rect y="48" width="400" height="1"/><rect y="54" width="400" height="1"/><rect y="60" width="400" height="1"/><rect y="66" width="400" height="1"/><rect y="72" width="400" height="1"/><rect y="78" width="400" height="1"/><rect y="84" width="400" height="1"/><rect y="90" width="400" height="1"/><rect y="96" width="400" height="1"/><rect y="102" width="400" height="1"/><rect y="108" width="400" height="1"/><rect y="114" width="400" height="1"/><rect y="120" width="400" height="1"/><rect y="126" width="400" height="1"/><rect y="132" width="400" height="1"/><rect y="138" width="400" height="1"/></g>
+          </svg>
+        </div>
+        <div class="tile-b">
+          <div class="tile-h"><h3>Ashfall</h3><span class="meta">Video · Kwame Mensah</span></div>
+          <p class="prose">Does the cut at 1:12 read as intentional, or as a mistake? Watch it once at full size before you read anything else.</p>
+          <div class="tile-f">
+            <span class="grit" role="img" aria-label="Grit 3000, release candidate"><span class="gbars" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i></i></span><span class="gn num">3000</span><span class="gw">release candidate</span></span>
+            <span class="meta">5 notes, 3 steps apart. Nobody agrees yet.</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="tile t-md">
+        <div class="cover"><svg viewBox="0 0 320 120" preserveAspectRatio="none" aria-hidden="true"><g stroke="currentColor" stroke-width="1" fill="none" opacity=".55"><path d="M0 30h320M0 60h320M0 90h320M40 0v120M80 0v120M120 0v120M160 0v120M200 0v120M240 0v120M280 0v120"/></g><rect x="120" y="60" width="40" height="30" fill="currentColor" opacity=".9"/><rect x="160" y="30" width="40" height="30" fill="currentColor" opacity=".35"/></svg></div>
+        <div class="tile-b">
+          <div class="tile-h"><h3>Brinehollow</h3><span class="meta">Game</span></div>
+          <p class="prose">The tutorial is 90 seconds and 40 per cent of testers quit inside it. I need to know which beat loses them.</p>
+          <div class="tile-f">
+            <span class="grit" role="img" aria-label="Grit 1000, beta"><span class="gbars" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="cur"></i><i></i><i></i></span><span class="gn num">1000</span><span class="gw">beta</span></span>
+            <span class="meta">24 notes</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="tile t-sm">
+        <div class="cover"><svg viewBox="0 0 240 120" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="currentColor" opacity=".7"><path d="M0 96h240"/><path d="M20 96V40h60v56M100 96V24h60v72M180 96V56h44v40"/></g><rect x="100" y="24" width="60" height="8" fill="currentColor"/></svg></div>
+        <div class="tile-b">
+          <div class="tile-h"><h3>Kestrel Deck</h3><span class="meta">Hardware</span></div>
+          <div class="tile-f">
+            <span class="grit" role="img" aria-label="Grit 3000, release candidate"><span class="gbars" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i></i></span><span class="gn num">3000</span><span class="gw">release candidate</span></span>
+            <span class="meta">9 notes</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="tile t-sm2">
+        <div class="cover"><svg viewBox="0 0 240 120" preserveAspectRatio="none" aria-hidden="true"><g fill="currentColor" opacity=".8"><rect x="8" y="52" width="4" height="16"/><rect x="20" y="44" width="4" height="32"/><rect x="32" y="30" width="4" height="60"/><rect x="44" y="50" width="4" height="20"/><rect x="56" y="18" width="4" height="84"/><rect x="68" y="40" width="4" height="40"/><rect x="80" y="54" width="4" height="12"/><rect x="92" y="26" width="4" height="68"/><rect x="104" y="46" width="4" height="28"/><rect x="116" y="36" width="4" height="48"/><rect x="128" y="56" width="4" height="8"/><rect x="140" y="22" width="4" height="76"/><rect x="152" y="48" width="4" height="24"/><rect x="164" y="38" width="4" height="44"/><rect x="176" y="52" width="4" height="16"/><rect x="188" y="32" width="4" height="56"/><rect x="200" y="50" width="4" height="20"/><rect x="212" y="42" width="4" height="36"/><rect x="224" y="54" width="4" height="12"/></g></svg></div>
+        <div class="tile-b">
+          <div class="tile-h"><h3>Six Minutes on the Ice</h3><span class="meta">Video</span></div>
+          <div class="tile-f">
+            <span class="grit" role="img" aria-label="Grit 400, prototype"><span class="gbars" aria-hidden="true"><i class="on"></i><i class="cur"></i><i></i><i></i><i></i></span><span class="gn num">400</span><span class="gw">prototype</span></span>
+            <span class="meta">3 notes</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="tile t-sm3">
+        <div class="cover"><svg viewBox="0 0 240 120" preserveAspectRatio="none" aria-hidden="true"><g fill="currentColor" opacity=".75"><rect x="28" y="26" width="150" height="3"/><rect x="28" y="42" width="184" height="3"/><rect x="28" y="58" width="120" height="3"/><rect x="28" y="74" width="164" height="3"/><rect x="28" y="90" width="72" height="3"/></g></svg></div>
+        <div class="tile-b">
+          <div class="tile-h"><h3>Standing Order</h3><span class="meta">Business idea</span></div>
+          <div class="tile-f">
+            <span class="grit" role="img" aria-label="Grit 120, concept"><span class="gbars" aria-hidden="true"><i class="cur"></i><i></i><i></i><i></i><i></i></span><span class="gn num">120</span><span class="gw">concept</span></span>
+            <span class="meta">2 notes</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="tile t-xs">
+        <div class="cover"><svg viewBox="0 0 80 80" preserveAspectRatio="none" aria-hidden="true"><g fill="currentColor" opacity=".8"><rect x="10" y="54" width="12" height="16"/><rect x="26" y="42" width="12" height="28"/><rect x="42" y="30" width="12" height="40"/><rect x="58" y="18" width="12" height="52"/></g></svg></div>
+        <div class="tile-b">
+          <div class="tile-h"><h3 style="font-size:1.0625rem">Ferryman</h3></div>
+          <div class="tile-f" style="margin-top:9px">
+            <span class="grit" role="img" aria-label="Grit 8000, shipped"><span class="gbars" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i></span><span class="gn num">8000</span><span class="gw">shipped</span></span>
+          </div>
+        </div>
+      </article>
+
+      <div class="wall-more">
+        <span class="h4" style="font-variation-settings:'opsz' 20,'wght' 200">19 more are open.</span>
+        <a class="btn btn-2 btn-sm" href="#">See every open ask</a>
+      </div>
+    </div>
+  </div></section>
+
+  <section class="hiw"><div class="wrap">
+    <h2 class="h2" style="margin-bottom:44px"><span class="lt">Four moves,</span> start to shipped.</h2>
+    <dl>
+      <div class="pair"><dt><i class="num">01</i><b>Post the build</b></dt>
+        <dd>A link, a cut, a draft or a repo, plus the stage it is at on the grit scale. The stage and the kind of project decide which questions the composer puts in front of a reviewer.</dd></div>
+      <div class="pair"><dt><i class="num">02</i><b>Name the ask</b></dt>
+        <dd>You write the questions. A reviewer reads your ask before they open the build, which is what keeps the reply about <em>the part you are unsure of</em> rather than the part that is easiest to comment on.</dd></div>
+      <div class="pair"><dt><i class="num">03</i><b>Read the disagreement</b></dt>
+        <dd>Notes are grouped by theme, and every rating is drawn as a spread rather than an average. <em>Where reviewers disagree is the finding</em>, so Whetstone shows you the split and names the outliers instead of flattening five people into one number.</dd></div>
+      <div class="pair"><dt><i class="num">04</i><b>Answer or ship it</b></dt>
+        <dd>Turn a note into a suggestion and move it from open to planned to shipped. The reviewer who raised it is told when it moves. Six suggestions have been marked shipped so far.</dd></div>
+    </dl>
+  </div></section>
+
+  <section class="anat"><div class="wrap"><div class="anat-g">
+    <div class="anat-h">
+      <h2 class="h3">Every note carries three things.</h2>
+      <p class="meta" style="margin-top:16px;font-size:.9375rem;line-height:1.55;max-width:34ch">Which is why 233 points sort into a work list instead of a wall of opinion.</p>
+    </div>
+    <div class="anat-b">
+      <div class="arow">
+        <span class="micro" style="padding-top:5px">Category</span>
+        <div>
+          <div class="arow-v"><span class="chip">Fun</span><span class="chip">Balance</span><span class="chip">Controls</span><span class="chip">Onboarding</span><span class="chip">Performance</span><span class="chip">Art direction</span></div>
+          <p>Ten kinds of project, each with its own axes. A video is not rated on controls.</p>
+        </div>
+      </div>
+      <div class="arow">
+        <span class="micro" style="padding-top:5px">Severity</span>
+        <div>
+          <div class="arow-v"><span class="chip">low</span><span class="chip">medium</span><span class="chip ember"><b></b>high</span></div>
+          <p>Always a word, never only a colour. High severity also carries a filled square and sorts to the top of the creator’s list.</p>
+        </div>
+      </div>
+      <div class="arow">
+        <span class="micro" style="padding-top:5px">Version</span>
+        <div>
+          <div class="arow-v"><span class="tok">written against <b>v3</b></span><span class="tok">fixed in <b>v4</b></span><span class="chip on">shipped</span></div>
+          <p>A note that was answered stays attached to the version it was written against, so nobody re-reports a thing you already fixed.</p>
+        </div>
+      </div>
+    </div>
+  </div></div></section>
+
+  <section class="stage"><div class="wrap stage-g">
+    <h2 class="h1"><span class="lt">Post the thing</span><br>you are about to ship.</h2>
+    <div class="side"><p>Free, and about five minutes: the build, the stage, and the questions you actually want answered. Reviewing someone else’s project is how you get read faster.</p></div>
+    <div class="acts">
+      <a class="btn btn-stage" href="#">Post a project</a>
+      <a class="btn btn-stage-2" href="#">Read the open asks</a>
+    </div>
+  </div></section>
+
+  <div class="wrap"><footer class="foot">
+    <a class="mark" href="#" style="font-size:.9375rem"><span></span>Whetstone</a>
+    <ul><li><a href="#">How it works</a></li><li><a href="#">For reviewers</a></li><li><a href="#">Ask for help</a></li><li><a href="#">Terms</a></li></ul>
+    <span class="num">© 2026</span>
+  </footer></div>
+
+</div>
+</div>
+<style>
+/* ---------- MOBILE 390 ---------- */
+.mob .wrap{width:342px}
+.mob .nav{height:60px}
+.mob .nav nav{display:none}
+.mob .hero{padding:32px 0 56px}
+.mob .h-d{font-size:3.5rem;line-height:.94;letter-spacing:-.038em}
+.mob .lead{font-size:1rem;margin-top:22px;max-width:none}
+.mob .acts{flex-direction:column;align-items:stretch;gap:10px;margin-top:28px}
+.mob .acts .btn{width:100%}
+.mob .stats{grid-template-columns:1fr 1fr;gap:20px 24px;margin-top:44px}
+.mob .stat b{font-size:1.75rem}
+.mob .proof{position:static;width:auto;padding:18px 0 0;background:transparent;
+  border-left:0;border-right:0;border-bottom:0;border-top:1px solid var(--ink-1);margin-top:44px}
+.mob .prow{grid-template-columns:44px 1fr;gap:12px}
+.mob .pth{width:44px;height:44px}
+.mob .wall{display:block}
+.mob .wall-s{padding-bottom:64px}
+.mob .wall-h{display:block;margin-bottom:28px}
+.mob .wall-h .legend{margin-top:14px;max-width:none}
+.mob .tile{display:block;margin-bottom:28px}
+.mob .t-xl .cover{height:188px;width:100%}
+.mob .t-xl h3{font-size:2.25rem}
+.mob .t-xl .prose{font-size:1.0625rem;max-width:none}
+.mob .t-md,.mob .t-sm,.mob .t-sm2,.mob .t-sm3,.mob .t-xs{display:flex;flex-direction:row;gap:14px;align-items:center;
+  border-top:1px solid var(--rule);padding-top:16px}
+.mob .t-md .cover,.mob .t-sm .cover,.mob .t-sm2 .cover,.mob .t-sm3 .cover{width:86px;height:64px;flex:none}
+.mob .t-md .prose,.mob .t-sm .prose{display:none}
+.mob .t-md .tile-b,.mob .t-sm .tile-b{padding-top:0}
+.mob .wall-more{display:flex;flex-direction:column;align-items:flex-start;gap:14px;margin-top:8px}
+.mob .stage{padding:56px 0 52px}
+.mob .stage-g{display:block}
+.mob .stage .h1{font-size:2.25rem}
+.mob .stage .side{margin-top:20px}
+.mob .stage .acts{margin-top:28px}
+.mob .foot{flex-direction:column;align-items:flex-start;gap:14px;padding:22px 0 28px}
+.mob .foot ul{flex-wrap:wrap;gap:16px}
+</style>
+
+<div class="plate">
+<div class="cap"><b>Screen 1</b> Homepage <i>390 · dark · laid out for the column, not squeezed into it</i></div>
+<div class="screen mob" data-t="dark">
+  <div class="wrap"><header class="nav">
+    <a class="mark" href="#"><span></span>Whetstone</a>
+    <a class="btn btn-sm" href="#">Post a project</a>
+  </header></div>
+
+  <section class="hero"><div class="wrap">
+    <span class="tag"><span class="dotmark"></span>24 open asks</span>
+    <h1 class="h-d"><span class="lt">Ship</span><br>sharper.</h1>
+    <p class="lead">Post the build. Name the questions you need answered. Get notes back carrying a category, a severity and the version they were written against.</p>
+    <div class="acts"><a class="btn" href="#">Post a project</a><a class="btn btn-2" href="#">Read the open asks</a></div>
+    <div class="stats">
+      <div class="stat"><b class="num">24</b><span>projects taking feedback</span></div>
+      <div class="stat"><b class="num">171</b><span>reviews by 28 people</span></div>
+      <div class="stat"><b class="num">233</b><span>points raised inside them</span></div>
+      <div class="stat"><b class="num">6</b><span>marked shipped</span></div>
+    </div>
+    <aside class="proof">
+      <div class="proof-h"><span class="micro">The feed, live</span><span class="meta">3 of 24</span></div>
+      <article class="prow">
+        <div class="pth"><svg viewBox="0 0 52 52" aria-hidden="true"><g fill="none" stroke="currentColor"><path d="M6 40h40M6 32h40M6 24h40M6 16h40"/><path d="M14 8v36M26 8v36M38 8v36"/></g><rect x="26" y="24" width="12" height="8" fill="currentColor"/></svg></div>
+        <div><h4>Brinehollow</h4>
+          <p class="prose">The tutorial is 90 seconds and 40 per cent of testers quit inside it. I need to know which beat loses them.</p>
+          <div class="prow-f"><span class="grit" role="img" aria-label="Grit 1000, beta"><span class="gbars" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="cur"></i><i></i><i></i></span><span class="gn num">1000</span><span class="gw">beta</span></span><span class="meta">24 notes</span></div>
+        </div>
+      </article>
+      <article class="prow">
+        <div class="pth"><svg viewBox="0 0 52 52" aria-hidden="true"><g fill="none" stroke="currentColor"><circle cx="26" cy="26" r="18"/><circle cx="26" cy="26" r="11"/><circle cx="26" cy="26" r="4"/><path d="M26 4v44"/></g></svg></div>
+        <div><h4>Kestrel Deck</h4>
+          <p class="prose">The hinge is rated for 20 000 cycles and I think that is the wrong number. Tell me what you heard.</p>
+          <div class="prow-f"><span class="grit" role="img" aria-label="Grit 3000, release candidate"><span class="gbars" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i></i></span><span class="gn num">3000</span><span class="gw">rc</span></span><span class="meta">9 notes</span></div>
+        </div>
+      </article>
+    </aside>
+  </div></section>
+
+  <section class="wall-s"><div class="wrap">
+    <div class="wall-h"><h2 class="h3">On the wall this week.</h2>
+      <p class="legend meta" style="font-size:.9375rem;line-height:1.55">Size is how much the ask still needs answering. The big ones need you most.</p></div>
+    <article class="tile t-xl">
+      <div class="cover"><svg viewBox="0 0 400 200" preserveAspectRatio="none" aria-hidden="true"><rect width="400" height="200" fill="#0B0E0A"/><rect y="40" width="400" height="28" fill="#101409"/><rect y="68" width="400" height="22" fill="#171B0E"/><rect y="90" width="400" height="14" fill="#221F10"/><rect y="104" width="400" height="9" fill="#33240F"/><rect y="113" width="400" height="6" fill="#4E2C11"/><rect y="119" width="400" height="5" fill="#7A3614"/><rect y="124" width="400" height="4" fill="#A1381A"/><rect y="128" width="400" height="2" fill="#E8B072"/><rect y="130" width="400" height="70" fill="#0E0F0A"/><circle cx="306" cy="52" r="32" fill="none" stroke="#E8B072" stroke-width="1" opacity=".38"/><g fill="#ECEFE9"><rect y="30" width="400" height="1" opacity=".07"/><rect y="76" width="400" height="1" opacity=".10"/><rect y="96" width="400" height="1" opacity=".14"/></g><g fill="#E8B072" opacity=".45"><rect x="40" y="28" width="2" height="2"/><rect x="96" y="16" width="2" height="2"/><rect x="150" y="44" width="2" height="2"/><rect x="212" y="24" width="2" height="2"/><rect x="260" y="60" width="2" height="2"/><rect x="350" y="34" width="2" height="2"/></g><g fill="#070806"><rect x="14" y="104" width="2" height="24"/><rect x="38" y="112" width="2" height="16"/><rect x="62" y="96" width="3" height="32"/><rect x="92" y="110" width="2" height="18"/><rect x="118" y="102" width="2" height="26"/><rect x="146" y="114" width="2" height="14"/><rect x="172" y="94" width="3" height="34"/><rect x="202" y="108" width="2" height="20"/><rect x="228" y="100" width="2" height="28"/><rect x="258" y="112" width="2" height="16"/><rect x="286" y="92" width="3" height="36"/><rect x="316" y="106" width="2" height="22"/><rect x="344" y="102" width="2" height="26"/><rect x="376" y="110" width="2" height="18"/></g></svg></div>
+      <div class="tile-b">
+        <div class="tile-h"><h3>Ashfall</h3><span class="meta">Video</span></div>
+        <p class="prose">Does the cut at 1:12 read as intentional, or as a mistake?</p>
+        <div class="tile-f"><span class="grit" role="img" aria-label="Grit 3000, release candidate"><span class="gbars" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i></i></span><span class="gn num">3000</span><span class="gw">rc</span></span><span class="meta">5 notes, 3 steps apart</span></div>
+      </div>
+    </article>
+    <article class="tile t-md">
+      <div class="cover"><svg viewBox="0 0 320 120" preserveAspectRatio="none" aria-hidden="true"><g stroke="currentColor" fill="none" opacity=".55"><path d="M0 30h320M0 60h320M0 90h320M40 0v120M80 0v120M120 0v120M160 0v120M200 0v120M240 0v120M280 0v120"/></g><rect x="120" y="60" width="40" height="30" fill="currentColor" opacity=".9"/></svg></div>
+      <div class="tile-b"><div class="tile-h"><h3 style="font-size:1.0625rem">Brinehollow</h3></div>
+        <div class="tile-f" style="margin-top:9px"><span class="grit" role="img" aria-label="Grit 1000, beta"><span class="gbars" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="cur"></i><i></i><i></i></span><span class="gn num">1000</span></span><span class="meta">24 notes</span></div></div>
+    </article>
+    <article class="tile t-sm">
+      <div class="cover"><svg viewBox="0 0 240 120" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="currentColor" opacity=".7"><path d="M0 96h240"/><path d="M20 96V40h60v56M100 96V24h60v72M180 96V56h44v40"/></g><rect x="100" y="24" width="60" height="8" fill="currentColor"/></svg></div>
+      <div class="tile-b"><div class="tile-h"><h3 style="font-size:1.0625rem">Kestrel Deck</h3></div>
+        <div class="tile-f" style="margin-top:9px"><span class="grit" role="img" aria-label="Grit 3000, release candidate"><span class="gbars" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i></i></span><span class="gn num">3000</span></span><span class="meta">9 notes</span></div></div>
+    </article>
+    <div class="wall-more"><span class="h4" style="font-variation-settings:'opsz' 20,'wght' 200">19 more are open.</span><a class="btn btn-2 btn-sm" href="#">See every open ask</a></div>
+  </div></section>
+
+  <section class="stage"><div class="wrap stage-g">
+    <h2 class="h1"><span class="lt">Post the thing</span><br>you are about to ship.</h2>
+    <div class="side"><p>Free, and about five minutes: the build, the stage, and the questions you actually want answered.</p></div>
+    <div class="acts"><a class="btn btn-stage" href="#">Post a project</a><a class="btn btn-stage-2" href="#">Read the open asks</a></div>
+  </div></section>
+  <div class="wrap"><footer class="foot">
+    <a class="mark" href="#" style="font-size:.9375rem"><span></span>Whetstone</a>
+    <ul><li><a href="#">How it works</a></li><li><a href="#">For reviewers</a></li><li><a href="#">Ask for help</a></li></ul>
+  </footer></div>
+</div>
+</div>
+<style>
+@media (prefers-reduced-motion: reduce){*{transition-duration:1ms !important;animation-duration:1ms !important}}
+/* ---------- PROJECT PAGE ---------- */
+.pj-head{padding:64px 0 40px}
+.pj-t{display:grid;grid-template-columns:repeat(12,1fr);gap:32px;align-items:end}
+.pj-t h1{grid-column:1/span 6;font-size:6.5rem;line-height:.86;letter-spacing:-.045em;
+  font-variation-settings:'opsz' 96,'wght' 730;color:var(--ink-1);margin-left:-.055em}
+.pj-t .tagline{grid-column:8/span 5;padding-bottom:12px;font-size:1.375rem;line-height:1.45;
+  font-family:"Newsreader",Georgia,serif;font-variation-settings:'opsz' 22,'wght' 400;color:var(--ink-2)}
+.pj-by{display:flex;align-items:center;gap:20px;margin-top:40px;padding-top:20px;border-top:1px solid var(--ink-1);flex-wrap:wrap}
+.pj-by .who{display:flex;align-items:center;gap:11px;font-size:var(--t-base);font-variation-settings:'wght' 650;color:var(--ink-1)}
+.pj-by .sep{width:1px;height:22px;background:var(--rule)}
+.pj-by .push{margin-left:auto;display:flex;gap:12px;align-items:center}
+
+/* the sliced composition */
+.art-comp{position:relative;height:440px;width:1296px;margin:16px 0 0}
+.slice{position:absolute;overflow:hidden;border:1px solid var(--art-frame);background:#0C0F0B}
+.s-a{left:0;top:0;width:390px;height:440px}
+.s-b{left:422px;top:72px;width:442px;height:310px}
+.s-c{left:896px;top:18px;width:400px;height:366px}
+.art{position:absolute;width:1296px;height:440px}
+.s-a .art{left:0;top:0}.s-b .art{left:-422px;top:-72px}.s-c .art{left:-896px;top:-18px}
+.art svg{display:block;width:1296px;height:440px}
+.art-lab{position:absolute;left:20px;bottom:16px;display:flex;gap:14px;z-index:2;
+  font-size:var(--t-2xs);letter-spacing:.1em;text-transform:uppercase;color:#C9CFBF;font-variation-settings:'wght' 600}
+.cut{position:absolute;left:390px;top:-14px;width:32px;height:468px;z-index:3}
+.cut i{position:absolute;left:15px;top:0;width:2px;height:468px;background:var(--mark);display:block}
+.cut b{position:absolute;left:10px;top:0;width:12px;height:12px;background:var(--mark);border:1px solid var(--mark-line);display:block}
+.ruler{position:relative;height:64px;margin-top:22px;border-top:1px solid var(--edge)}
+.ruler .tk{position:absolute;top:0;width:1px;height:7px;background:var(--edge)}
+.ruler .end{position:absolute;top:14px;font-size:var(--t-xs);color:var(--ink-3);font-variant-numeric:tabular-nums}
+.ruler .cutm{position:absolute;top:0;height:20px;width:2px;background:var(--mark-line)}
+.ruler .cutl{position:absolute;top:26px;transform:translateX(-50%);white-space:nowrap;
+  font-size:var(--t-xs);color:var(--ink-1);font-variation-settings:'wght' 650;
+  border-bottom:2px solid var(--mark-line);padding-bottom:2px}
+
+/* the ask */
+.pj-ask{padding:72px 0 96px}
+.ask-g{display:grid;grid-template-columns:repeat(12,1fr);gap:32px}
+.ask{grid-column:1/span 7;border-left:2px solid var(--mark-line);padding-left:28px}
+.ask p{font-family:"Newsreader",Georgia,serif;font-size:var(--t-ask);line-height:1.42;
+  font-variation-settings:'opsz' 28,'wght' 400;color:var(--ink-1);margin-top:14px;max-width:32ch}
+.ask .who{display:flex;align-items:center;gap:10px;margin-top:22px;font-size:var(--t-xs);color:var(--ink-3)}
+.about{grid-column:9/span 4}
+.about .prose{margin-top:12px;max-width:40ch}
+.about dl{margin-top:22px;border-top:1px solid var(--rule)}
+.about .r{display:flex;justify-content:space-between;gap:16px;padding:9px 0;border-bottom:1px solid var(--rule);
+  font-size:var(--t-xs);color:var(--ink-3)}
+.about .r b{color:var(--ink-1);font-variation-settings:'wght' 650;font-variant-numeric:tabular-nums}
+
+/* disagreement */
+.dis{background:var(--stage);color:var(--stage-1);padding:88px 0 80px;border-block:1px solid var(--stage-rule)}
+.dis .micro{color:var(--stage-3)}
+.dis-g{display:grid;grid-template-columns:repeat(12,1fr);gap:32px}
+.dis-h{grid-column:1/span 8}
+.dis-h h2{color:var(--stage-1);margin-top:14px}
+.dis-q{grid-column:10/span 3;padding-top:36px}
+.dis-q p{font-size:var(--t-xs);color:var(--stage-2);line-height:1.55;margin-top:8px}
+.plot{grid-column:1/span 8;margin-top:44px}
+.plot-c{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;align-items:end;min-height:176px}
+.col{display:flex;flex-direction:column;justify-content:flex-end;gap:8px}
+.brk{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:auto 12px;gap:0 12px;margin-bottom:14px}
+.brk .lab{grid-column:3/span 3;grid-row:1;text-align:center;font-size:var(--t-2xs);letter-spacing:.1em;
+  text-transform:uppercase;font-variation-settings:'wght' 650;color:var(--stage-mark);padding-bottom:6px}
+.brk .b{grid-row:2;border-top:1px solid var(--stage-edge)}
+.brk .b.l{grid-column:3;border-left:1px solid var(--stage-edge)}
+.brk .b.m{grid-column:4}
+.brk .b.r{grid-column:5;border-right:1px solid var(--stage-edge)}
+.rv{border:1px solid var(--stage-edge);border-radius:var(--r-1);padding:10px 12px;
+  display:flex;align-items:center;gap:10px;background:transparent}
+.rv .av{background:transparent;border-color:var(--stage-edge);color:var(--stage-2)}
+.is-median .rv{border-color:var(--stage-2)}
+.rv span{font-size:var(--t-sm);color:var(--stage-1);font-variation-settings:'wght' 600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rv.out{border-color:var(--stage-mark)}
+.rv.out .tagout{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--stage-mark);margin-left:auto;font-variation-settings:'wght' 700}
+.med{height:5px;background:var(--stage-mark);margin-top:14px}
+.axis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;border-top:1px solid var(--stage-edge);padding-top:10px;margin-top:8px}
+.axis .a{font-size:var(--t-2xs);color:var(--stage-3);letter-spacing:.06em;text-transform:uppercase}
+.axis .a b{display:block;font-size:1.5rem;letter-spacing:-.02em;text-transform:none;
+  font-variation-settings:'wght' 700;font-variant-numeric:tabular-nums;color:var(--stage-2);margin-bottom:3px}
+.axis .a.on b{color:var(--stage-mark)}
+.axis .a.on{color:var(--stage-mark)}
+.dis-say{grid-column:1/span 7;margin-top:48px}
+.dis-say p{font-family:"Newsreader",Georgia,serif;font-size:1.375rem;line-height:1.55;
+  font-variation-settings:'opsz' 22,'wght' 400;color:var(--stage-1);max-width:50ch}
+.readout{grid-column:9/span 4;margin-top:48px;align-self:end}
+.readout .r{display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--stage-rule);
+  font-size:var(--t-xs);color:var(--stage-3)}
+.readout .r b{color:var(--stage-1);font-variation-settings:'wght' 650;font-variant-numeric:tabular-nums}
+.others{grid-column:1/span 12;margin-top:64px;display:grid;grid-template-columns:repeat(4,1fr);gap:32px;
+  border-top:1px solid var(--stage-rule);padding-top:22px}
+.others h4{font-size:var(--t-sm);font-variation-settings:'wght' 650;color:var(--stage-1)}
+.others .sp{display:flex;gap:3px;margin:10px 0 8px}
+.others .sp i{height:16px;flex:1;border:1px solid var(--stage-edge);display:block}
+.others .sp i.f{background:var(--stage-2);border-color:var(--stage-2)}
+.others .sp i.m{background:var(--stage-mark);border-color:var(--stage-mark)}
+.others p{font-size:var(--t-xs);color:var(--stage-3);font-variant-numeric:tabular-nums}
+
+/* grit scale */
+.gs{padding:88px 0}
+.gs-h{display:grid;grid-template-columns:repeat(12,1fr);gap:32px;align-items:end;margin-bottom:48px}
+.gs-h h3{grid-column:1/span 5}
+.gs-h p{grid-column:7/span 5;font-size:var(--t-base);color:var(--ink-2);line-height:1.55;max-width:46ch}
+.scale{display:grid;grid-template-columns:repeat(5,1fr);gap:32px;align-items:end;
+  border-bottom:1px solid var(--ink-1);padding-bottom:0}
+.step{position:relative;padding-bottom:18px}
+.step .wedge{display:block;background:transparent;border:1px solid var(--edge);width:100%}
+.step:nth-child(1) .wedge{height:18px}.step:nth-child(2) .wedge{height:34px}
+.step:nth-child(3) .wedge{height:56px}.step:nth-child(4) .wedge{height:84px}
+.step:nth-child(5) .wedge{height:118px}
+.step.done .wedge{background:var(--ink-2);border-color:var(--ink-2)}
+.step.here .wedge{background:var(--mark);border-color:var(--mark-line)}
+.step b{display:block;margin-top:14px;font-size:1.75rem;letter-spacing:-.03em;
+  font-variation-settings:'opsz' 28,'wght' 730;font-variant-numeric:tabular-nums;
+  font-feature-settings:'zero' 1;color:var(--ink-1)}
+.step span{display:block;margin-top:4px;font-size:var(--t-xs);color:var(--ink-3)}
+.step .here-l{position:absolute;left:0;top:-30px;font-size:var(--t-2xs);letter-spacing:.1em;
+  text-transform:uppercase;font-variation-settings:'wght' 700;color:var(--ink-1)}
+.step.here b{border-bottom:2px solid var(--mark-line);display:inline-block}
+
+/* notes */
+.notes{padding:0 0 96px}
+.notes-h{display:flex;align-items:baseline;justify-content:space-between;gap:32px;
+  border-top:1px solid var(--ink-1);padding-top:24px;margin-bottom:36px}
+.note{display:grid;grid-template-columns:repeat(12,1fr);gap:32px;padding:32px 0;border-top:1px solid var(--rule)}
+.note-w{grid-column:1/span 3}
+.note-w .nm{display:flex;align-items:center;gap:12px}
+.note-w .nm b{font-size:var(--t-base);font-variation-settings:'wght' 700;color:var(--ink-1);letter-spacing:-.01em}
+.note-w .meta{margin-top:10px;padding-left:56px}
+.note-b{grid-column:4/span 7}
+.note-toks{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.note-b .prose{max-width:62ch}
+.reply{margin-top:24px;border-left:2px solid var(--mark-line);padding:2px 0 2px 22px}
+.reply .nm{display:flex;align-items:center;gap:10px;font-size:var(--t-sm);color:var(--ink-1);font-variation-settings:'wght' 650}
+.reply .prose{font-size:1rem;margin-top:9px;max-width:58ch}
+.shipped{grid-column:11/span 2;align-self:start}
+.ship-tag{display:inline-flex;align-items:center;gap:8px;background:var(--mark);color:var(--mark-ink);
+  border:1px solid var(--mark-line);border-radius:var(--r-1);padding:7px 10px;font-size:var(--t-2xs);
+  letter-spacing:.08em;text-transform:uppercase;font-variation-settings:'wght' 700}
+.shipped p{font-size:var(--t-xs);color:var(--ink-3);margin-top:10px;line-height:1.5}
+.note.quiet{padding:20px 0}
+.note.quiet .note-b .prose{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;color:var(--ink-3)}
+
+.scan{position:absolute;left:0;top:0;width:1296px;height:440px;z-index:1;
+  background:repeating-linear-gradient(to bottom,rgba(236,239,233,.055) 0 1px,transparent 1px 8px)}
+.art-lab2{position:absolute;right:24px;top:26px;z-index:2;text-align:right;
+  font-size:var(--t-2xs);letter-spacing:.09em;text-transform:uppercase;color:#C9CFBF;
+  font-variation-settings:'wght' 600;line-height:1.9}
+</style>
+<div class="plate">
+<div class="cap"><b>Screen 2</b> Project page, the signature screen <i>1440 · dark</i></div>
+<div class="screen desk" data-t="dark">
+  <div class="wrap"><header class="nav">
+    <a class="mark" href="#" aria-label="Whetstone, home"><span></span>Whetstone</a>
+    <nav><a href="#">Discover</a><a href="#">Open asks</a><a href="#">Discussions</a><a href="#">Reviewers</a></nav>
+    <div class="nav-r">
+      <span class="kbd">Search <b>⌘</b><b>K</b></span>
+      <span class="av" aria-hidden="true">MS</span>
+    </div>
+  </header></div>
+
+  <section class="pj-head"><div class="wrap">
+    <div class="pj-t">
+      <h1>Ashfall</h1>
+      <p class="tagline">A one take music video shot at the edge of a controlled burn.</p>
+    </div>
+    <div class="pj-by">
+      <span class="who"><span class="av">KM</span>Kwame Mensah</span>
+      <span class="sep"></span>
+      <span class="meta">Video · posted 6 days ago</span>
+      <span class="sep"></span>
+      <span class="grit" role="img" aria-label="Grit 3000, release candidate"><span class="gbars" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i></i></span><span class="gn num">3000</span><span class="gw">release candidate</span></span>
+      <span class="chip pine">open for feedback</span>
+      <span class="push">
+        <a class="btn btn-2 btn-sm" href="#">Watch later</a>
+        <a class="btn btn-sm" href="#">Write a note</a>
+      </span>
+    </div>
+  </div></section>
+
+  <div class="wrap">
+    <div class="art-comp">
+      <div class="slice s-a"><div class="art"><svg viewBox="0 0 1296 440" preserveAspectRatio="none" aria-hidden="true"><rect width="1296" height="440" fill="#0B0E0A"/><rect y="90" width="1296" height="60" fill="#101409"/><rect y="150" width="1296" height="46" fill="#171B0E"/><rect y="196" width="1296" height="32" fill="#221F10"/><rect y="228" width="1296" height="20" fill="#33240F"/><rect y="248" width="1296" height="14" fill="#4E2C11"/><rect y="262" width="1296" height="10" fill="#7A3614"/><rect y="272" width="1296" height="8" fill="#A1381A"/><rect y="280" width="1296" height="4" fill="#E8B072"/><rect y="284" width="1296" height="156" fill="#0E0F0A"/><circle cx="995" cy="116" r="70" fill="none" stroke="#E8B072" stroke-width="1.5" opacity=".38"/><circle cx="995" cy="116" r="118" fill="none" stroke="#E8B072" stroke-width="1" opacity=".13"/><g fill="#ECEFE9"><rect y="64" width="1296" height="1" opacity=".07"/><rect y="112" width="1296" height="1" opacity=".05"/><rect y="168" width="1296" height="1" opacity=".10"/><rect y="212" width="1296" height="1" opacity=".14"/></g><g fill="#E8B072" opacity=".45"><rect x="120" y="62" width="2" height="2"/><rect x="210" y="38" width="2" height="2"/><rect x="300" y="96" width="2" height="2"/><rect x="392" y="54" width="2" height="2"/><rect x="470" y="120" width="2" height="2"/><rect x="548" y="44" width="2" height="2"/><rect x="640" y="84" width="2" height="2"/><rect x="712" y="132" width="2" height="2"/><rect x="790" y="58" width="2" height="2"/><rect x="868" y="102" width="2" height="2"/><rect x="940" y="40" width="2" height="2"/><rect x="1014" y="126" width="2" height="2"/><rect x="1088" y="70" width="2" height="2"/><rect x="1160" y="48" width="2" height="2"/><rect x="1232" y="110" width="2" height="2"/><rect x="160" y="148" width="2" height="2"/><rect x="360" y="160" width="2" height="2"/><rect x="600" y="142" width="2" height="2"/><rect x="840" y="166" width="2" height="2"/><rect x="1120" y="152" width="2" height="2"/><rect x="250" y="190" width="2" height="2"/><rect x="520" y="182" width="2" height="2"/><rect x="760" y="196" width="2" height="2"/><rect x="1050" y="188" width="2" height="2"/><rect x="1270" y="170" width="2" height="2"/><rect x="68" y="110" width="2" height="2"/></g><g fill="#070806"><rect x="40" y="232" width="3" height="52"/><rect x="78" y="250" width="2" height="34"/><rect x="118" y="214" width="4" height="70"/><rect x="166" y="244" width="2" height="40"/><rect x="205" y="226" width="3" height="58"/><rect x="250" y="256" width="2" height="28"/><rect x="292" y="208" width="4" height="76"/><rect x="340" y="240" width="2" height="44"/><rect x="380" y="222" width="3" height="62"/><rect x="428" y="252" width="2" height="32"/><rect x="470" y="200" width="5" height="84"/><rect x="524" y="238" width="2" height="46"/><rect x="566" y="218" width="3" height="66"/><rect x="612" y="248" width="2" height="36"/><rect x="656" y="228" width="3" height="56"/><rect x="700" y="256" width="2" height="28"/><rect x="744" y="210" width="4" height="74"/><rect x="796" y="242" width="2" height="42"/><rect x="838" y="224" width="3" height="60"/><rect x="884" y="252" width="2" height="32"/><rect x="926" y="206" width="4" height="78"/><rect x="978" y="240" width="2" height="44"/><rect x="1020" y="220" width="3" height="64"/><rect x="1066" y="250" width="2" height="34"/><rect x="1108" y="230" width="3" height="54"/><rect x="1152" y="256" width="2" height="28"/><rect x="1196" y="212" width="4" height="72"/><rect x="1248" y="244" width="2" height="40"/><rect x="1282" y="226" width="3" height="58"/></g><g fill="#ECEFE9" opacity=".035"><rect y="292" width="1296" height="1"/><rect y="308" width="1296" height="1"/><rect y="324" width="1296" height="1"/><rect y="340" width="1296" height="1"/><rect y="356" width="1296" height="1"/><rect y="372" width="1296" height="1"/><rect y="388" width="1296" height="1"/><rect y="404" width="1296" height="1"/><rect y="420" width="1296" height="1"/><rect y="436" width="1296" height="1"/></g></svg><div class="scan"></div><div class="art-lab"><span>3:50</span><span>one take</span><span>no coverage</span><span>graded warm</span></div><div class="art-lab2">Ashfall<br>dusk, managed burn</div></div></div>
+      <div class="slice s-b"><div class="art"><svg viewBox="0 0 1296 440" preserveAspectRatio="none" aria-hidden="true"><rect width="1296" height="440" fill="#0B0E0A"/><rect y="90" width="1296" height="60" fill="#101409"/><rect y="150" width="1296" height="46" fill="#171B0E"/><rect y="196" width="1296" height="32" fill="#221F10"/><rect y="228" width="1296" height="20" fill="#33240F"/><rect y="248" width="1296" height="14" fill="#4E2C11"/><rect y="262" width="1296" height="10" fill="#7A3614"/><rect y="272" width="1296" height="8" fill="#A1381A"/><rect y="280" width="1296" height="4" fill="#E8B072"/><rect y="284" width="1296" height="156" fill="#0E0F0A"/><circle cx="995" cy="116" r="70" fill="none" stroke="#E8B072" stroke-width="1.5" opacity=".38"/><circle cx="995" cy="116" r="118" fill="none" stroke="#E8B072" stroke-width="1" opacity=".13"/><g fill="#ECEFE9"><rect y="64" width="1296" height="1" opacity=".07"/><rect y="112" width="1296" height="1" opacity=".05"/><rect y="168" width="1296" height="1" opacity=".10"/><rect y="212" width="1296" height="1" opacity=".14"/></g><g fill="#E8B072" opacity=".45"><rect x="120" y="62" width="2" height="2"/><rect x="210" y="38" width="2" height="2"/><rect x="300" y="96" width="2" height="2"/><rect x="392" y="54" width="2" height="2"/><rect x="470" y="120" width="2" height="2"/><rect x="548" y="44" width="2" height="2"/><rect x="640" y="84" width="2" height="2"/><rect x="712" y="132" width="2" height="2"/><rect x="790" y="58" width="2" height="2"/><rect x="868" y="102" width="2" height="2"/><rect x="940" y="40" width="2" height="2"/><rect x="1014" y="126" width="2" height="2"/><rect x="1088" y="70" width="2" height="2"/><rect x="1160" y="48" width="2" height="2"/><rect x="1232" y="110" width="2" height="2"/><rect x="160" y="148" width="2" height="2"/><rect x="360" y="160" width="2" height="2"/><rect x="600" y="142" width="2" height="2"/><rect x="840" y="166" width="2" height="2"/><rect x="1120" y="152" width="2" height="2"/><rect x="250" y="190" width="2" height="2"/><rect x="520" y="182" width="2" height="2"/><rect x="760" y="196" width="2" height="2"/><rect x="1050" y="188" width="2" height="2"/><rect x="1270" y="170" width="2" height="2"/><rect x="68" y="110" width="2" height="2"/></g><g fill="#070806"><rect x="40" y="232" width="3" height="52"/><rect x="78" y="250" width="2" height="34"/><rect x="118" y="214" width="4" height="70"/><rect x="166" y="244" width="2" height="40"/><rect x="205" y="226" width="3" height="58"/><rect x="250" y="256" width="2" height="28"/><rect x="292" y="208" width="4" height="76"/><rect x="340" y="240" width="2" height="44"/><rect x="380" y="222" width="3" height="62"/><rect x="428" y="252" width="2" height="32"/><rect x="470" y="200" width="5" height="84"/><rect x="524" y="238" width="2" height="46"/><rect x="566" y="218" width="3" height="66"/><rect x="612" y="248" width="2" height="36"/><rect x="656" y="228" width="3" height="56"/><rect x="700" y="256" width="2" height="28"/><rect x="744" y="210" width="4" height="74"/><rect x="796" y="242" width="2" height="42"/><rect x="838" y="224" width="3" height="60"/><rect x="884" y="252" width="2" height="32"/><rect x="926" y="206" width="4" height="78"/><rect x="978" y="240" width="2" height="44"/><rect x="1020" y="220" width="3" height="64"/><rect x="1066" y="250" width="2" height="34"/><rect x="1108" y="230" width="3" height="54"/><rect x="1152" y="256" width="2" height="28"/><rect x="1196" y="212" width="4" height="72"/><rect x="1248" y="244" width="2" height="40"/><rect x="1282" y="226" width="3" height="58"/></g><g fill="#ECEFE9" opacity=".035"><rect y="292" width="1296" height="1"/><rect y="308" width="1296" height="1"/><rect y="324" width="1296" height="1"/><rect y="340" width="1296" height="1"/><rect y="356" width="1296" height="1"/><rect y="372" width="1296" height="1"/><rect y="388" width="1296" height="1"/><rect y="404" width="1296" height="1"/><rect y="420" width="1296" height="1"/><rect y="436" width="1296" height="1"/></g></svg><div class="scan"></div><div class="art-lab"><span>3:50</span><span>one take</span><span>no coverage</span><span>graded warm</span></div><div class="art-lab2">Ashfall<br>dusk, managed burn</div></div></div>
+      <div class="slice s-c"><div class="art"><svg viewBox="0 0 1296 440" preserveAspectRatio="none" aria-hidden="true"><rect width="1296" height="440" fill="#0B0E0A"/><rect y="90" width="1296" height="60" fill="#101409"/><rect y="150" width="1296" height="46" fill="#171B0E"/><rect y="196" width="1296" height="32" fill="#221F10"/><rect y="228" width="1296" height="20" fill="#33240F"/><rect y="248" width="1296" height="14" fill="#4E2C11"/><rect y="262" width="1296" height="10" fill="#7A3614"/><rect y="272" width="1296" height="8" fill="#A1381A"/><rect y="280" width="1296" height="4" fill="#E8B072"/><rect y="284" width="1296" height="156" fill="#0E0F0A"/><circle cx="995" cy="116" r="70" fill="none" stroke="#E8B072" stroke-width="1.5" opacity=".38"/><circle cx="995" cy="116" r="118" fill="none" stroke="#E8B072" stroke-width="1" opacity=".13"/><g fill="#ECEFE9"><rect y="64" width="1296" height="1" opacity=".07"/><rect y="112" width="1296" height="1" opacity=".05"/><rect y="168" width="1296" height="1" opacity=".10"/><rect y="212" width="1296" height="1" opacity=".14"/></g><g fill="#E8B072" opacity=".45"><rect x="120" y="62" width="2" height="2"/><rect x="210" y="38" width="2" height="2"/><rect x="300" y="96" width="2" height="2"/><rect x="392" y="54" width="2" height="2"/><rect x="470" y="120" width="2" height="2"/><rect x="548" y="44" width="2" height="2"/><rect x="640" y="84" width="2" height="2"/><rect x="712" y="132" width="2" height="2"/><rect x="790" y="58" width="2" height="2"/><rect x="868" y="102" width="2" height="2"/><rect x="940" y="40" width="2" height="2"/><rect x="1014" y="126" width="2" height="2"/><rect x="1088" y="70" width="2" height="2"/><rect x="1160" y="48" width="2" height="2"/><rect x="1232" y="110" width="2" height="2"/><rect x="160" y="148" width="2" height="2"/><rect x="360" y="160" width="2" height="2"/><rect x="600" y="142" width="2" height="2"/><rect x="840" y="166" width="2" height="2"/><rect x="1120" y="152" width="2" height="2"/><rect x="250" y="190" width="2" height="2"/><rect x="520" y="182" width="2" height="2"/><rect x="760" y="196" width="2" height="2"/><rect x="1050" y="188" width="2" height="2"/><rect x="1270" y="170" width="2" height="2"/><rect x="68" y="110" width="2" height="2"/></g><g fill="#070806"><rect x="40" y="232" width="3" height="52"/><rect x="78" y="250" width="2" height="34"/><rect x="118" y="214" width="4" height="70"/><rect x="166" y="244" width="2" height="40"/><rect x="205" y="226" width="3" height="58"/><rect x="250" y="256" width="2" height="28"/><rect x="292" y="208" width="4" height="76"/><rect x="340" y="240" width="2" height="44"/><rect x="380" y="222" width="3" height="62"/><rect x="428" y="252" width="2" height="32"/><rect x="470" y="200" width="5" height="84"/><rect x="524" y="238" width="2" height="46"/><rect x="566" y="218" width="3" height="66"/><rect x="612" y="248" width="2" height="36"/><rect x="656" y="228" width="3" height="56"/><rect x="700" y="256" width="2" height="28"/><rect x="744" y="210" width="4" height="74"/><rect x="796" y="242" width="2" height="42"/><rect x="838" y="224" width="3" height="60"/><rect x="884" y="252" width="2" height="32"/><rect x="926" y="206" width="4" height="78"/><rect x="978" y="240" width="2" height="44"/><rect x="1020" y="220" width="3" height="64"/><rect x="1066" y="250" width="2" height="34"/><rect x="1108" y="230" width="3" height="54"/><rect x="1152" y="256" width="2" height="28"/><rect x="1196" y="212" width="4" height="72"/><rect x="1248" y="244" width="2" height="40"/><rect x="1282" y="226" width="3" height="58"/></g><g fill="#ECEFE9" opacity=".035"><rect y="292" width="1296" height="1"/><rect y="308" width="1296" height="1"/><rect y="324" width="1296" height="1"/><rect y="340" width="1296" height="1"/><rect y="356" width="1296" height="1"/><rect y="372" width="1296" height="1"/><rect y="388" width="1296" height="1"/><rect y="404" width="1296" height="1"/><rect y="420" width="1296" height="1"/><rect y="436" width="1296" height="1"/></g></svg><div class="scan"></div><div class="art-lab"><span>3:50</span><span>one take</span><span>no coverage</span><span>graded warm</span></div><div class="art-lab2">Ashfall<br>dusk, managed burn</div></div></div>
+      <div class="cut" aria-hidden="true"><i></i><b></b></div>
+    </div>
+    <div class="ruler">
+      <span class="tk" style="left:169px"></span><span class="tk" style="left:338px"></span>
+      <span class="tk" style="left:507px"></span><span class="tk" style="left:676px"></span>
+      <span class="tk" style="left:846px"></span><span class="tk" style="left:1015px"></span>
+      <span class="tk" style="left:1184px"></span>
+      <span class="end num" style="left:0">0:00</span>
+      <span class="end num" style="right:0">3:50</span>
+      <span class="cutm" style="left:405px"></span>
+      <span class="cutl" style="left:406px">1:12, the cut in question</span>
+    </div>
+  </div>
+
+  <section class="pj-ask"><div class="wrap ask-g">
+    <div class="ask">
+      <span class="micro">The ask</span>
+      <p>Does the cut at 1:12 read as intentional, or as a mistake? Watch it once at full size before you read anything else.</p>
+      <span class="who"><span class="av sm">KM</span>Asked by Kwame Mensah, 6 days ago. It is the only cut in the film.</span>
+    </div>
+    <div class="about">
+      <span class="micro">About this build</span>
+      <p class="prose">Three minutes fifty, one take, shot at dusk beside a managed burn with a crew of five and a fire service liaison who was not enjoying himself. Locked cut, delivery Friday. Graded warm on purpose, which is the opposite of what I usually argue for.</p>
+      <dl>
+        <div class="r"><span>Runtime</span><b class="num">3:50</b></div>
+        <div class="r"><span>Cuts</span><b class="num">1</b></div>
+        <div class="r"><span>Delivery</span><b>Friday</b></div>
+        <div class="r"><span>Wants</span><b>Art direction, edit</b></div>
+      </dl>
+    </div>
+  </div></section>
+
+  <section class="dis"><div class="wrap dis-g">
+    <div class="dis-h">
+      <span class="micro">Where reviewers placed it · clarity of story</span>
+      <h2 class="h1"><span class="lt">Five reviewers.</span><br>Three steps apart.</h2>
+    </div>
+    <div class="dis-q">
+      <span class="micro">The axis</span>
+      <p>“Can you follow the through-line without rewinding?” Rated on the same 120 to 8000 scale the project is posted at.</p>
+    </div>
+
+    <div class="plot">
+      <div class="brk" aria-hidden="true"><span class="lab">the spread: 3 steps of 5</span><span class="b l"></span><span class="b m"></span><span class="b r"></span></div>
+      <div class="plot-c">
+        <div class="col"></div>
+        <div class="col"></div>
+        <div class="col">
+          <div class="rv out"><span class="av sm">JR</span><span>Jonas Reier</span><span class="tagout">outlier</span></div>
+        </div>
+        <div class="col is-median">
+          <div class="rv"><span class="av sm">SK</span><span>Suvi Kallio</span></div>
+          <div class="rv"><span class="av sm">AO</span><span>Ada Okonjo</span></div>
+          <div class="rv"><span class="av sm">TB</span><span>Tomás Brito</span></div>
+          <div class="med"></div>
+        </div>
+        <div class="col">
+          <div class="rv out"><span class="av sm">MH</span><span>Mira Halloran</span><span class="tagout">outlier</span></div>
+        </div>
+      </div>
+      <div class="axis">
+        <span class="a"><b class="num">120</b>concept</span>
+        <span class="a"><b class="num">400</b>prototype</span>
+        <span class="a"><b class="num">1000</b>beta</span>
+        <span class="a on"><b class="num">3000</b>median · release candidate</span>
+        <span class="a"><b class="num">8000</b>shipped</span>
+      </div>
+    </div>
+
+    <div class="dis-say">
+      <p>Three of them call it a release candidate. One says it is still a beta. One says it is already shipped. The median is 3000, and a median is all it is: the disagreement is the finding here, so read the two sitting on their own before you read the three that agree.</p>
+    </div>
+    <div class="readout">
+      <div class="r"><span>Reviewers</span><b class="num">5</b></div>
+      <div class="r"><span>Steps covered</span><b class="num">3 of 5</b></div>
+      <div class="r"><span>Median</span><b class="num">3000</b></div>
+      <div class="r"><span>Mean</span><b>not taken</b></div>
+    </div>
+
+    <div class="others">
+      <div><h4>Hook strength</h4><div class="sp" role="img" aria-label="All 5 reviewers at 8000"><i></i><i></i><i></i><i></i><i class="m"></i></div><p>5 reviewers, all at 8000. Agreed.</p></div>
+      <div><h4>Pacing and retention</h4><div class="sp" role="img" aria-label="2 at 3000, 3 at 8000, median 8000"><i></i><i></i><i></i><i class="f"></i><i class="m"></i></div><p>5 reviewers, one step apart. Median 8000.</p></div>
+      <div><h4>Production craft</h4><div class="sp" role="img" aria-label="2 at 3000, 3 at 8000, median 8000"><i></i><i></i><i></i><i class="f"></i><i class="m"></i></div><p>5 reviewers, one step apart. Median 8000.</p></div>
+      <div><h4>Payoff</h4><div class="sp" role="img" aria-label="3 at 3000, 2 at 8000, median 3000"><i></i><i></i><i></i><i class="m"></i><i class="f"></i></div><p>5 reviewers, one step apart. Median 3000.</p></div>
+    </div>
+  </div></section>
+
+  <section class="gs"><div class="wrap">
+    <div class="gs-h">
+      <h3 class="h3"><span class="lt">One scale,</span> 120 to 8000.</h3>
+      <p>Every project states how finished it is before anyone reviews it, so nobody sends a concept the notes a release candidate needs. Ashfall is posted at 3000.</p>
+    </div>
+    <div class="scale">
+      <div class="step done"><span class="wedge"></span><b class="num">120</b><span>concept. An idea written down.</span></div>
+      <div class="step done"><span class="wedge"></span><b class="num">400</b><span>prototype. It proves one thing and breaks elsewhere.</span></div>
+      <div class="step done"><span class="wedge"></span><b class="num">1000</b><span>beta. A stranger can use it unattended.</span></div>
+      <div class="step here"><span class="here-l">Ashfall is here</span><span class="wedge"></span><b class="num">3000</b><span>release candidate. Looking for the defect that would embarrass you.</span></div>
+      <div class="step"><span class="wedge"></span><b class="num">8000</b><span>shipped. Feedback now aims at the next version.</span></div>
+    </div>
+  </div></section>
+
+  <section class="notes"><div class="wrap">
+    <div class="notes-h">
+      <h3 class="h3">Notes</h3>
+      <span class="meta">5 notes from 5 people · 2 answered · 1 shipped</span>
+    </div>
+
+    <article class="note">
+      <div class="note-w">
+        <div class="nm"><span class="av lg">SK</span><b>Suvi Kallio</b></div>
+        <div class="meta"><span class="chip" style="height:22px">expert</span><br><span style="display:inline-block;margin-top:8px">4 days ago</span></div>
+      </div>
+      <div class="note-b">
+        <div class="note-toks">
+          <span class="tok">category <b>Onboarding</b></span>
+          <span class="tok hi">severity <b>high</b></span>
+          <span class="tok">written against <b>v3</b></span>
+        </div>
+        <p class="prose">Quit at the tutorial the first time, stayed the second. First attempt I closed it at about forty seconds. The meter started moving before I understood it was a timer, so I read it as a score I was losing.</p>
+        <div class="reply">
+          <div class="nm"><span class="av sm">KM</span>Kwame Mensah <span class="chip" style="height:20px">creator</span></div>
+          <p class="prose">That is the second person to read the meter as a score. The label now lands before the meter moves, and the first sweep is half speed. Thank you for staying for a second run.</p>
+        </div>
+      </div>
+      <div class="shipped">
+        <span class="ship-tag"><svg width="11" height="11" viewBox="0 0 11 11" aria-hidden="true"><path d="M1 5.6l3 3L10 1.6" fill="none" stroke="currentColor" stroke-width="2"/></svg>Shipped in v4</span>
+        <p>Suvi was told when it moved. The note stays attached to v3, so nobody reports it twice.</p>
+      </div>
+    </article>
+
+    <article class="note quiet">
+      <div class="note-w"><div class="nm"><span class="av">AO</span><b>Ada Okonjo</b></div></div>
+      <div class="note-b">
+        <div class="note-toks"><span class="tok">category <b>Art direction</b></span><span class="tok">severity <b>medium</b></span><span class="tok">against <b>v3</b></span></div>
+        <p class="prose">The warm grade is doing more work than you think it is, particularly in the last forty seconds where the burn line sits.</p>
+      </div>
+      <div class="shipped"><span class="meta">Open · 2 days ago</span></div>
+    </article>
+
+    <article class="note quiet">
+      <div class="note-w"><div class="nm"><span class="av">JR</span><b>Jonas Reier</b></div></div>
+      <div class="note-b">
+        <div class="note-toks"><span class="tok">category <b>Edit</b></span><span class="tok hi">severity <b>high</b></span><span class="tok">against <b>v3</b></span></div>
+        <p class="prose">I read the cut as a mistake on first watch and as a decision on second, which is the answer to your question, and it is not a good one.</p>
+      </div>
+      <div class="shipped"><span class="meta">Answered · 3 days ago</span></div>
+    </article>
+    <div class="hr" style="margin-top:0"></div>
+    <div style="display:flex;gap:16px;align-items:center;margin-top:28px">
+      <a class="btn btn-2 btn-sm" href="#">Show the other 2 notes</a>
+      <span class="meta">Sorted by severity, then by version.</span>
+    </div>
+  </div></section>
+
+  <div class="wrap"><footer class="foot">
+    <a class="mark" href="#" style="font-size:.9375rem"><span></span>Whetstone</a>
+    <ul><li><a href="#">Discover</a></li><li><a href="#">Discussions</a></li><li><a href="#">Ask for help</a></li><li><a href="#">Terms</a></li></ul>
+    <span class="num">© 2026</span>
+  </footer></div>
+</div>
+</div>
+<div class="plate">
+<div class="cap"><b>Screen 2</b> The same screen, light. Same composition, same measured contrast <i>1440 · light</i></div>
+<div class="screen desk" data-t="light">
+  <div class="wrap"><header class="nav">
+    <a class="mark" href="#" aria-label="Whetstone, home"><span></span>Whetstone</a>
+    <nav><a href="#">Discover</a><a href="#">Open asks</a><a href="#">Discussions</a><a href="#">Reviewers</a></nav>
+    <div class="nav-r">
+      <span class="kbd">Search <b>⌘</b><b>K</b></span>
+      <span class="av" aria-hidden="true">MS</span>
+    </div>
+  </header></div>
+
+  <section class="pj-head"><div class="wrap">
+    <div class="pj-t">
+      <h1>Ashfall</h1>
+      <p class="tagline">A one take music video shot at the edge of a controlled burn.</p>
+    </div>
+    <div class="pj-by">
+      <span class="who"><span class="av">KM</span>Kwame Mensah</span>
+      <span class="sep"></span>
+      <span class="meta">Video · posted 6 days ago</span>
+      <span class="sep"></span>
+      <span class="grit" role="img" aria-label="Grit 3000, release candidate"><span class="gbars" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i></i></span><span class="gn num">3000</span><span class="gw">release candidate</span></span>
+      <span class="chip pine">open for feedback</span>
+      <span class="push">
+        <a class="btn btn-2 btn-sm" href="#">Watch later</a>
+        <a class="btn btn-sm" href="#">Write a note</a>
+      </span>
+    </div>
+  </div></section>
+
+  <div class="wrap">
+    <div class="art-comp">
+      <div class="slice s-a"><div class="art"><svg viewBox="0 0 1296 440" preserveAspectRatio="none" aria-hidden="true"><rect width="1296" height="440" fill="#0B0E0A"/><rect y="90" width="1296" height="60" fill="#101409"/><rect y="150" width="1296" height="46" fill="#171B0E"/><rect y="196" width="1296" height="32" fill="#221F10"/><rect y="228" width="1296" height="20" fill="#33240F"/><rect y="248" width="1296" height="14" fill="#4E2C11"/><rect y="262" width="1296" height="10" fill="#7A3614"/><rect y="272" width="1296" height="8" fill="#A1381A"/><rect y="280" width="1296" height="4" fill="#E8B072"/><rect y="284" width="1296" height="156" fill="#0E0F0A"/><circle cx="995" cy="116" r="70" fill="none" stroke="#E8B072" stroke-width="1.5" opacity=".38"/><circle cx="995" cy="116" r="118" fill="none" stroke="#E8B072" stroke-width="1" opacity=".13"/><g fill="#ECEFE9"><rect y="64" width="1296" height="1" opacity=".07"/><rect y="112" width="1296" height="1" opacity=".05"/><rect y="168" width="1296" height="1" opacity=".10"/><rect y="212" width="1296" height="1" opacity=".14"/></g><g fill="#E8B072" opacity=".45"><rect x="120" y="62" width="2" height="2"/><rect x="210" y="38" width="2" height="2"/><rect x="300" y="96" width="2" height="2"/><rect x="392" y="54" width="2" height="2"/><rect x="470" y="120" width="2" height="2"/><rect x="548" y="44" width="2" height="2"/><rect x="640" y="84" width="2" height="2"/><rect x="712" y="132" width="2" height="2"/><rect x="790" y="58" width="2" height="2"/><rect x="868" y="102" width="2" height="2"/><rect x="940" y="40" width="2" height="2"/><rect x="1014" y="126" width="2" height="2"/><rect x="1088" y="70" width="2" height="2"/><rect x="1160" y="48" width="2" height="2"/><rect x="1232" y="110" width="2" height="2"/><rect x="160" y="148" width="2" height="2"/><rect x="360" y="160" width="2" height="2"/><rect x="600" y="142" width="2" height="2"/><rect x="840" y="166" width="2" height="2"/><rect x="1120" y="152" width="2" height="2"/><rect x="250" y="190" width="2" height="2"/><rect x="520" y="182" width="2" height="2"/><rect x="760" y="196" width="2" height="2"/><rect x="1050" y="188" width="2" height="2"/><rect x="1270" y="170" width="2" height="2"/><rect x="68" y="110" width="2" height="2"/></g><g fill="#070806"><rect x="40" y="232" width="3" height="52"/><rect x="78" y="250" width="2" height="34"/><rect x="118" y="214" width="4" height="70"/><rect x="166" y="244" width="2" height="40"/><rect x="205" y="226" width="3" height="58"/><rect x="250" y="256" width="2" height="28"/><rect x="292" y="208" width="4" height="76"/><rect x="340" y="240" width="2" height="44"/><rect x="380" y="222" width="3" height="62"/><rect x="428" y="252" width="2" height="32"/><rect x="470" y="200" width="5" height="84"/><rect x="524" y="238" width="2" height="46"/><rect x="566" y="218" width="3" height="66"/><rect x="612" y="248" width="2" height="36"/><rect x="656" y="228" width="3" height="56"/><rect x="700" y="256" width="2" height="28"/><rect x="744" y="210" width="4" height="74"/><rect x="796" y="242" width="2" height="42"/><rect x="838" y="224" width="3" height="60"/><rect x="884" y="252" width="2" height="32"/><rect x="926" y="206" width="4" height="78"/><rect x="978" y="240" width="2" height="44"/><rect x="1020" y="220" width="3" height="64"/><rect x="1066" y="250" width="2" height="34"/><rect x="1108" y="230" width="3" height="54"/><rect x="1152" y="256" width="2" height="28"/><rect x="1196" y="212" width="4" height="72"/><rect x="1248" y="244" width="2" height="40"/><rect x="1282" y="226" width="3" height="58"/></g><g fill="#ECEFE9" opacity=".035"><rect y="292" width="1296" height="1"/><rect y="308" width="1296" height="1"/><rect y="324" width="1296" height="1"/><rect y="340" width="1296" height="1"/><rect y="356" width="1296" height="1"/><rect y="372" width="1296" height="1"/><rect y="388" width="1296" height="1"/><rect y="404" width="1296" height="1"/><rect y="420" width="1296" height="1"/><rect y="436" width="1296" height="1"/></g></svg><div class="scan"></div><div class="art-lab"><span>3:50</span><span>one take</span><span>no coverage</span><span>graded warm</span></div><div class="art-lab2">Ashfall<br>dusk, managed burn</div></div></div>
+      <div class="slice s-b"><div class="art"><svg viewBox="0 0 1296 440" preserveAspectRatio="none" aria-hidden="true"><rect width="1296" height="440" fill="#0B0E0A"/><rect y="90" width="1296" height="60" fill="#101409"/><rect y="150" width="1296" height="46" fill="#171B0E"/><rect y="196" width="1296" height="32" fill="#221F10"/><rect y="228" width="1296" height="20" fill="#33240F"/><rect y="248" width="1296" height="14" fill="#4E2C11"/><rect y="262" width="1296" height="10" fill="#7A3614"/><rect y="272" width="1296" height="8" fill="#A1381A"/><rect y="280" width="1296" height="4" fill="#E8B072"/><rect y="284" width="1296" height="156" fill="#0E0F0A"/><circle cx="995" cy="116" r="70" fill="none" stroke="#E8B072" stroke-width="1.5" opacity=".38"/><circle cx="995" cy="116" r="118" fill="none" stroke="#E8B072" stroke-width="1" opacity=".13"/><g fill="#ECEFE9"><rect y="64" width="1296" height="1" opacity=".07"/><rect y="112" width="1296" height="1" opacity=".05"/><rect y="168" width="1296" height="1" opacity=".10"/><rect y="212" width="1296" height="1" opacity=".14"/></g><g fill="#E8B072" opacity=".45"><rect x="120" y="62" width="2" height="2"/><rect x="210" y="38" width="2" height="2"/><rect x="300" y="96" width="2" height="2"/><rect x="392" y="54" width="2" height="2"/><rect x="470" y="120" width="2" height="2"/><rect x="548" y="44" width="2" height="2"/><rect x="640" y="84" width="2" height="2"/><rect x="712" y="132" width="2" height="2"/><rect x="790" y="58" width="2" height="2"/><rect x="868" y="102" width="2" height="2"/><rect x="940" y="40" width="2" height="2"/><rect x="1014" y="126" width="2" height="2"/><rect x="1088" y="70" width="2" height="2"/><rect x="1160" y="48" width="2" height="2"/><rect x="1232" y="110" width="2" height="2"/><rect x="160" y="148" width="2" height="2"/><rect x="360" y="160" width="2" height="2"/><rect x="600" y="142" width="2" height="2"/><rect x="840" y="166" width="2" height="2"/><rect x="1120" y="152" width="2" height="2"/><rect x="250" y="190" width="2" height="2"/><rect x="520" y="182" width="2" height="2"/><rect x="760" y="196" width="2" height="2"/><rect x="1050" y="188" width="2" height="2"/><rect x="1270" y="170" width="2" height="2"/><rect x="68" y="110" width="2" height="2"/></g><g fill="#070806"><rect x="40" y="232" width="3" height="52"/><rect x="78" y="250" width="2" height="34"/><rect x="118" y="214" width="4" height="70"/><rect x="166" y="244" width="2" height="40"/><rect x="205" y="226" width="3" height="58"/><rect x="250" y="256" width="2" height="28"/><rect x="292" y="208" width="4" height="76"/><rect x="340" y="240" width="2" height="44"/><rect x="380" y="222" width="3" height="62"/><rect x="428" y="252" width="2" height="32"/><rect x="470" y="200" width="5" height="84"/><rect x="524" y="238" width="2" height="46"/><rect x="566" y="218" width="3" height="66"/><rect x="612" y="248" width="2" height="36"/><rect x="656" y="228" width="3" height="56"/><rect x="700" y="256" width="2" height="28"/><rect x="744" y="210" width="4" height="74"/><rect x="796" y="242" width="2" height="42"/><rect x="838" y="224" width="3" height="60"/><rect x="884" y="252" width="2" height="32"/><rect x="926" y="206" width="4" height="78"/><rect x="978" y="240" width="2" height="44"/><rect x="1020" y="220" width="3" height="64"/><rect x="1066" y="250" width="2" height="34"/><rect x="1108" y="230" width="3" height="54"/><rect x="1152" y="256" width="2" height="28"/><rect x="1196" y="212" width="4" height="72"/><rect x="1248" y="244" width="2" height="40"/><rect x="1282" y="226" width="3" height="58"/></g><g fill="#ECEFE9" opacity=".035"><rect y="292" width="1296" height="1"/><rect y="308" width="1296" height="1"/><rect y="324" width="1296" height="1"/><rect y="340" width="1296" height="1"/><rect y="356" width="1296" height="1"/><rect y="372" width="1296" height="1"/><rect y="388" width="1296" height="1"/><rect y="404" width="1296" height="1"/><rect y="420" width="1296" height="1"/><rect y="436" width="1296" height="1"/></g></svg><div class="scan"></div><div class="art-lab"><span>3:50</span><span>one take</span><span>no coverage</span><span>graded warm</span></div><div class="art-lab2">Ashfall<br>dusk, managed burn</div></div></div>
+      <div class="slice s-c"><div class="art"><svg viewBox="0 0 1296 440" preserveAspectRatio="none" aria-hidden="true"><rect width="1296" height="440" fill="#0B0E0A"/><rect y="90" width="1296" height="60" fill="#101409"/><rect y="150" width="1296" height="46" fill="#171B0E"/><rect y="196" width="1296" height="32" fill="#221F10"/><rect y="228" width="1296" height="20" fill="#33240F"/><rect y="248" width="1296" height="14" fill="#4E2C11"/><rect y="262" width="1296" height="10" fill="#7A3614"/><rect y="272" width="1296" height="8" fill="#A1381A"/><rect y="280" width="1296" height="4" fill="#E8B072"/><rect y="284" width="1296" height="156" fill="#0E0F0A"/><circle cx="995" cy="116" r="70" fill="none" stroke="#E8B072" stroke-width="1.5" opacity=".38"/><circle cx="995" cy="116" r="118" fill="none" stroke="#E8B072" stroke-width="1" opacity=".13"/><g fill="#ECEFE9"><rect y="64" width="1296" height="1" opacity=".07"/><rect y="112" width="1296" height="1" opacity=".05"/><rect y="168" width="1296" height="1" opacity=".10"/><rect y="212" width="1296" height="1" opacity=".14"/></g><g fill="#E8B072" opacity=".45"><rect x="120" y="62" width="2" height="2"/><rect x="210" y="38" width="2" height="2"/><rect x="300" y="96" width="2" height="2"/><rect x="392" y="54" width="2" height="2"/><rect x="470" y="120" width="2" height="2"/><rect x="548" y="44" width="2" height="2"/><rect x="640" y="84" width="2" height="2"/><rect x="712" y="132" width="2" height="2"/><rect x="790" y="58" width="2" height="2"/><rect x="868" y="102" width="2" height="2"/><rect x="940" y="40" width="2" height="2"/><rect x="1014" y="126" width="2" height="2"/><rect x="1088" y="70" width="2" height="2"/><rect x="1160" y="48" width="2" height="2"/><rect x="1232" y="110" width="2" height="2"/><rect x="160" y="148" width="2" height="2"/><rect x="360" y="160" width="2" height="2"/><rect x="600" y="142" width="2" height="2"/><rect x="840" y="166" width="2" height="2"/><rect x="1120" y="152" width="2" height="2"/><rect x="250" y="190" width="2" height="2"/><rect x="520" y="182" width="2" height="2"/><rect x="760" y="196" width="2" height="2"/><rect x="1050" y="188" width="2" height="2"/><rect x="1270" y="170" width="2" height="2"/><rect x="68" y="110" width="2" height="2"/></g><g fill="#070806"><rect x="40" y="232" width="3" height="52"/><rect x="78" y="250" width="2" height="34"/><rect x="118" y="214" width="4" height="70"/><rect x="166" y="244" width="2" height="40"/><rect x="205" y="226" width="3" height="58"/><rect x="250" y="256" width="2" height="28"/><rect x="292" y="208" width="4" height="76"/><rect x="340" y="240" width="2" height="44"/><rect x="380" y="222" width="3" height="62"/><rect x="428" y="252" width="2" height="32"/><rect x="470" y="200" width="5" height="84"/><rect x="524" y="238" width="2" height="46"/><rect x="566" y="218" width="3" height="66"/><rect x="612" y="248" width="2" height="36"/><rect x="656" y="228" width="3" height="56"/><rect x="700" y="256" width="2" height="28"/><rect x="744" y="210" width="4" height="74"/><rect x="796" y="242" width="2" height="42"/><rect x="838" y="224" width="3" height="60"/><rect x="884" y="252" width="2" height="32"/><rect x="926" y="206" width="4" height="78"/><rect x="978" y="240" width="2" height="44"/><rect x="1020" y="220" width="3" height="64"/><rect x="1066" y="250" width="2" height="34"/><rect x="1108" y="230" width="3" height="54"/><rect x="1152" y="256" width="2" height="28"/><rect x="1196" y="212" width="4" height="72"/><rect x="1248" y="244" width="2" height="40"/><rect x="1282" y="226" width="3" height="58"/></g><g fill="#ECEFE9" opacity=".035"><rect y="292" width="1296" height="1"/><rect y="308" width="1296" height="1"/><rect y="324" width="1296" height="1"/><rect y="340" width="1296" height="1"/><rect y="356" width="1296" height="1"/><rect y="372" width="1296" height="1"/><rect y="388" width="1296" height="1"/><rect y="404" width="1296" height="1"/><rect y="420" width="1296" height="1"/><rect y="436" width="1296" height="1"/></g></svg><div class="scan"></div><div class="art-lab"><span>3:50</span><span>one take</span><span>no coverage</span><span>graded warm</span></div><div class="art-lab2">Ashfall<br>dusk, managed burn</div></div></div>
+      <div class="cut" aria-hidden="true"><i></i><b></b></div>
+    </div>
+    <div class="ruler">
+      <span class="tk" style="left:169px"></span><span class="tk" style="left:338px"></span>
+      <span class="tk" style="left:507px"></span><span class="tk" style="left:676px"></span>
+      <span class="tk" style="left:846px"></span><span class="tk" style="left:1015px"></span>
+      <span class="tk" style="left:1184px"></span>
+      <span class="end num" style="left:0">0:00</span>
+      <span class="end num" style="right:0">3:50</span>
+      <span class="cutm" style="left:405px"></span>
+      <span class="cutl" style="left:406px">1:12, the cut in question</span>
+    </div>
+  </div>
+
+  <section class="pj-ask"><div class="wrap ask-g">
+    <div class="ask">
+      <span class="micro">The ask</span>
+      <p>Does the cut at 1:12 read as intentional, or as a mistake? Watch it once at full size before you read anything else.</p>
+      <span class="who"><span class="av sm">KM</span>Asked by Kwame Mensah, 6 days ago. It is the only cut in the film.</span>
+    </div>
+    <div class="about">
+      <span class="micro">About this build</span>
+      <p class="prose">Three minutes fifty, one take, shot at dusk beside a managed burn with a crew of five and a fire service liaison who was not enjoying himself. Locked cut, delivery Friday. Graded warm on purpose, which is the opposite of what I usually argue for.</p>
+      <dl>
+        <div class="r"><span>Runtime</span><b class="num">3:50</b></div>
+        <div class="r"><span>Cuts</span><b class="num">1</b></div>
+        <div class="r"><span>Delivery</span><b>Friday</b></div>
+        <div class="r"><span>Wants</span><b>Art direction, edit</b></div>
+      </dl>
+    </div>
+  </div></section>
+
+  <section class="dis"><div class="wrap dis-g">
+    <div class="dis-h">
+      <span class="micro">Where reviewers placed it · clarity of story</span>
+      <h2 class="h1"><span class="lt">Five reviewers.</span><br>Three steps apart.</h2>
+    </div>
+    <div class="dis-q">
+      <span class="micro">The axis</span>
+      <p>“Can you follow the through-line without rewinding?” Rated on the same 120 to 8000 scale the project is posted at.</p>
+    </div>
+
+    <div class="plot">
+      <div class="brk" aria-hidden="true"><span class="lab">the spread: 3 steps of 5</span><span class="b l"></span><span class="b m"></span><span class="b r"></span></div>
+      <div class="plot-c">
+        <div class="col"></div>
+        <div class="col"></div>
+        <div class="col">
+          <div class="rv out"><span class="av sm">JR</span><span>Jonas Reier</span><span class="tagout">outlier</span></div>
+        </div>
+        <div class="col is-median">
+          <div class="rv"><span class="av sm">SK</span><span>Suvi Kallio</span></div>
+          <div class="rv"><span class="av sm">AO</span><span>Ada Okonjo</span></div>
+          <div class="rv"><span class="av sm">TB</span><span>Tomás Brito</span></div>
+          <div class="med"></div>
+        </div>
+        <div class="col">
+          <div class="rv out"><span class="av sm">MH</span><span>Mira Halloran</span><span class="tagout">outlier</span></div>
+        </div>
+      </div>
+      <div class="axis">
+        <span class="a"><b class="num">120</b>concept</span>
+        <span class="a"><b class="num">400</b>prototype</span>
+        <span class="a"><b class="num">1000</b>beta</span>
+        <span class="a on"><b class="num">3000</b>median · release candidate</span>
+        <span class="a"><b class="num">8000</b>shipped</span>
+      </div>
+    </div>
+
+    <div class="dis-say">
+      <p>Three of them call it a release candidate. One says it is still a beta. One says it is already shipped. The median is 3000, and a median is all it is: the disagreement is the finding here, so read the two sitting on their own before you read the three that agree.</p>
+    </div>
+    <div class="readout">
+      <div class="r"><span>Reviewers</span><b class="num">5</b></div>
+      <div class="r"><span>Steps covered</span><b class="num">3 of 5</b></div>
+      <div class="r"><span>Median</span><b class="num">3000</b></div>
+      <div class="r"><span>Mean</span><b>not taken</b></div>
+    </div>
+
+    <div class="others">
+      <div><h4>Hook strength</h4><div class="sp" role="img" aria-label="All 5 reviewers at 8000"><i></i><i></i><i></i><i></i><i class="m"></i></div><p>5 reviewers, all at 8000. Agreed.</p></div>
+      <div><h4>Pacing and retention</h4><div class="sp" role="img" aria-label="2 at 3000, 3 at 8000, median 8000"><i></i><i></i><i></i><i class="f"></i><i class="m"></i></div><p>5 reviewers, one step apart. Median 8000.</p></div>
+      <div><h4>Production craft</h4><div class="sp" role="img" aria-label="2 at 3000, 3 at 8000, median 8000"><i></i><i></i><i></i><i class="f"></i><i class="m"></i></div><p>5 reviewers, one step apart. Median 8000.</p></div>
+      <div><h4>Payoff</h4><div class="sp" role="img" aria-label="3 at 3000, 2 at 8000, median 3000"><i></i><i></i><i></i><i class="m"></i><i class="f"></i></div><p>5 reviewers, one step apart. Median 3000.</p></div>
+    </div>
+  </div></section>
+
+  <section class="gs"><div class="wrap">
+    <div class="gs-h">
+      <h3 class="h3"><span class="lt">One scale,</span> 120 to 8000.</h3>
+      <p>Every project states how finished it is before anyone reviews it, so nobody sends a concept the notes a release candidate needs. Ashfall is posted at 3000.</p>
+    </div>
+    <div class="scale">
+      <div class="step done"><span class="wedge"></span><b class="num">120</b><span>concept. An idea written down.</span></div>
+      <div class="step done"><span class="wedge"></span><b class="num">400</b><span>prototype. It proves one thing and breaks elsewhere.</span></div>
+      <div class="step done"><span class="wedge"></span><b class="num">1000</b><span>beta. A stranger can use it unattended.</span></div>
+      <div class="step here"><span class="here-l">Ashfall is here</span><span class="wedge"></span><b class="num">3000</b><span>release candidate. Looking for the defect that would embarrass you.</span></div>
+      <div class="step"><span class="wedge"></span><b class="num">8000</b><span>shipped. Feedback now aims at the next version.</span></div>
+    </div>
+  </div></section>
+
+  <section class="notes"><div class="wrap">
+    <div class="notes-h">
+      <h3 class="h3">Notes</h3>
+      <span class="meta">5 notes from 5 people · 2 answered · 1 shipped</span>
+    </div>
+
+    <article class="note">
+      <div class="note-w">
+        <div class="nm"><span class="av lg">SK</span><b>Suvi Kallio</b></div>
+        <div class="meta"><span class="chip" style="height:22px">expert</span><br><span style="display:inline-block;margin-top:8px">4 days ago</span></div>
+      </div>
+      <div class="note-b">
+        <div class="note-toks">
+          <span class="tok">category <b>Onboarding</b></span>
+          <span class="tok hi">severity <b>high</b></span>
+          <span class="tok">written against <b>v3</b></span>
+        </div>
+        <p class="prose">Quit at the tutorial the first time, stayed the second. First attempt I closed it at about forty seconds. The meter started moving before I understood it was a timer, so I read it as a score I was losing.</p>
+        <div class="reply">
+          <div class="nm"><span class="av sm">KM</span>Kwame Mensah <span class="chip" style="height:20px">creator</span></div>
+          <p class="prose">That is the second person to read the meter as a score. The label now lands before the meter moves, and the first sweep is half speed. Thank you for staying for a second run.</p>
+        </div>
+      </div>
+      <div class="shipped">
+        <span class="ship-tag"><svg width="11" height="11" viewBox="0 0 11 11" aria-hidden="true"><path d="M1 5.6l3 3L10 1.6" fill="none" stroke="currentColor" stroke-width="2"/></svg>Shipped in v4</span>
+        <p>Suvi was told when it moved. The note stays attached to v3, so nobody reports it twice.</p>
+      </div>
+    </article>
+
+    <article class="note quiet">
+      <div class="note-w"><div class="nm"><span class="av">AO</span><b>Ada Okonjo</b></div></div>
+      <div class="note-b">
+        <div class="note-toks"><span class="tok">category <b>Art direction</b></span><span class="tok">severity <b>medium</b></span><span class="tok">against <b>v3</b></span></div>
+        <p class="prose">The warm grade is doing more work than you think it is, particularly in the last forty seconds where the burn line sits.</p>
+      </div>
+      <div class="shipped"><span class="meta">Open · 2 days ago</span></div>
+    </article>
+
+    <article class="note quiet">
+      <div class="note-w"><div class="nm"><span class="av">JR</span><b>Jonas Reier</b></div></div>
+      <div class="note-b">
+        <div class="note-toks"><span class="tok">category <b>Edit</b></span><span class="tok hi">severity <b>high</b></span><span class="tok">against <b>v3</b></span></div>
+        <p class="prose">I read the cut as a mistake on first watch and as a decision on second, which is the answer to your question, and it is not a good one.</p>
+      </div>
+      <div class="shipped"><span class="meta">Answered · 3 days ago</span></div>
+    </article>
+    <div class="hr" style="margin-top:0"></div>
+    <div style="display:flex;gap:16px;align-items:center;margin-top:28px">
+      <a class="btn btn-2 btn-sm" href="#">Show the other 2 notes</a>
+      <span class="meta">Sorted by severity, then by version.</span>
+    </div>
+  </div></section>
+
+  <div class="wrap"><footer class="foot">
+    <a class="mark" href="#" style="font-size:.9375rem"><span></span>Whetstone</a>
+    <ul><li><a href="#">Discover</a></li><li><a href="#">Discussions</a></li><li><a href="#">Ask for help</a></li><li><a href="#">Terms</a></li></ul>
+    <span class="num">© 2026</span>
+  </footer></div>
+</div>
+</div>
+<style>
+/* ---------- PROJECT PAGE, 390 ---------- */
+.mob .pj-head{padding:28px 0 24px}
+.mob .pj-t{display:block}
+.mob .pj-t h1{font-size:3.25rem;margin-left:-.04em}
+.mob .pj-t .tagline{font-size:1.125rem;padding:14px 0 0;max-width:30ch}
+.mob .pj-by{margin-top:22px;gap:12px;padding-top:14px}
+.mob .pj-by .sep,.mob .pj-by .push{display:none}
+.mob .mart{position:relative;height:206px;border:1px solid var(--art-frame);overflow:hidden;background:#0C0F0B}
+.mob .mart svg{display:block;width:100%;height:100%}
+.mob .mart .scan{width:100%;height:206px}
+.mob .mart .mcut{position:absolute;left:31%;top:0;width:2px;height:206px;background:var(--mark);z-index:3}
+.mob .mart .art-lab{position:absolute;left:12px;bottom:10px;z-index:2;gap:10px}
+.mob .ruler{height:52px;margin-top:14px}
+.mob .pj-ask{padding:36px 0 44px}
+.mob .ask-g{display:block}
+.mob .ask{padding-left:18px}
+.mob .ask p{font-size:1.375rem;max-width:none}
+.mob .about{margin-top:36px}
+.mob .about .prose{max-width:none}
+.mob .dis{padding:48px 0 44px}
+.mob .dis-g{display:block}
+.mob .dis-h h2{font-size:2rem}
+.mob .dis-q{padding-top:20px}
+.mob .plot{margin-top:28px}
+.mob .plot-c{display:block;min-height:0}
+.mob .mrow{display:grid;grid-template-columns:72px 1fr;gap:12px;align-items:center;
+  border-top:1px solid var(--stage-rule);padding:8px 0;min-height:46px}
+.mob .mrow .lab{font-size:var(--t-2xs);color:var(--stage-3);letter-spacing:.06em;text-transform:uppercase}
+.mob .mrow .lab b{display:block;font-size:1rem;letter-spacing:-.02em;text-transform:none;
+  font-variation-settings:'wght' 700;font-variant-numeric:tabular-nums;color:var(--stage-2)}
+.mob .mrow.on{border-top-color:var(--stage-mark)}
+.mob .mrow.on .lab,.mob .mrow.on .lab b{color:var(--stage-mark)}
+.mob .mrow .none{font-size:var(--t-xs);color:var(--stage-3)}
+.mob .mrow .rvs{display:flex;flex-direction:column;gap:6px}
+.mob .dis-say{margin-top:28px}
+.mob .dis-say p{font-size:1.1875rem;max-width:none}
+.mob .readout{margin-top:24px}
+.mob .others{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:32px}
+.mob .gs{padding:44px 0}
+.mob .gs-h{display:block;margin-bottom:28px}
+.mob .gs-h p{margin-top:12px;max-width:none}
+.mob .scale{gap:8px}
+.mob .step:nth-child(1) .wedge{height:10px}.mob .step:nth-child(2) .wedge{height:18px}
+.mob .step:nth-child(3) .wedge{height:28px}.mob .step:nth-child(4) .wedge{height:42px}
+.mob .step:nth-child(5) .wedge{height:60px}
+.mob .step b{font-size:.9375rem;margin-top:8px}
+.mob .step span:not(.wedge):not(.here-l){display:none}
+.mob .step .here-l{display:block;top:-24px;font-size:9px}
+.mob .notes{padding-bottom:44px}
+.mob .note{display:block;padding:22px 0}
+.mob .note-w .meta{padding-left:0;margin-top:12px}
+.mob .note-b{margin-top:14px}
+.mob .shipped{margin-top:18px}
+.mob .reply{padding-left:16px}
+</style>
+
+<div class="plate">
+<div class="cap"><b>Screen 2</b> Project page <i>390 · light · the slice collapses to one frame, the plot turns on its side</i></div>
+<div class="screen mob" data-t="light">
+  <div class="wrap"><header class="nav">
+    <a class="mark" href="#"><span></span>Whetstone</a>
+    <span class="av" aria-hidden="true">MS</span>
+  </header></div>
+
+  <section class="pj-head"><div class="wrap">
+    <div class="pj-t">
+      <h1>Ashfall</h1>
+      <p class="tagline">A one take music video shot at the edge of a controlled burn.</p>
+    </div>
+    <div class="pj-by">
+      <span class="who"><span class="av sm">KM</span>Kwame Mensah</span>
+      <span class="meta">Video</span>
+      <span class="grit" role="img" aria-label="Grit 3000, release candidate"><span class="gbars" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i></i></span><span class="gn num">3000</span></span>
+      <span class="chip pine">open</span>
+    </div>
+  </div></section>
+
+  <div class="wrap">
+    <div class="mart">
+      <svg viewBox="0 0 400 200" preserveAspectRatio="none" aria-hidden="true">
+        <rect width="400" height="200" fill="#0C0F0B"/><rect y="60" width="400" height="32" fill="#13160F"/><rect y="92" width="400" height="26" fill="#1C1E13"/><rect y="118" width="400" height="18" fill="#2B2917"/><rect y="136" width="400" height="12" fill="#45361C"/><rect y="148" width="400" height="8" fill="#6E4720"/><rect y="156" width="400" height="6" fill="#A1381A"/><rect y="162" width="400" height="2" fill="#E8B072"/><rect y="164" width="400" height="36" fill="#14150E"/>
+        <rect y="114" width="400" height="1" fill="#ECEFE9" opacity=".13"/>
+        <g fill="#0A0B08"><rect x="24" y="132" width="2" height="32"/><rect x="52" y="140" width="2" height="24"/><rect x="96" y="126" width="2" height="38"/><rect x="140" y="144" width="2" height="20"/><rect x="188" y="134" width="2" height="30"/><rect x="232" y="148" width="2" height="16"/><rect x="286" y="128" width="2" height="36"/><rect x="332" y="142" width="2" height="22"/><rect x="368" y="136" width="2" height="28"/></g>
+        <g fill="#E8B072" opacity=".5"><rect x="60" y="40" width="2" height="2"/><rect x="150" y="70" width="2" height="2"/><rect x="240" y="30" width="2" height="2"/><rect x="320" y="56" width="2" height="2"/></g>
+      </svg>
+      <div class="scan"></div>
+      <span class="mcut"></span>
+      <div class="art-lab"><span>3:50</span><span>one take</span><span>no coverage</span></div>
+    </div>
+    <div class="ruler">
+      <span class="tk" style="left:44px"></span><span class="tk" style="left:89px"></span><span class="tk" style="left:134px"></span><span class="tk" style="left:178px"></span><span class="tk" style="left:223px"></span><span class="tk" style="left:268px"></span><span class="tk" style="left:312px"></span>
+      <span class="end num" style="left:0">0:00</span><span class="end num" style="right:0">3:50</span>
+      <span class="cutm" style="left:106px"></span>
+      <span class="cutl" style="left:107px">1:12, the cut</span>
+    </div>
+  </div>
+
+  <section class="pj-ask"><div class="wrap ask-g">
+    <div class="ask">
+      <span class="micro">The ask</span>
+      <p>Does the cut at 1:12 read as intentional, or as a mistake? Watch it once at full size before you read anything else.</p>
+      <span class="who"><span class="av sm">KM</span>Asked 6 days ago. It is the only cut in the film.</span>
+    </div>
+    <div class="about">
+      <span class="micro">About this build</span>
+      <p class="prose">Three minutes fifty, one take, shot at dusk beside a managed burn with a crew of five and a fire service liaison who was not enjoying himself. Locked cut, delivery Friday. Graded warm on purpose, which is the opposite of what I usually argue for.</p>
+      <dl>
+        <div class="r"><span>Runtime</span><b class="num">3:50</b></div>
+        <div class="r"><span>Cuts</span><b class="num">1</b></div>
+        <div class="r"><span>Delivery</span><b>Friday</b></div>
+      </dl>
+    </div>
+  </div></section>
+
+  <section class="dis"><div class="wrap dis-g">
+    <div class="dis-h">
+      <span class="micro">Clarity of story</span>
+      <h2 class="h1"><span class="lt">Five reviewers.</span><br>Three steps apart.</h2>
+    </div>
+    <div class="dis-q"><p>“Can you follow the through-line without rewinding?”</p></div>
+    <div class="plot"><div class="plot-c">
+      <div class="mrow"><span class="lab"><b class="num">120</b>concept</span><span class="none">nobody</span></div>
+      <div class="mrow"><span class="lab"><b class="num">400</b>prototype</span><span class="none">nobody</span></div>
+      <div class="mrow"><span class="lab"><b class="num">1000</b>beta</span><div class="rvs"><div class="rv out"><span class="av sm">JR</span><span>Jonas Reier</span><span class="tagout">outlier</span></div></div></div>
+      <div class="mrow on"><span class="lab"><b class="num">3000</b>median</span><div class="rvs"><div class="rv"><span class="av sm">SK</span><span>Suvi Kallio</span></div><div class="rv"><span class="av sm">AO</span><span>Ada Okonjo</span></div><div class="rv"><span class="av sm">TB</span><span>Tomás Brito</span></div></div></div>
+      <div class="mrow"><span class="lab"><b class="num">8000</b>shipped</span><div class="rvs"><div class="rv out"><span class="av sm">MH</span><span>Mira Halloran</span><span class="tagout">outlier</span></div></div></div>
+    </div></div>
+    <div class="dis-say"><p>Three call it a release candidate. One says it is still a beta. One says it is already shipped. The disagreement is the finding, so read the two sitting on their own first.</p></div>
+    <div class="readout">
+      <div class="r"><span>Steps covered</span><b class="num">3 of 5</b></div>
+      <div class="r"><span>Median</span><b class="num">3000</b></div>
+      <div class="r"><span>Mean</span><b>not taken</b></div>
+    </div>
+    <div class="others">
+      <div><h4>Hook strength</h4><div class="sp" role="img" aria-label="all five at 8000"><i></i><i></i><i></i><i></i><i class="m"></i></div><p>All at 8000. Agreed.</p></div>
+      <div><h4>Payoff</h4><div class="sp" role="img" aria-label="three at 3000, two at 8000"><i></i><i></i><i></i><i class="m"></i><i class="f"></i></div><p>One step apart. Median 3000.</p></div>
+    </div>
+  </div></section>
+
+  <section class="gs"><div class="wrap">
+    <div class="gs-h">
+      <h3 class="h3"><span class="lt">One scale,</span> 120 to 8000.</h3>
+      <p>Every project states how finished it is before anyone reviews it. Ashfall is posted at 3000, release candidate.</p>
+    </div>
+    <div class="scale">
+      <div class="step done"><span class="wedge"></span><b class="num">120</b></div>
+      <div class="step done"><span class="wedge"></span><b class="num">400</b></div>
+      <div class="step done"><span class="wedge"></span><b class="num">1000</b></div>
+      <div class="step here"><span class="here-l">here</span><span class="wedge"></span><b class="num">3000</b></div>
+      <div class="step"><span class="wedge"></span><b class="num">8000</b></div>
+    </div>
+  </div></section>
+
+  <section class="notes"><div class="wrap">
+    <div class="notes-h"><h3 class="h3">Notes</h3><span class="meta">5 · 1 shipped</span></div>
+    <article class="note">
+      <div class="note-w">
+        <div class="nm"><span class="av lg">SK</span><b>Suvi Kallio</b></div>
+        <div class="meta"><span class="chip" style="height:22px">expert</span> <span>4 days ago</span></div>
+      </div>
+      <div class="note-b">
+        <div class="note-toks"><span class="tok">category <b>Onboarding</b></span><span class="tok hi">severity <b>high</b></span><span class="tok">against <b>v3</b></span></div>
+        <p class="prose">Quit at the tutorial the first time, stayed the second. First attempt I closed it at about forty seconds. The meter started moving before I understood it was a timer, so I read it as a score I was losing.</p>
+        <div class="reply">
+          <div class="nm"><span class="av sm">KM</span>Kwame Mensah <span class="chip" style="height:20px">creator</span></div>
+          <p class="prose">That is the second person to read the meter as a score. The label now lands before the meter moves.</p>
+        </div>
+      </div>
+      <div class="shipped">
+        <span class="ship-tag"><svg width="11" height="11" viewBox="0 0 11 11" aria-hidden="true"><path d="M1 5.6l3 3L10 1.6" fill="none" stroke="currentColor" stroke-width="2"/></svg>Shipped in v4</span>
+        <p>Suvi was told when it moved. The note stays attached to v3.</p>
+      </div>
+    </article>
+  </div></section>
+  <div class="wrap"><footer class="foot">
+    <a class="mark" href="#" style="font-size:.9375rem"><span></span>Whetstone</a>
+    <ul><li><a href="#">Discover</a></li><li><a href="#">Ask for help</a></li></ul>
+  </footer></div>
+</div>
+</div>
+<style>
+/* ---------- COMPONENT PLATE ---------- */
+.cplate{width:628px;padding:40px}
+.cgroup{border-top:1px solid var(--ink-1);padding:20px 0 28px}
+.cgroup+.cgroup{border-top:1px solid var(--rule)}
+.crow{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-top:16px}
+.cstate{display:flex;flex-direction:column;gap:8px}
+.cstate .micro{font-size:10px}
+.field{max-width:320px;margin-top:16px}
+.field label{display:block;font-size:var(--t-sm);font-variation-settings:'wght' 650;color:var(--ink-1);margin-bottom:7px}
+.field .hint{font-size:var(--t-xs);color:var(--ink-3);margin-bottom:9px}
+.field input{width:100%;height:44px;padding:0 12px;font:inherit;font-size:1rem;color:var(--ink-1);
+  background:var(--sunk);border:1px solid var(--edge);border-radius:var(--r-2);
+  transition:border-color var(--d-2) var(--e-out)}
+.field input::placeholder{color:var(--ink-3)}
+.field input:hover{border-color:var(--ink-2)}
+.field input:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-color:var(--ink-1)}
+.field.err input{border-color:var(--ember)}
+.field .msg{display:flex;gap:7px;align-items:flex-start;margin-top:9px;font-size:var(--t-xs);color:var(--ember);line-height:1.45}
+.field .msg svg{flex:none;margin-top:2px}
+/* ---------- SPEC ---------- */
+.spec{width:1440px;padding:56px 72px 72px}
+.spec h2{margin-bottom:10px}
+.spec .sub{font-size:var(--t-base);color:var(--ink-2);max-width:62ch;line-height:1.6;margin-bottom:40px}
+.spec h3{margin:44px 0 16px;font-size:var(--t-md);font-variation-settings:'opsz' 20,'wght' 700}
+.spec table{width:100%;border-collapse:collapse;font-size:var(--t-xs);font-variant-numeric:tabular-nums}
+.spec th{text-align:left;font-size:var(--t-2xs);letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ink-3);font-variation-settings:'wght' 650;padding:0 14px 8px 0;border-bottom:1px solid var(--ink-1)}
+.spec td{padding:8px 14px 8px 0;border-bottom:1px solid var(--rule);color:var(--ink-2);vertical-align:top}
+.spec td b{color:var(--ink-1);font-variation-settings:'wght' 650}
+.spec .sw{display:inline-block;width:20px;height:14px;border:1px solid var(--edge);vertical-align:-2px;margin-right:9px}
+.spec .two{display:grid;grid-template-columns:1fr 1fr;gap:56px}
+.spec .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:56px}
+.spec code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--ink-1)}
+</style>
+
+<div class="plate">
+<div class="cap"><b>Components</b> rest · hover · focus-visible <i>both themes, same geometry</i></div>
+<div class="row2">
+  <div class="screen cplate" data-t="light">
+    <div class="cgroup">
+      <span class="micro">Primary and secondary</span>
+      <div class="crow">
+        <span class="cstate"><span class="micro">rest</span><button class="btn">Post a project</button></span>
+        <span class="cstate"><span class="micro">hover</span><button class="btn is-hover">Post a project</button></span>
+        <span class="cstate"><span class="micro">focus-visible</span><button class="btn is-focus">Post a project</button></span>
+      </div>
+      <div class="crow">
+        <span class="cstate"><span class="micro">rest</span><button class="btn btn-2">Read the asks</button></span>
+        <span class="cstate"><span class="micro">hover</span><button class="btn btn-2 is-hover">Read the asks</button></span>
+        <span class="cstate"><span class="micro">focus-visible</span><button class="btn btn-2 is-focus">Read the asks</button></span>
+      </div>
+    </div>
+    <div class="cgroup">
+      <span class="micro">Input, label, error</span>
+      <div class="field err">
+        <label for="f1">Version this note is written against</label>
+        <span class="hint">The build you actually watched. It stays attached to the note.</span>
+        <input id="f1" type="text" value="v" aria-describedby="e1" aria-invalid="true">
+        <span class="msg" id="e1"><svg width="13" height="13" viewBox="0 0 13 13" aria-hidden="true"><rect x="1" y="1" width="11" height="11" fill="none" stroke="currentColor"/><path d="M6.5 3.5v4" stroke="currentColor"/><rect x="6" y="8.6" width="1" height="1.2" fill="currentColor"/></svg>Error: a version looks like v3 or 2.1.4. Nothing else will sort.</span>
+      </div>
+    </div>
+    <div class="cgroup">
+      <span class="micro">Chips, tokens, avatar, grit</span>
+      <div class="crow">
+        <span class="chip">expert</span><span class="chip ember"><b></b>high</span><span class="chip pine">open for feedback</span><span class="chip on">shipped</span>
+        <span class="tok">category <b>Onboarding</b></span>
+        <span class="av">SK</span><span class="av lg">KM</span>
+        <span class="grit" role="img" aria-label="Grit 3000, release candidate"><span class="gbars" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i></i></span><span class="gn num">3000</span><span class="gw">release candidate</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen cplate" data-t="dark">
+    <div class="cgroup">
+      <span class="micro">Primary and secondary</span>
+      <div class="crow">
+        <span class="cstate"><span class="micro">rest</span><button class="btn">Post a project</button></span>
+        <span class="cstate"><span class="micro">hover</span><button class="btn is-hover">Post a project</button></span>
+        <span class="cstate"><span class="micro">focus-visible</span><button class="btn is-focus">Post a project</button></span>
+      </div>
+      <div class="crow">
+        <span class="cstate"><span class="micro">rest</span><button class="btn btn-2">Read the asks</button></span>
+        <span class="cstate"><span class="micro">hover</span><button class="btn btn-2 is-hover">Read the asks</button></span>
+        <span class="cstate"><span class="micro">focus-visible</span><button class="btn btn-2 is-focus">Read the asks</button></span>
+      </div>
+    </div>
+    <div class="cgroup">
+      <span class="micro">Input, label, error</span>
+      <div class="field err">
+        <label for="f2">Version this note is written against</label>
+        <span class="hint">The build you actually watched. It stays attached to the note.</span>
+        <input id="f2" type="text" value="v" aria-describedby="e2" aria-invalid="true">
+        <span class="msg" id="e2"><svg width="13" height="13" viewBox="0 0 13 13" aria-hidden="true"><rect x="1" y="1" width="11" height="11" fill="none" stroke="currentColor"/><path d="M6.5 3.5v4" stroke="currentColor"/><rect x="6" y="8.6" width="1" height="1.2" fill="currentColor"/></svg>Error: a version looks like v3 or 2.1.4. Nothing else will sort.</span>
+      </div>
+    </div>
+    <div class="cgroup">
+      <span class="micro">Chips, tokens, avatar, grit</span>
+      <div class="crow">
+        <span class="chip">expert</span><span class="chip ember"><b></b>high</span><span class="chip pine">open for feedback</span><span class="chip on">shipped</span>
+        <span class="tok">category <b>Onboarding</b></span>
+        <span class="av">SK</span><span class="av lg">KM</span>
+        <span class="grit" role="img" aria-label="Grit 3000, release candidate"><span class="gbars" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i></i></span><span class="gn num">3000</span><span class="gw">release candidate</span></span>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<div class="plate">
+<div class="cap"><b>Spec</b> tokens, measured <i>WCAG 2.2 AA · body floor 4.5:1 · non-text and large text floor 3:1</i></div>
+<div class="screen spec" data-t="light">
+  <h2 class="h2"><span class="lt">Salon Hang,</span> measured.</h2>
+  <p class="sub">Every ratio below is computed, not estimated. Citron is the identity mark and it is a fill only: it always carries near-black ink on it and a perceivable border, because citron against light paper is 1.24:1 and would fail as a line or a word. In light the text role of that family is olive #4C5A0E.</p>
+
+  <div class="two">
+    <div>
+      <h3>Colour, light theme</h3>
+      <table>
+        <thead><tr><th>Token</th><th>Hex</th><th>on paper<br>#ECEFE9</th><th>on panel<br>#F6F8F3</th><th>on sunk<br>#E1E5DC</th></tr></thead>
+        <tbody>
+          <tr><td><span class="sw" style="background:#101410"></span><b>ink-1</b> headings, values, primary fill</td><td>#101410</td><td>16.01</td><td>17.39</td><td>14.56</td></tr>
+          <tr><td><span class="sw" style="background:#3A453C"></span><b>ink-2</b> body, prose</td><td>#3A453C</td><td>8.63</td><td>9.37</td><td>7.84</td></tr>
+          <tr><td><span class="sw" style="background:#59655B"></span><b>ink-3</b> metadata, counts</td><td>#59655B</td><td>5.26</td><td>5.71</td><td>4.78</td></tr>
+          <tr><td><span class="sw" style="background:#A1381A"></span><b>ember</b> high severity, error</td><td>#A1381A</td><td>5.84</td><td>6.34</td><td>5.31</td></tr>
+          <tr><td><span class="sw" style="background:#1C5C3E"></span><b>pine</b> open, resolved</td><td>#1C5C3E</td><td>6.83</td><td>7.41</td><td>6.21</td></tr>
+          <tr><td><span class="sw" style="background:#4C5A0E"></span><b>mark-line</b> the ask rule, citron as text</td><td>#4C5A0E</td><td>6.52</td><td>7.07</td><td>5.92</td></tr>
+          <tr><td><span class="sw" style="background:#6C786E"></span><b>edge</b> every control boundary</td><td>#6C786E</td><td>3.98</td><td>4.32</td><td>3.61</td></tr>
+          <tr><td><span class="sw" style="background:#CCD3C7"></span><b>rule</b> decorative hairline only</td><td>#CCD3C7</td><td>1.32</td><td>1.43</td><td>1.20</td></tr>
+          <tr><td><span class="sw" style="background:#CBE33F"></span><b>mark</b> citron, fill only</td><td>#CBE33F</td><td colspan="3">1.24 against paper, so never a line or a word. Ink on citron: <b>12.92</b>. Always bordered in #4C5A0E.</td></tr>
+        </tbody>
+      </table>
+      <h3>Ink on fills, light</h3>
+      <table><tbody>
+        <tr><td>#ECEFE9 on ink-1 #101410 (primary button)</td><td><b>16.01</b></td></tr>
+        <tr><td>#101410 on citron #CBE33F (shipped tag)</td><td><b>12.92</b></td></tr>
+        <tr><td>#ECEFE9 on ember #A1381A</td><td><b>5.84</b></td></tr>
+        <tr><td>#ECEFE9 on pine #1C5C3E</td><td><b>6.83</b></td></tr>
+      </tbody></table>
+      <h3>The stage, light (the inverted band)</h3>
+      <table><tbody>
+        <tr><td><span class="sw" style="background:#101410"></span>ground #101410</td><td>stage-1 #ECEFE9 <b>16.01</b> · stage-2 #A7B2A3 <b>8.45</b> · stage-3 #8A968A <b>6.03</b> · citron #CBE33F <b>12.92</b> · edge #6C786E <b>4.03</b></td></tr>
+      </tbody></table>
+    </div>
+
+    <div>
+      <h3>Colour, dark theme</h3>
+      <table>
+        <thead><tr><th>Token</th><th>Hex</th><th>on ground<br>#0F130E</th><th>on panel<br>#171C15</th><th>on sunk<br>#090C08</th></tr></thead>
+        <tbody>
+          <tr><td><span class="sw" style="background:#E9EDE2"></span><b>ink-1</b></td><td>#E9EDE2</td><td>15.79</td><td>14.57</td><td>16.56</td></tr>
+          <tr><td><span class="sw" style="background:#B5BFB0"></span><b>ink-2</b></td><td>#B5BFB0</td><td>9.86</td><td>9.10</td><td>10.34</td></tr>
+          <tr><td><span class="sw" style="background:#8C9788"></span><b>ink-3</b></td><td>#8C9788</td><td>6.16</td><td>5.68</td><td>6.46</td></tr>
+          <tr><td><span class="sw" style="background:#F2977A"></span><b>ember</b></td><td>#F2977A</td><td>8.47</td><td>7.82</td><td>8.88</td></tr>
+          <tr><td><span class="sw" style="background:#83D2A0"></span><b>pine</b></td><td>#83D2A0</td><td>10.44</td><td>9.64</td><td>10.95</td></tr>
+          <tr><td><span class="sw" style="background:#D3EC55"></span><b>mark</b> citron, text and fill here</td><td>#D3EC55</td><td>14.20</td><td>13.10</td><td>14.89</td></tr>
+          <tr><td><span class="sw" style="background:#77836F"></span><b>edge</b></td><td>#77836F</td><td>4.70</td><td>4.34</td><td>4.93</td></tr>
+          <tr><td><span class="sw" style="background:#2B3228"></span><b>rule</b> decorative only</td><td>#2B3228</td><td>1.42</td><td>1.31</td><td>1.49</td></tr>
+        </tbody>
+      </table>
+      <h3>Ink on fills, dark</h3>
+      <table><tbody>
+        <tr><td>#0F130E on citron #D3EC55 (primary button, shipped tag)</td><td><b>14.20</b></td></tr>
+        <tr><td>#0F130E on pine #83D2A0</td><td><b>10.44</b></td></tr>
+        <tr><td>#0F130E on ember #F2977A</td><td><b>8.47</b></td></tr>
+      </tbody></table>
+      <h3>The stage, dark</h3>
+      <table><tbody>
+        <tr><td><span class="sw" style="background:#1F2620"></span>ground #1F2620</td><td>stage-1 #E9EDE2 <b>13.03</b> · stage-2 #B5BFB0 <b>8.14</b> · stage-3 #8C9788 <b>5.09</b> · citron #D3EC55 <b>11.72</b> · edge #77836F <b>3.88</b></td></tr>
+      </tbody></table>
+      <h3>Rules that hold in both themes</h3>
+      <table><tbody>
+        <tr><td>No state is carried by hue alone. Severity ships a word, a border and a filled square. The median ships a citron bar and the word “median”.</td></tr>
+        <tr><td>One citron object per viewport at most, plus the grit marker. Measured accent footprint on both screens is under 2% of pixels.</td></tr>
+        <tr><td>The hairline never bounds a control. Any edge you must see to operate something is <code>--edge</code>, 3.6:1 or better everywhere.</td></tr>
+        <tr><td>The artwork is literal colour, not tokens: it is the creator’s media and it renders identically in both themes.</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+
+  <h3>Type</h3>
+  <div class="two">
+    <div>
+      <table>
+        <thead><tr><th>Face</th><th>Job</th><th>Stack</th></tr></thead>
+        <tbody>
+          <tr><td><b>Bricolage Grotesque</b><br>variable, opsz 12–96, wdth 75–100, wght 200–800</td><td>Everything the machine writes: wordmark, nav, buttons, labels, chips, counts, all headlines, every numeral.</td><td><code>"Bricolage Grotesque","Helvetica Neue",Arial,sans-serif</code></td></tr>
+          <tr><td><b>Newsreader</b><br>variable, opsz 6–72, wght 200–700</td><td>Everything a person wrote: the ask, the about, feedback bodies, creator replies, the disagreement sentence. A serif in a row means there is a human in there.</td><td><code>"Newsreader",Georgia,"Times New Roman",serif</code></td></tr>
+        </tbody>
+      </table>
+      <table style="margin-top:22px"><tbody>
+        <tr><td>Numerals</td><td><code>tabular-nums</code> on every count, grit value, timestamp and ratio; grit adds <code>'zero' 1</code> so 120 and 1000 cannot be misread. Newsreader prose uses oldstyle proportional figures.</td></tr>
+        <tr><td>Emphasis</td><td>Weight, never colour and never italic. Display lines pair wght 200 with wght 730 in one size. There is no coloured word in any headline.</td></tr>
+        <tr><td>Measure</td><td>Newsreader prose 62ch max, the ask 32ch, UI paragraphs 46–58ch. Nothing exceeds 66ch.</td></tr>
+      </tbody></table>
+    </div>
+    <div>
+      <table>
+        <thead><tr><th>Token</th><th>rem / px</th><th>line-height</th><th>tracking</th><th>wght</th></tr></thead>
+        <tbody>
+          <tr><td><b>display</b> hero</td><td>8.25 / 132 · 3.5 / 56 at 390</td><td>0.92</td><td>-0.040em</td><td>200 + 750</td></tr>
+          <tr><td><b>project h1</b></td><td>6.5 / 104</td><td>0.86</td><td>-0.045em</td><td>730</td></tr>
+          <tr><td><b>2xl</b> h1 in band</td><td>3.75 / 60</td><td>1.02</td><td>-0.035em</td><td>200 + 730</td></tr>
+          <tr><td><b>xl</b> h2</td><td>2.5 / 40</td><td>1.06</td><td>-0.030em</td><td>200 + 720</td></tr>
+          <tr><td><b>lg</b> h3</td><td>1.75 / 28</td><td>1.14</td><td>-0.022em</td><td>700</td></tr>
+          <tr><td><b>ask</b> Newsreader</td><td>1.75 / 28</td><td>1.42</td><td>0</td><td>400</td></tr>
+          <tr><td><b>md</b> h4, tile title</td><td>1.25 / 20</td><td>1.25</td><td>-0.015em</td><td>700</td></tr>
+          <tr><td><b>prose-lg</b> Newsreader</td><td>1.375 / 22</td><td>1.52</td><td>0</td><td>400</td></tr>
+          <tr><td><b>prose</b> Newsreader</td><td>1.0625 / 17</td><td>1.62</td><td>0</td><td>400</td></tr>
+          <tr><td><b>base</b> UI body, inputs</td><td>0.9375–1 / 15–16</td><td>1.55</td><td>0</td><td>400 / 650</td></tr>
+          <tr><td><b>sm</b> dense UI</td><td>0.8125 / 13</td><td>1.50</td><td>0</td><td>400</td></tr>
+          <tr><td><b>xs</b> metadata</td><td>0.75 / 12</td><td>1.50</td><td>+0.005em</td><td>400</td></tr>
+          <tr><td><b>2xs</b> micro label</td><td>0.6875 / 11</td><td>1.30</td><td>+0.100em, uppercase</td><td>600</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h3>Space, radius, border, shadow, motion</h3>
+  <div class="three">
+    <div>
+      <table><thead><tr><th>Spacing</th><th>px</th></tr></thead><tbody>
+        <tr><td>s-1 … s-4</td><td>4 · 8 · 12 · 16</td></tr>
+        <tr><td>s-5 … s-7</td><td>24 · 32 · 48</td></tr>
+        <tr><td>s-8 … s-11</td><td>64 · 96 · 144 · 192</td></tr>
+        <tr><td>Grid</td><td>12 columns, 32px gutter, 1296px container inside 1440, 72px page margin</td></tr>
+        <tr><td>Section rhythm</td><td>No two adjacent sections share vertical padding: 88 / 128 / 72 / 96 / 104</td></tr>
+        <tr><td>Mobile</td><td>390 viewport, 342 container, 24px margin</td></tr>
+      </tbody></table>
+    </div>
+    <div>
+      <table><thead><tr><th>Radius</th><th>Used on</th></tr></thead><tbody>
+        <tr><td>0px</td><td>slices, covers, wedges, plot bars, rules, table cells</td></tr>
+        <tr><td>2px</td><td>chips, tokens, reviewer bars, shipped tag</td></tr>
+        <tr><td>4px</td><td>buttons, inputs</td></tr>
+        <tr><td>10px</td><td>overlays only, unused on these two screens</td></tr>
+        <tr><td>999px</td><td>avatars, and nothing else</td></tr>
+      </tbody></table>
+      <table style="margin-top:22px"><thead><tr><th>Border and shadow</th></tr></thead><tbody>
+        <tr><td>1px in every state. Width never changes on hover or focus, only colour. Focus is a 2px outline at 3px offset, never a border swap.</td></tr>
+        <tr><td>No shadow on any card, tile, row, chip or button anywhere in this file. Depth is the 1px rule, the surface step, and negative space. One overlay shadow token exists for modals: <code>0 24px 48px -12px rgba(10,13,9,.55)</code>.</td></tr>
+        <tr><td>Maximum one containment level. Nothing bordered sits inside anything bordered.</td></tr>
+      </tbody></table>
+    </div>
+    <div>
+      <table><thead><tr><th>Motion</th><th>Value</th></tr></thead><tbody>
+        <tr><td>enter</td><td>180ms <code>cubic-bezier(.2,0,0,1)</code></td></tr>
+        <tr><td>exit</td><td>120ms <code>cubic-bezier(.2,0,0,1)</code></td></tr>
+        <tr><td>view transition</td><td>240ms, one per view, ceiling</td></tr>
+        <tr><td>hover on a control</td><td>colour only, 180ms. No lift, no scale, no shadow.</td></tr>
+        <tr><td>Not present</td><td>scroll-triggered reveals, parallax, number counters, anything over 240ms, motion that is not a state change</td></tr>
+        <tr><td>reduced motion</td><td><code>prefers-reduced-motion: reduce</code> removes every transition; nothing in the design depends on movement</td></tr>
+      </tbody></table>
+      <table style="margin-top:22px"><thead><tr><th>Targets</th></tr></thead><tbody>
+        <tr><td>44px minimum on every control, 8px minimum gap between adjacent targets, on both screens and at 390.</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+</div>
+</div>
+
+</div>
+</body>
+</html>

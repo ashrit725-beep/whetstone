@@ -1,0 +1,1074 @@
+/* ============================================================================
+   Marketing surfaces — Paper & Ink geometry.
+
+   Only what a utility cannot say: the honing word's ink ramp, the proof panel's
+   ruling, the disagreement plot, the full-bleed scale and the two registers.
+
+   Every colour reads a token. Lengths are written as literal pixels from the
+   closed spacing scale (4 8 12 16 24 32 48 64 96 128 192) rather than as
+   `var(--spacing-N)`, and that is deliberate: Tailwind v4 emits a theme
+   variable only when a generated utility references it, so a named step that
+   the surfaces happen to express as a multiplier utility instead is dropped
+   from the stylesheet and every `var(--spacing-9)` in a CSS module silently
+   resolves to nothing. It did: the grit scale's 96px bars measured 1px tall in
+   the built page. A stylesheet outside Tailwind's scan cannot depend on which
+   utilities other files happen to use.
+
+   Nothing here animates but colour, opacity and transform.
+   ========================================================================== */
+
+/* ------------------------------------------------------- 1. the honing word */
+
+/*
+ * A word whose letters go from outline to solid across its own length. The
+ * ramp is the grit scale: the first letter is a 120 concept, the last is 8000
+ * shipped, and the same device draws every grit reading in the product.
+ *
+ * `.hone span` in globals.css carries the ink fraction and the stroke. This
+ * file adds three things: an opaque fill, a stroke weight that suits display
+ * sizes, and the one entrance, which animates `color` only. Because the fill
+ * is a colour and the stroke never moves, the word occupies exactly the same
+ * box on the first frame as on the last, so the reserved width is the word's
+ * own and the animation cannot shift a pixel of layout.
+ *
+ * The fill is opaque on purpose. A variable font keeps its overlapping
+ * contours (the crossbar of the "e" is drawn over its bowl), and a stroke
+ * traces every contour. Over a translucent fill those inner traces showed as a
+ * box inside the "e" and a notch in the "a". Mixing the ink into the paper
+ * gives the same tone as ink at that opacity, and because the stroke is
+ * painted first, an opaque fill covers every trace that lies inside the
+ * letter and leaves only the silhouette. The word sits on the page ground, so
+ * the paper token is the colour behind it in both themes.
+ */
+.hone {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* The declared width is twice what shows: the fill covers the inner half. */
+.hone span {
+  -webkit-text-stroke-width: 5px;
+}
+
+@supports (-webkit-text-stroke: 1px black) {
+  .hone span {
+    color: color-mix(in srgb, var(--color-ink) calc(var(--f, 1) * 100%), var(--color-paper));
+  }
+}
+
+@media (max-width: 60rem) {
+  .hone span {
+    -webkit-text-stroke-width: 4px;
+  }
+}
+@media (max-width: 40rem) {
+  .hone span {
+    -webkit-text-stroke-width: 3px;
+  }
+}
+
+/*
+ * The attribute is set by the client gate, once per session, after paint. With
+ * it absent — reduced motion, no JavaScript, a client-side navigation back to
+ * this page — the letters render their end state and nothing moves.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .hone[data-ink] span {
+    animation: ink-arrive var(--dur-3) var(--ease) both;
+    animation-delay: calc(var(--i, 0) * 24ms);
+  }
+
+  /* From the paper, not from transparent: a transparent first frame would
+     show the inner contours the opaque fill exists to hide. */
+  @keyframes ink-arrive {
+    from {
+      color: var(--color-paper);
+    }
+  }
+}
+
+/* ------------------------------------------------------- 2. the proof panel */
+
+/*
+ * The live rows, in the one box on the page that has an edge. A single 1.5px
+ * rule holds all of them, and the rows inside are separated by hairlines, so
+ * the panel is one containment level rather than a stack of cards.
+ */
+.panel {
+  border: 1.5px solid var(--color-ink);
+  background-color: var(--color-paper-hi);
+}
+
+.panelHead,
+.panelFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 24px;
+}
+
+.panelHead {
+  border-block-end: 1.5px solid var(--color-ink);
+}
+
+.panelFoot {
+  border-block-start: 1px solid var(--color-rule);
+}
+
+.panelRow {
+  position: relative;
+  display: block;
+  padding: 24px;
+  border-block-start: 1px solid var(--color-rule);
+  transition: background-color var(--dur-1) var(--ease);
+}
+
+.panelRow:first-child {
+  border-block-start: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .panelRow:hover {
+    background-color: var(--color-paper-sub);
+  }
+}
+
+.panelRow:has(:focus-visible) {
+  background-color: var(--color-paper-sub);
+}
+
+/* The whole row navigates; the only tab stop is the title anchor. */
+.panelRow .stretch::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+/* ------------------------------------------------- 3. the disagreement plot */
+
+.plot {
+  margin-block-start: 32px;
+}
+
+/* The plot says what it is plotting, in the open, above the steps. */
+.plotHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 48px;
+  padding-block-end: 16px;
+  border-block-end: 1.5px solid var(--color-ink);
+}
+
+/* What 1 and 5 mean on this axis, said once and set on one line each. */
+.plotKey {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  font-size: var(--text-xs);
+  color: var(--color-ink-2);
+}
+
+.plotKey b {
+  font-weight: normal;
+  font-variation-settings: "wght" 750;
+  color: var(--color-ink);
+  margin-inline-end: 4px;
+}
+
+/*
+ * Below 60rem each step is a row: numeral and count in a fixed first column,
+ * names in the second. Every row has the same padding, so nothing in the
+ * median row sits a pixel away from where it sits in the others.
+ */
+.plotCols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  list-style: none;
+}
+
+.plotCol {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  align-items: center;
+  column-gap: 16px;
+  padding: 16px 12px;
+  border-block-end: 1px solid var(--color-rule);
+}
+
+/* The median is a ground, not a rule: it adds no padding and no border. */
+.plotCol[data-median="true"] {
+  background-color: var(--color-paper-hi);
+}
+
+.plotFoot {
+  display: grid;
+  gap: 4px;
+  min-inline-size: 0;
+}
+
+.plotStep {
+  position: relative;
+  justify-self: start;
+  font-size: var(--text-md);
+  line-height: 1;
+  color: var(--color-ink);
+  font-variation-settings: "wght" 800;
+}
+
+/* Hung off the numeral's right edge rather than set beside it, so "4" sits
+   exactly where "3" and "5" sit whether or not it is the median. */
+.plotTag {
+  position: absolute;
+  inset-inline-start: calc(100% + 8px);
+  inset-block-end: 2px;
+  white-space: nowrap;
+  font-size: var(--text-2xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-2);
+  font-variation-settings: "wght" 700;
+}
+
+.plotCount {
+  font-size: var(--text-xs);
+  color: var(--color-ink-3);
+}
+
+.plotStack {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  min-inline-size: 0;
+}
+
+/* A reviewer: a square of ink and a name. Stacked, the squares are the bar. */
+.plotVoter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-inline-size: 0;
+  font-size: var(--text-xs);
+  line-height: 1.45;
+  color: var(--color-ink-2);
+}
+
+.plotVoter::before {
+  content: "";
+  flex: none;
+  inline-size: 8px;
+  block-size: 8px;
+  background-color: var(--color-ink);
+}
+
+.plotVoter span {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plotMore {
+  font-size: var(--text-xs);
+  color: var(--color-ink-3);
+  padding-inline-start: 16px;
+}
+
+/* Nobody chose this step. A hairline keeps the place without shouting. */
+.plotNone {
+  display: block;
+  inline-size: 24px;
+  block-size: 1px;
+  background-color: var(--color-rule-2);
+}
+
+.plotBracket {
+  display: none;
+}
+
+/*
+ * Above 60rem the same markup stands up: five columns on a ruled baseline,
+ * names stacked upward from it, and under each column its numeral and count.
+ * The columns stretch to one height, so every baseline is the same baseline.
+ */
+@media (min-width: 60rem) {
+  .plotCols {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    min-block-size: 15rem;
+  }
+
+  .plotCol {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 24px 16px 0;
+    border-block-end: 0;
+    border-inline-start: 1px solid var(--color-rule);
+  }
+
+  .plotCol:last-child {
+    border-inline-end: 1px solid var(--color-rule);
+  }
+
+  /* The names stand centred on their step, as a bar stands on its tick. */
+  .plotStack {
+    order: 1;
+    flex-direction: column-reverse;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 8px;
+    max-inline-size: 100%;
+  }
+
+  /* The baseline is each foot's top edge. The foot is pulled one pixel past
+     the column's padding on both sides, over the column rule, so the five
+     edges meet as one unbroken line. */
+  .plotFoot {
+    order: 2;
+    align-self: stretch;
+    justify-items: center;
+    margin: 16px -17px 0;
+    padding: 12px 17px 16px;
+    border-block-start: 1.5px solid var(--color-ink);
+  }
+
+  .plotStep {
+    justify-self: center;
+  }
+
+  /* The bracket spans only the steps the reviewers actually used. */
+  .plotBracket {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    margin-block-start: 16px;
+  }
+
+  .plotBracketBar {
+    position: relative;
+    grid-row: 1;
+    display: flex;
+    justify-content: center;
+    margin-inline: 16px;
+    padding-block-start: 8px;
+    border-block-start: 1px solid var(--color-ink-3);
+  }
+
+  .plotBracketBar span {
+    font-size: var(--text-2xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-ink-2);
+    font-variation-settings: "wght" 700;
+  }
+
+  .plotBracketBar::before,
+  .plotBracketBar::after {
+    content: "";
+    position: absolute;
+    inset-block-start: -5px;
+    block-size: 9px;
+    inline-size: 1px;
+    background-color: var(--color-ink-3);
+  }
+  .plotBracketBar::before {
+    inset-inline-start: 0;
+  }
+  .plotBracketBar::after {
+    inset-inline-end: 0;
+  }
+}
+
+/* --------------------------------------------------- 4. the numbered index */
+
+/* The index sits on paper-sub and its rows lift to paper under the pointer,
+   so the outlined ranks below are filled with whichever ground is behind them. */
+.index {
+  --ground: var(--color-paper-sub);
+  list-style: none;
+}
+
+.indexRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px 16px;
+  padding-block: 24px;
+  border-block-start: 1px solid var(--color-rule);
+  transition: background-color var(--dur-1) var(--ease);
+}
+
+.indexRow:last-child {
+  border-block-end: 1px solid var(--color-rule);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .indexRow:hover {
+    --ground: var(--color-paper);
+    background-color: var(--color-paper);
+  }
+}
+
+.indexRow:has(:focus-visible) {
+  --ground: var(--color-paper);
+  background-color: var(--color-paper);
+}
+
+.indexRow .stretch::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+/* Outlined numerals, so the rank is present without competing with the title.
+   The leader keeps its fill: it is the one the section is about.
+
+   An outline is a stroke painted under a fill of the ground colour, never a
+   transparent fill. The variable font keeps overlapping contours, and with a
+   transparent fill the stroke traced the "4" crossbar straight through its
+   stem. Painted first and half covered, the stroke shows only the silhouette,
+   at half its declared width. */
+.rank {
+  font-size: var(--text-lg);
+  line-height: 1;
+  font-variation-settings: "wght" 800;
+  letter-spacing: -0.03em;
+  color: var(--ground);
+  -webkit-text-stroke: 2.4px var(--color-ink-3);
+  paint-order: stroke fill;
+  transition: color var(--dur-1) var(--ease);
+}
+
+.indexRow:first-child .rank {
+  color: var(--color-ink);
+  -webkit-text-stroke: 0;
+}
+
+.indexBody {
+  display: grid;
+  gap: 12px;
+  min-inline-size: 0;
+}
+
+@media (min-width: 60rem) {
+  .indexRow {
+    grid-template-columns: 4.5rem minmax(0, 1.3fr) minmax(0, 0.9fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 24px;
+    padding-block: 24px;
+  }
+
+  .indexBody {
+    display: contents;
+  }
+
+  .rank {
+    font-size: var(--text-xl);
+  }
+}
+
+/* -------------------------------------------------- 5. the full-bleed scale */
+
+.scale {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  list-style: none;
+  border-block-start: 1.5px solid var(--color-ink);
+}
+
+.scaleStep {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-inline-size: 0;
+  padding: 16px var(--pad-inline) 24px;
+  border-block-start: 1px solid var(--color-rule);
+}
+
+.scaleStep:first-child {
+  border-block-start: 0;
+}
+
+/* The density column: how solid the ink is at this step, drawn once, large. */
+.scaleBar {
+  position: relative;
+  display: block;
+  block-size: 32px;
+  border-block-end: 1px solid var(--color-rule);
+}
+
+.scaleBar i {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline: 0;
+  display: block;
+  background-color: rgb(var(--ink-rgb) / var(--d, 0.1));
+}
+
+@media (min-width: 48rem) {
+  .scale {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .scaleStep {
+    padding: 0 24px 24px;
+    border-block-start: 0;
+    border-inline-start: 1px solid var(--color-rule);
+  }
+
+  .scaleStep:first-child {
+    border-inline-start: 0;
+    padding-inline-start: var(--pad-inline);
+  }
+
+  .scaleStep:last-child {
+    padding-inline-end: var(--pad-inline);
+  }
+
+  .scaleBar {
+    block-size: 96px;
+    margin-block-end: 16px;
+  }
+}
+
+/* ---------------------------------------------------------- 6. definitions */
+
+/*
+ * "How it works" is a definition list with visible terms, never three cards.
+ * The term column is fixed so every definition starts on one left edge.
+ */
+.terms {
+  display: grid;
+  row-gap: 0;
+}
+
+.term {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 48px;
+  row-gap: 12px;
+  padding-block: 24px;
+  border-block-start: 1px solid var(--color-rule);
+}
+
+.term:last-child {
+  border-block-end: 1px solid var(--color-rule);
+}
+
+.term dt {
+  font-size: var(--text-md);
+  line-height: 1.25;
+  color: var(--color-ink);
+  font-variation-settings: "opsz" 22, "wght" 700;
+}
+
+.term dd {
+  margin: 0;
+  max-inline-size: 52ch;
+  color: var(--color-ink-2);
+}
+
+/* Outlined like the ranks above, and for the same reason filled with the
+   ground rather than left transparent. */
+.termIndex {
+  display: block;
+  font-size: var(--text-lg);
+  line-height: 1;
+  font-variation-settings: "wght" 800;
+  color: var(--ground, var(--color-paper));
+  -webkit-text-stroke: 2.8px var(--color-ink);
+  paint-order: stroke fill;
+  margin-block-end: 12px;
+}
+
+/* Declares the ground for outlined numerals inside a paper-sub section. */
+.groundSub {
+  --ground: var(--color-paper-sub);
+}
+
+@media (min-width: 60rem) {
+  .term {
+    grid-template-columns: 5rem minmax(0, 1fr) minmax(0, 1.1fr);
+    align-items: start;
+    column-gap: 48px;
+  }
+
+  .termIndex {
+    margin-block-end: 0;
+  }
+}
+
+/* ------------------------------------------------------------ 7. taxonomy */
+
+.cats {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: 96px;
+  list-style: none;
+}
+
+.catRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5rem minmax(4rem, max-content);
+  align-items: center;
+  gap: 16px;
+  padding-block: 12px;
+  border-block-start: 1px solid var(--color-rule);
+}
+
+/* A measured share of the filings, in ink. Not a chart, a reading. */
+.catBar {
+  display: block;
+  position: relative;
+  block-size: 8px;
+  background-color: var(--color-rule);
+}
+
+.catBar i {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  display: block;
+  background-color: var(--color-ink);
+}
+
+@media (min-width: 60rem) {
+  .cats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ------------------------------------------------------- 8. plain register */
+
+.register {
+  display: grid;
+  list-style: none;
+  border-block-start: 1px solid var(--color-rule);
+}
+
+.registerItem {
+  min-inline-size: 0;
+  padding-block: 16px;
+  border-block-end: 1px solid var(--color-rule);
+}
+
+/* --------------------------------------------------------- 9. stat ledger */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  list-style: none;
+  border-block-start: 1.5px solid var(--color-ink);
+}
+
+.stats li {
+  min-inline-size: 0;
+  padding: 16px 16px 16px 0;
+  border-block-end: 1px solid var(--color-rule);
+}
+
+.stats li:nth-child(odd) {
+  border-inline-end: 1px solid var(--color-rule);
+}
+
+.stats li:nth-child(even) {
+  padding-inline-start: 16px;
+}
+
+/* Four across only from 80rem. Between 60 and 80 the hero shares its row with
+   the proof panel, and four columns of about 130px broke every label onto
+   three lines with five-digit figures touching the rules. */
+@media (min-width: 80rem) {
+  .stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .stats li {
+    padding: 16px 16px 0 0;
+    border-block-end: 0;
+    border-inline-end: 1px solid var(--color-rule);
+  }
+
+  .stats li:nth-child(even) {
+    padding-inline-start: 0;
+  }
+
+  .stats li:last-child {
+    border-inline-end: 0;
+  }
+}
+
+/* -------------------------------------------------------------- 10. table */
+
+/*
+ * One real table, scrollable inside its own region so the page never is.
+ *
+ * `position: relative` is load-bearing, not decoration. The table carries
+ * `sr-only` spans, and an absolutely positioned element whose containing block
+ * sits outside a scroll container escapes that container's clip and adds its
+ * static position to the page's scroll width. Measured at 390: the page
+ * scrolled to 669px until this line existed.
+ */
+.tableWrap {
+  position: relative;
+  overflow-x: auto;
+  border-block-start: 1.5px solid var(--color-ink);
+}
+
+.table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.table th,
+.table td {
+  padding: 12px 16px 12px 0;
+  text-align: start;
+  vertical-align: top;
+  border-block-end: 1px solid var(--color-rule);
+}
+
+.table thead th {
+  font-size: var(--text-2xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+  font-variation-settings: "wght" 700;
+  white-space: nowrap;
+}
+
+.table tbody th {
+  font-size: var(--text-base);
+  color: var(--color-ink);
+  font-variation-settings: "wght" 650;
+}
+
+.table td {
+  color: var(--color-ink-2);
+  font-size: var(--text-sm);
+}
+
+/* ------------------------------------------------------- 11. the grit cells */
+
+/* 2px between cells: the cells are 9px wide, and a gap off the spacing scale
+   would be wider than the ink it separates. */
+.cells {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+/* -------------------------------------------------------------- 12. chrome */
+
+.navLink {
+  display: inline-flex;
+  color: var(--color-ink-2);
+  transition: color var(--dur-1) var(--ease);
+}
+
+.navLink:hover {
+  color: var(--color-ink);
+}
+
+.navLink[aria-current="page"] {
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* The section label: a word, then a rule to the end of the measure. */
+.secLabel {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.secLabel i {
+  flex: 1;
+  block-size: 1px;
+  background-color: var(--color-rule);
+}
+
+/* A reading restated in prose, hung off the same 7rem register as the plot. */
+.inWords {
+  display: grid;
+  gap: 16px;
+  margin-block-start: 64px;
+}
+
+@media (min-width: 60rem) {
+  .inWords {
+    grid-template-columns: 7rem minmax(0, 1fr);
+    gap: 48px;
+  }
+}
+
+/* An eyebrow is ruled, never filled: a 1px box around one live fact. */
+.eyebrowRule {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border: 1px solid var(--color-rule-2);
+  border-radius: var(--radius-none);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-variation-settings: "wght" 700;
+  color: var(--color-ink-2);
+}
+
+/* The supporting line runs short on purpose: the headline is the element the
+   eye lands on, and a 66ch measure beside it would compete. */
+.heroSub {
+  max-inline-size: 41ch;
+}
+
+/* ------------------------------------------------------------ 13. skeleton */
+
+/*
+ * A skeleton is the loaded box with the ink taken out: one recessed paper step
+ * and the same geometry, never a shimmer and never a spinner. Sizes are set at
+ * the call site from the real element's own measurements.
+ */
+.skel {
+  display: block;
+  background-color: var(--color-paper-deep);
+  border-radius: var(--radius-xs);
+}
+
+/*
+ * None of the list blocks above declare `margin` or `padding`. That is
+ * deliberate: the reset already zeroes both, and a `margin: 0` shorthand in a
+ * CSS module loads after Tailwind's utilities, so it silently cancelled the
+ * `mt-16` that separates each list from the heading introducing it. Measured:
+ * the hero's stat ledger sat 0px below the buttons instead of 64px.
+ */
+
+/* ------------------------------------------------------ 14. arrivals chart */
+
+/*
+ * Twenty-eight bars on a ruled baseline, a gutter on the right for the two
+ * figures the rules carry, and headroom above for the busiest day's label.
+ * The field sits on the page ground, which is why the break across an
+ * over-scale bar is drawn in the paper token.
+ */
+.arrivals {
+  --gutter: 48px;
+}
+
+.arrivalsField {
+  position: relative;
+  block-size: 8rem;
+  margin-block-start: 32px;
+  margin-inline-end: var(--gutter);
+  border-block-end: 1.5px solid var(--color-ink);
+}
+
+/* A horizontal reference, run across the gutter, with its figure above it at
+   the gutter's far edge. The top of the scale is a hairline under the bars;
+   the median day is dashed and drawn over them. */
+.arrivalsRule {
+  position: absolute;
+  inset-inline: 0 calc(var(--gutter) * -1);
+  inset-block-end: var(--y, 0%);
+  border-block-start: 1px solid var(--color-rule);
+}
+
+.arrivalsRule[data-median="true"] {
+  z-index: 2;
+  border-block-start: 1px dashed var(--color-ink-3);
+}
+
+.arrivalsRule b {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-end: 2px;
+  font-size: var(--text-2xs);
+  line-height: 1.25;
+  font-weight: normal;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink-3);
+  font-variation-settings: "wght" 650;
+}
+
+.arrivalsRule[data-median="true"] b {
+  color: var(--color-ink-2);
+  font-variation-settings: "wght" 750;
+}
+
+.arrivalsBars {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  gap: 1px;
+  list-style: none;
+}
+
+.arrivalsBars li {
+  position: relative;
+  flex: 1 1 0;
+  min-inline-size: 0;
+}
+
+.arrivalsBars i {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  block-size: var(--h, 0%);
+  background-color: var(--color-ink);
+}
+
+/* Today: a lighter ground for the whole column, and the bar drawn open. */
+.arrivalsBars li[data-today="true"] {
+  background-color: var(--color-paper-sub);
+}
+
+.arrivalsBars li[data-today="true"] i {
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--color-ink-2);
+}
+
+/* A day over the scale: drawn to the top with a break through it, and its
+   real figure printed above. */
+.arrivalsBars li[data-over="true"] i::after {
+  content: "";
+  position: absolute;
+  inset-inline: -2px;
+  inset-block-start: 12px;
+  block-size: 4px;
+  background-color: var(--color-paper);
+  transform: skewY(-20deg);
+}
+
+.arrivalsPeak {
+  position: absolute;
+  inset-inline-start: 50%;
+  inset-block-end: calc(var(--h, 0%) + 6px);
+  transform: translateX(-50%);
+  font-size: var(--text-2xs);
+  line-height: 1.25;
+  white-space: nowrap;
+  color: var(--color-ink);
+  font-variation-settings: "wght" 750;
+}
+
+.arrivalsBars li[data-edge="start"] .arrivalsPeak {
+  inset-inline-start: 0;
+  transform: none;
+}
+
+.arrivalsBars li[data-edge="end"] .arrivalsPeak {
+  inset-inline: auto 0;
+  transform: none;
+}
+
+/* Week starts and today, each caption hung from a tick at its day's edge. */
+.arrivalsAxis {
+  position: relative;
+  block-size: 24px;
+  margin-inline-end: var(--gutter);
+}
+
+.arrivalsAxis span {
+  position: absolute;
+  inset-block-start: 8px;
+  inset-inline-start: var(--x, 0%);
+  font-size: var(--text-2xs);
+  line-height: 1.25;
+  white-space: nowrap;
+  color: var(--color-ink-3);
+  font-variation-settings: "wght" 650;
+}
+
+.arrivalsAxis span::before {
+  content: "";
+  position: absolute;
+  inset-block-start: -8px;
+  inset-inline-start: 0;
+  inline-size: 1px;
+  block-size: 5px;
+  background-color: var(--color-ink-3);
+}
+
+.arrivalsAxis span[data-today="true"] {
+  inset-inline: auto 0;
+  color: var(--color-ink-2);
+  font-variation-settings: "wght" 750;
+}
+
+.arrivalsAxis span[data-today="true"]::before {
+  inset-inline: auto 0;
+}
+
+@media (width < 40rem) {
+  .arrivalsAxis span[data-minor="true"] {
+    display: none;
+  }
+}
+
+/* The three readings in words, which is also the chart's key. */
+.arrivalsLegend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: 16px;
+  padding-block-start: 16px;
+  border-block-start: 1px solid var(--color-rule);
+}
+
+.arrivalsLegend dt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-2xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+  font-variation-settings: "wght" 700;
+}
+
+.arrivalsLegend dd {
+  margin: 4px 0 0;
+  font-size: var(--text-md);
+  line-height: 1.2;
+  color: var(--color-ink);
+  font-variation-settings: "wght" 750;
+}
+
+/* The date sits on its own line under the figure, at every width, so a long
+   figure never pushes it into the next reading. */
+.arrivalsLegend dd span {
+  display: block;
+  margin-block-start: 2px;
+  font-size: var(--text-xs);
+  color: var(--color-ink-3);
+  font-variation-settings: "wght" 500;
+}
+
+.arrivalsLegend i[data-key="median"] {
+  inline-size: 16px;
+  border-block-start: 1px dashed var(--color-ink-3);
+}
+
+.arrivalsLegend i[data-key="today"] {
+  inline-size: 8px;
+  block-size: 12px;
+  box-shadow: inset 0 0 0 1.5px var(--color-ink-2);
+  background-color: var(--color-paper-sub);
+}
+
+@media (min-width: 40rem) {
+  .arrivalsField {
+    block-size: 10rem;
+  }
+
+  .arrivalsBars {
+    gap: 2px;
+  }
+}

@@ -1,0 +1,26 @@
+node_modules
+.next
+.next-dev
+# A dev server given NEXT_DIST_DIR=/tmp/... builds into ./tmp/ (the path is
+# resolved against the project), so keep any such output out of the repo.
+/tmp/
+out
+.env
+.env.local
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+data/*.db*
+# MAIL_TRANSPORT=outbox writes reset links here by default; each is a live token.
+data/outbox
+.DS_Store
+next-env.d.ts
+*.tsbuildinfo
+
+# Verification output. Regenerate with scripts/shoot.mjs; never commit it.
+shots
+
+# Throwaway probe scripts and measurement output from verification runs.
+scripts/.probe/
+scripts/.content/

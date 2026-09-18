@@ -1,0 +1,686 @@
+@import "tailwindcss";
+
+/* ============================================================================
+   WHETSTONE — "Paper & Ink"
+   Warm paper, near-black ink, and one mark that always means the same thing.
+   The grit scale is redrawn as INK DENSITY, so how finished a thing is and how
+   finished the type looks are the same fact. That is the whole identity.
+   Every colour in this product is defined here and nowhere else.
+   ========================================================================== */
+
+/* ---------- Faces. Two, with genuinely different jobs. ---------- */
+/* Bricolage Grotesque: all chrome, every heading, every numeral.
+   Newsreader: only words a human wrote. A serif line in a list means a person. */
+
+@font-face {
+  font-family: "Bricolage Grotesque Variable";
+  src: url("/fonts/bricolage-var.woff2") format("woff2-variations");
+  font-weight: 200 800;
+  font-stretch: 75% 100%;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Newsreader Variable";
+  src: url("/fonts/newsreader-var.woff2") format("woff2-variations");
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Newsreader Variable";
+  src: url("/fonts/newsreader-var-italic.woff2") format("woff2-variations");
+  font-weight: 200 800;
+  font-style: italic;
+  font-display: swap;
+}
+/* Metric-matched fallbacks so swapping the real face in shifts nothing. */
+@font-face {
+  font-family: "Bricolage Fallback";
+  src: local("Helvetica Neue"), local("Arial");
+  size-adjust: 103%;
+  ascent-override: 94%;
+  descent-override: 24%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Newsreader Fallback";
+  src: local("Georgia"), local("Times New Roman");
+  size-adjust: 96%;
+  ascent-override: 92%;
+  descent-override: 26%;
+  line-gap-override: 0%;
+}
+
+@theme {
+  /* ---------- Paper. Light is the primary surface of this design. ---------- */
+  --color-paper-hi: #fffbf2;
+  --color-paper: #f6f0e4;
+  --color-paper-sub: #ece4d3;
+  --color-paper-deep: #e0d6c1;
+
+  /* ---------- Ink ---------- */
+  --color-ink: #17120c;
+  --color-ink-2: #453c2e;
+  --color-ink-3: #665b49;
+
+  /* ---------- Rules. Two weights: decorative and load-bearing. ---------- */
+  --color-rule: #d5cab4;
+  --color-rule-2: #7d7159;
+
+  /* ---------- The mark. One colour. It always means "this is the ask". ---- */
+  --color-mark: #a32d14;
+  --color-mark-ink: #fff8f2;
+  --color-btn-ink: #fffbf2;
+
+  /* Text that sits over photography or video. It cannot follow the theme,
+     because the media underneath it is dark in both. Two steps, so a caption
+     can sit under a title without inventing a third value at the call site. */
+  --color-on-media: #f4eddf;
+  --color-on-media-dim: #c6bba6;
+
+  /* Semantic states reuse the ink scale so nothing is carried by hue alone. */
+  --color-shipped: #2f5d3a;
+  --color-open: #7d5e12;
+
+  /* ---------- Faces ---------- */
+  --font-display: "Bricolage Grotesque Variable", "Bricolage Fallback", "Helvetica Neue", Arial, sans-serif;
+  --font-voice: "Newsreader Variable", "Newsreader Fallback", Georgia, "Times New Roman", serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  /* ---------- Scale. Display type is 8-10x body; that ratio is the point. -- */
+  /* 2xs has no tracking token: open tracking belongs to capitals, and most
+     2xs text is sentence case. See `.uppercase.text-2xs` below. */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1.25;
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.45;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.5;
+  --text-base: 1rem;
+  --text-base--line-height: 1.55;
+  --text-voice: 1.125rem;
+  --text-voice--line-height: 1.6;
+  --text-md: 1.375rem;
+  --text-md--line-height: 1.35;
+  --text-md--letter-spacing: -0.01em;
+  --text-lg: 1.75rem;
+  --text-lg--line-height: 1.2;
+  --text-lg--letter-spacing: -0.02em;
+  --text-xl: 2.375rem;
+  --text-xl--line-height: 1.1;
+  --text-xl--letter-spacing: -0.028em;
+  --text-2xl: 3.25rem;
+  --text-2xl--line-height: 1.04;
+  --text-2xl--letter-spacing: -0.034em;
+  --text-3xl: 4.5rem;
+  --text-3xl--line-height: 0.98;
+  --text-3xl--letter-spacing: -0.04em;
+  --text-hero: clamp(3.25rem, 8.5vw, 8.5rem);
+  --text-hero--line-height: 0.92;
+  --text-hero--letter-spacing: -0.045em;
+
+  /* Spacing is Tailwind's own 4px scale. An earlier revision redefined
+     --spacing-1..11 here, which silently changed w-11 from 44px to 192px
+     across 28 existing usages and blew the nav off the page. The values I
+     wanted (24 32 48 64 96 128 192) are already p-6 p-8 p-12 p-16 p-24
+     p-32 p-48, so no override is needed. Do not reintroduce one. */
+
+  /* ---------- Radius. Near zero. There are no rounded rectangles here. ---- */
+  /* ---------- Rules, rows and targets ----------
+     These were used across the component layer and defined nowhere, so every
+     declaration built on them was dropped at computed-value time: borders
+     vanished, register rows lost their minimum height, and filter rows
+     collapsed from 44px to the height of their text. */
+  --hairline: 1px;
+  --tap-min: 44px;           /* CONTRACT §4: 44x44 everywhere, no exceptions. */
+  --row-h: 4.5rem;           /* Register row. */
+  --row-h-feed: 5.5rem;      /* Feed row: it carries two lines of the ask. */
+
+  /* Exit is about two thirds of the entrance, per CONTRACT §6. */
+  --dur-exit-1: 80ms;
+
+  /* The chrome face, under the name the component layer already used for it. */
+  --font-ui: var(--font-display);
+
+  --radius-none: 0px;
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-full: 9999px;
+
+  /* ---------- Motion ---------- */
+  --dur-1: 120ms;
+  --dur-2: 180ms;
+  --dur-3: 240ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0.3, 0, 0.6, 1);
+  /* Acceleration, for something leaving. CONTRACT §6: arrive decelerating,
+     leave accelerating. */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 60rem;
+  --breakpoint-lg: 80rem;
+  --breakpoint-xl: 90rem;
+
+
+  /* ------------------------------------------------------------------------
+     COMPATIBILITY ALIASES
+     The previous direction ("Grit Index") named its tokens surface-N, text-N
+     and border-N. Roughly 1,350 class usages across 39 routes still reference
+     them. Rather than a mechanical rename that would churn every file and
+     lose the per-surface judgement inside them, the old names are mapped onto
+     the Paper & Ink scale here. The whole product adopts the new palette in
+     one step; each surface is then rebuilt on the real tokens as it is
+     reworked, and an alias is deleted once nothing references it.
+     Nothing new may be written against these names.
+     --------------------------------------------------------------------- */
+  --color-surface-0: var(--color-paper-sub);
+  --color-surface-1: var(--color-paper);
+  --color-surface-2: var(--color-paper-hi);
+  --color-surface-3: var(--color-paper-hi);
+  --color-surface-4: var(--color-paper-hi);
+  --color-surface-wash: var(--color-paper-deep);
+
+  --color-text-1: var(--color-ink);
+  --color-text-2: var(--color-ink-2);
+  --color-text-3: var(--color-ink-3);
+  --color-text-disabled: var(--color-ink-3);
+
+  --color-border-hair: var(--color-rule);
+  --color-border-control: var(--color-rule-2);
+  --color-border-strong: var(--color-ink-2);
+  --color-hatch: var(--color-ink-3);
+
+  --color-accent: var(--color-mark);
+  --color-accent-ink: var(--color-mark-ink);
+  --color-focus: var(--color-ink);
+  --color-info: var(--color-ink-2);
+  --color-warn: var(--color-open);
+  --color-straw: var(--color-open);
+  --color-straw-fill: var(--color-open);
+  --color-straw-ink: var(--color-mark-ink);
+  --color-positive: var(--color-shipped);
+  --color-positive-ink: var(--color-mark-ink);
+  --color-critical: var(--color-mark);
+  --color-critical-ink: var(--color-mark-ink);
+  --color-scrim: rgb(12 10 7 / 0.62);
+
+  /* The old build's face for words a person wrote. `font-prose` still marks
+     excerpts in the inbox, the activity log and the thread register, and set
+     them in the chrome face while this was missing. */
+  --font-prose: var(--font-voice);
+
+  /* The old build also used these spacing and radius names. */
+  --spacing-3xs: 2px;  --spacing-2xs: 4px;  --spacing-xs: 8px;
+  --spacing-sm: 12px;  --spacing-md: 16px;  --spacing-lg: 24px;
+  --spacing-xl: 32px;  --spacing-2xl: 48px; --spacing-3xl: 64px;
+  --spacing-4xl: 96px; --spacing-5xl: 128px; --spacing-6xl: 192px;
+  --radius-0: 0px;  --radius-md: 3px;  --radius-lg: 3px;
+  --shadow-overlay: 0 24px 48px -12px rgb(12 10 7 / 0.28);
+  --shadow-raised: 0 1px 0 var(--color-rule);
+
+
+  /* The Discover and Settings filter rail, the fixed half of the two-column
+     shell. Without it `grid-template-columns` was invalid and both shells
+     collapsed to a single column. */
+  /* The three reading widths, narrowest first. Each was read in a dozen files
+     and defined in none, so every `max-inline-size` built on one was dropped
+     and those columns ran the full width of the page. */
+  --container-prose: 42rem;    /* One column of prose, about 66ch. */
+  --container-feed: 58rem;     /* A register of rows. */
+  --container-detail: 72rem;   /* A project page, which carries two zones. */
+  --container-rail: 17rem;
+  --container-text: 38rem;
+  --container-page: 78rem;
+  --container-wide: 92rem;
+}
+
+:root {
+  color-scheme: light;
+  --ink-rgb: 23 18 12;
+  --nav-h: 4rem;
+  /* The Discover and Discussions filter bar, which sticks under the nav. Both
+     the scroll padding and every anchor's scroll margin are computed from it. */
+  --filterbar-h: 3.5rem;
+  --pad-inline: clamp(20px, 5vw, 64px);
+
+  /* ---------- Stacking ----------
+     One ladder, in the order things are allowed to cover each other. The middle
+     of it existed and the ends did not, so `z-index: var(--z-dropdown)` was an
+     invalid declaration and the browser dropped it: an open nav menu fell back
+     to auto and the sticky filter bar painted straight over it. A tooltip sits
+     at the top because a tooltip that is covered explains nothing. */
+  --z-base: 0;
+  --z-raised: 1;
+  --z-sticky: 200;
+  --z-sticky-nav: 300;
+  --z-nav: 300;
+  --z-dropdown: 350;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-tooltip: 600;
+}
+
+/* Night mode is a real design, not an inversion: the paper goes to stove-black
+   and the mark warms from oxide red to a flame so it keeps the same weight. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ink-rgb: 244 237 223;
+    --color-paper-hi: #231e16;
+    --color-paper: #1a1610;
+    --color-paper-sub: #120f0a;
+    --color-paper-deep: #0c0a07;
+    --color-ink: #f4eddf;
+    --color-ink-2: #c6bba6;
+    --color-ink-3: #9b9077;
+    --color-rule: #342d22;
+    --color-rule-2: #7c7059;
+    --color-mark: #ff7b4f;
+    --color-mark-ink: #1a0a03;
+    --color-btn-ink: #1a1610;
+    --color-shipped: #7fc08c;
+    --color-open: #e0b64a;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink-rgb: 244 237 223;
+  --color-paper-hi: #231e16;
+  --color-paper: #1a1610;
+  --color-paper-sub: #120f0a;
+  --color-paper-deep: #0c0a07;
+  --color-ink: #f4eddf;
+  --color-ink-2: #c6bba6;
+  --color-ink-3: #9b9077;
+  --color-rule: #342d22;
+  --color-rule-2: #7c7059;
+  --color-mark: #ff7b4f;
+  --color-mark-ink: #1a0a03;
+  --color-btn-ink: #1a1610;
+  --color-shipped: #7fc08c;
+  --color-open: #e0b64a;
+}
+
+/* ============================================================================
+   BASE
+   ========================================================================== */
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  /* Reserve the scrollbar only where a scrollbar actually takes width. On a
+     phone the bar overlays, so reserving it spends 11px of a 390px viewport on
+     nothing and reads as a page that overflows by 11px. */
+  @media (min-width: 60rem) {
+    html { scrollbar-gutter: stable; }
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    line-height: 1.55;
+    font-variation-settings: "opsz" 16, "wdth" 100, "wght" 400;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Headings get their weight from the display face's optical-size axis, so a
+     96px heading is drawn for 96px rather than scaled up from a text cut. */
+  h1, h2, h3, h4, h5, h6 {
+    margin: 0;
+    font-family: var(--font-display);
+    color: var(--color-ink);
+    text-wrap: balance;
+    font-style: normal;
+  }
+  /* Each level takes the leading and tracking its size is specified with, so a
+     bare heading sets like one with a `text-*` class instead of inheriting the
+     body's 1.55, which opened a line's worth of air inside every two-line
+     title. A utility still wins wherever one is set: utilities are a later
+     layer. */
+  h1 {
+    font-size: var(--text-2xl);
+    line-height: var(--text-2xl--line-height);
+    letter-spacing: var(--text-2xl--letter-spacing);
+    font-variation-settings: "opsz" 72, "wght" 800;
+  }
+  h2 {
+    font-size: var(--text-xl);
+    line-height: var(--text-xl--line-height);
+    letter-spacing: var(--text-xl--letter-spacing);
+    font-variation-settings: "opsz" 48, "wght" 750;
+  }
+  h3 {
+    font-size: var(--text-lg);
+    line-height: var(--text-lg--line-height);
+    letter-spacing: var(--text-lg--letter-spacing);
+    font-variation-settings: "opsz" 32, "wght" 700;
+  }
+  h4 {
+    font-size: var(--text-md);
+    line-height: var(--text-md--line-height);
+    letter-spacing: var(--text-md--letter-spacing);
+    font-variation-settings: "opsz" 22, "wght" 650;
+  }
+  h5, h6 {
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    font-variation-settings: "opsz" 16, "wght" 600;
+  }
+  /* The text sizes below `md` carry no tracking of their own, so their
+     utilities leave letter-spacing alone. A heading set that small would keep
+     its level's display tracking, which pinches text at 14px; it sets at the
+     normal tracking the size is drawn for instead. */
+  :is(h1, h2, h3, h4):is(.text-2xs, .text-xs, .text-sm, .text-base, .text-voice) {
+    letter-spacing: normal;
+  }
+
+  p { margin: 0; text-wrap: pretty; }
+
+  a { color: inherit; text-decoration: none; }
+
+  button, input, select, textarea { font: inherit; color: inherit; }
+  input, select, textarea { font-size: max(1rem, var(--text-base)); }
+  ::placeholder { color: var(--color-ink-3); opacity: 1; }
+
+  img, svg, video, canvas { display: block; max-width: 100%; }
+
+  /* One focus treatment. Never removed, never transitioned, always the ink. */
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 3px;
+    border-radius: inherit;
+  }
+  :focus:not(:focus-visible) { outline: none; }
+
+  ::selection { background-color: var(--color-mark); color: var(--color-mark-ink); }
+
+  hr { border: 0; border-block-start: 1px solid var(--color-rule); margin: 0; }
+
+  [hidden] { display: none !important; }
+
+  .skip-link {
+    position: absolute;
+    inset-inline-start: var(--spacing-md);
+    inset-block-start: -100%;
+    z-index: var(--z-toast);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: var(--color-ink);
+    color: var(--color-btn-ink);
+    font-size: var(--text-sm);
+  }
+  .skip-link:focus { inset-block-start: var(--spacing-md); }
+}
+
+/* ============================================================================
+   THE SIGNATURE: ink density
+   The grit scale (120 → 8000) is drawn as how solid the ink is. It appears as
+   letterforms in the wordmark and the hero, and as cells everywhere data is
+   shown, so the identity and the data are literally the same device.
+   ========================================================================== */
+
+/* A word that sharpens across its own letters. Each span carries --f, the ink
+   fraction, from outline at 120 to solid at 8000. */
+.hone span {
+  color: rgb(var(--ink-rgb) / var(--f, 1));
+  -webkit-text-stroke: 2px var(--color-ink);
+  paint-order: stroke fill;
+}
+@supports not (-webkit-text-stroke: 2px black) {
+  .hone span { color: var(--color-ink); -webkit-text-stroke: 0; }
+}
+
+/* The five-cell grit reading. --d is the ink fraction of each cell; the cell at
+   the project's own step is outlined and taller so it survives greyscale. */
+.grit-cell {
+  display: block;
+  inline-size: 9px;
+  block-size: 16px;
+  background-color: rgb(var(--ink-rgb) / var(--d, 0.12));
+}
+.grit-cell[data-on="true"] {
+  block-size: 22px;
+  outline: 1.5px solid var(--color-ink);
+  outline-offset: 0;
+}
+
+@layer components {
+  /* ---------- Human voice. A serif line means a person wrote it. ---------- */
+  .voice {
+    font-family: var(--font-voice);
+    font-size: var(--text-voice);
+    line-height: 1.6;
+    font-variation-settings: "opsz" 18, "wght" 400;
+    color: var(--color-ink-2);
+    max-inline-size: 66ch;
+  }
+  .voice em { font-style: italic; }
+  .voice strong { font-variation-settings: "opsz" 18, "wght" 650; color: var(--color-ink); }
+  .voice > * + * { margin-block-start: var(--spacing-md); }
+
+  /* ---------- Prose: the words themselves. ----------
+     `Prose` carries this class, and so does each surface that prints what a
+     person wrote outside it (an ask in a row, a headline, a quoted note). It
+     was read in a dozen files and defined in none, so those words set in the
+     chrome face and a three-paragraph post read as one block. It sets the face
+     and the rhythm and leaves size and colour to the surface, which knows
+     whether it is a row or a page. */
+  .prose-human {
+    font-family: var(--font-voice);
+    font-variation-settings: "opsz" 18, "wght" 400;
+    font-variant-numeric: proportional-nums oldstyle-nums;
+    max-inline-size: 66ch;
+    overflow-wrap: break-word;
+  }
+  .prose-human > * + * { margin-block-start: 0.75em; }
+  .prose-human :is(strong, b) { font-variation-settings: "opsz" 18, "wght" 650; }
+  .prose-human code { font-family: var(--font-mono); }
+  .prose-human :not(pre) > code { font-size: 0.875em; }
+  /* A heading inside a post is a signpost in the post, not a page section. */
+  .prose-human :is(h2, h3, h4, h5, h6) {
+    font-size: var(--text-md);
+    line-height: var(--text-md--line-height);
+    letter-spacing: var(--text-md--letter-spacing);
+    font-variation-settings: "opsz" 22, "wght" 650;
+  }
+  .prose-human > :is(h2, h3, h4, h5, h6):not(:first-child) { margin-block-start: 1.25em; }
+
+  /* ---------- Eyebrow. Ruled, never a pill. ---------- */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: var(--text-2xs);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-variation-settings: "wght" 650;
+    color: var(--color-ink-2);
+  }
+
+  /* A label set in capitals at the smallest size is tracked open, as the
+     eyebrow is. The same size in sentence case ("Time with the build") is not:
+     spacing that is right for capitals reads as loose letters in lower case.
+     A `tracking-*` utility on the element still wins. */
+  .uppercase.text-2xs { letter-spacing: 0.12em; }
+
+  /* ---------- Buttons. Square, inked, no shadow, no pill. ---------- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    min-block-size: 48px;
+    padding-inline: var(--spacing-lg);
+    border: 1.5px solid var(--color-ink);
+    border-radius: var(--radius-xs);
+    background-color: var(--color-ink);
+    color: var(--color-btn-ink);
+    font-size: var(--text-sm);
+    font-variation-settings: "wght" 650;
+    cursor: pointer;
+    transition: background-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease),
+      border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn:active { transform: translateY(1px); }
+  .btn[aria-disabled="true"] {
+    background-color: transparent;
+    color: var(--color-ink-3);
+    border-color: var(--color-rule);
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-secondary {
+    background-color: transparent;
+    color: var(--color-ink);
+    border-color: var(--color-rule-2);
+  }
+  .btn-secondary:hover {
+    border-color: var(--color-ink);
+    box-shadow: inset 0 -2px 0 var(--color-ink);
+  }
+
+  /* ---------- Inline link: the rule thickens rather than a colour change. -- */
+  .link {
+    box-shadow: inset 0 -1px 0 var(--color-rule-2);
+    transition: box-shadow var(--dur-1) var(--ease);
+  }
+  .link:hover { box-shadow: inset 0 -2px 0 var(--color-ink); }
+
+  /* ---------- Chip. Square, ruled, one weight. ---------- */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2xs);
+    padding: 3px var(--spacing-xs);
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-xs);
+    font-size: var(--text-2xs);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-variation-settings: "wght" 700;
+    color: var(--color-ink-2);
+    white-space: nowrap;
+  }
+  .chip[data-solid="true"] {
+    background-color: var(--color-ink);
+    border-color: var(--color-ink);
+    color: var(--color-btn-ink);
+  }
+  .chip[data-mark="true"] { border-color: var(--color-mark); color: var(--color-mark); }
+
+  /* ---------- Field. Label above, error space reserved, no reflow. -------- */
+  .field-input {
+    inline-size: 100%;
+    min-block-size: 48px;
+    padding: 0 var(--spacing-md);
+    background-color: var(--color-paper-hi);
+    color: var(--color-ink);
+    border: 1.5px solid var(--color-rule-2);
+    border-radius: var(--radius-xs);
+    transition: border-color var(--dur-1) var(--ease);
+  }
+  .field-input:hover { border-color: var(--color-ink-2); }
+  .field-input[aria-invalid="true"] { border-color: var(--color-mark); }
+  .field-help { min-block-size: 1lh; font-size: var(--text-xs); color: var(--color-ink-3); }
+  .field-help[data-error="true"] { color: var(--color-mark); }
+}
+
+/* ============================================================================
+   UTILITIES
+   ========================================================================== */
+
+@utility sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* The mark: a 2px rule on the leading edge of exactly one element per view. */
+@utility marked {
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: 2px;
+    background-color: var(--color-mark);
+  }
+}
+
+/* The grind-mark: the same 2px leading rule in ink, on the one current thing in
+   a view (the row the keyboard is on, the open note, the step you are at).
+   Selection steps the ink, so the mark stays the ask's. It is a `::before`
+   rather than a border, so arriving and leaving move nothing, and it cannot
+   share an element with `tap-44`, which draws there too. The component layer
+   used this name while nothing defined it, so no current row showed a mark. */
+@utility grind-mark-on {
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: 2px;
+    background-color: var(--color-ink);
+  }
+}
+
+@utility tap-44 {
+  position: relative;
+  &::before { content: ""; position: absolute; inset: -12px; }
+}
+
+@utility pad-inline { padding-inline: var(--pad-inline); }
+@utility measure { max-inline-size: 66ch; }
+@utility measure-ui { max-inline-size: 56ch; }
+/* Two more measures the component layer reads by the old build's names. With
+   them undefined, a thread register's excerpts ran the full row and the
+   dashboard's fix-first list, meant to keep each action beside its sentence,
+   ran the full column. */
+@utility measure-prose { max-inline-size: 66ch; }
+@utility measure-cap { max-inline-size: 72ch; }
+@utility track-safe { min-inline-size: 0; }
+@utility tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+
+/* ============================================================================
+   MOTION
+   Entrances under 240ms, exits 2/3 of that, and every one of them has a path
+   through the reduced-motion block below.
+   ========================================================================== */
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes ink-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@utility rise-in {
+  animation: rise var(--dur-3) var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

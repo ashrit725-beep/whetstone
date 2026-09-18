@@ -1,0 +1,52 @@
+{
+  "name": "whetstone",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "NEXT_DIST_DIR=.next-dev next dev -p 4300",
+    "build": "next build",
+    "start": "next start -p 4311",
+    "typecheck": "tsc --noEmit",
+    "lint": "next lint",
+    "db:seed": "node --experimental-strip-types scripts/seed.ts",
+    "db:populate": "node scripts/scale/populate.mjs",
+    "db:rebuild": "npm run db:seed && npm run db:populate && node --experimental-strip-types scripts/recompute-specificity.mts && node --experimental-strip-types scripts/recompute-hot.mts && node --experimental-strip-types scripts/recompute-reputation.mts && node scripts/audit.mjs",
+    "audit": "node scripts/audit.mjs",
+    "check:ai": "node --experimental-strip-types scripts/check-ai-schemas.mts",
+    "verify:pages": "THEME=dark node scripts/verify-pages.mjs && THEME=light node scripts/verify-pages.mjs",
+    "verify": "npm run typecheck && npm run build && npm run audit && npm run check:ai && npm run check:urls && npm run check:css",
+    "check:urls": "node --experimental-strip-types scripts/check-urls.mts",
+    "check:links": "node scripts/check-links.mjs",
+    "check:css": "node scripts/check-css.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.65.0",
+    "@fontsource-variable/archivo": "^5.3.0",
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@fontsource-variable/literata": "^5.3.0",
+    "@fontsource-variable/newsreader": "^5.3.0",
+    "@fontsource/bricolage-grotesque": "^5.3.0",
+    "clsx": "^2.1.1",
+    "jose": "^6.0.11",
+    "lucide-react": "^0.544.0",
+    "motion": "^13.2.0",
+    "next": "^15.5.4",
+    "openai": "^6.0.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "tailwind-merge": "^3.3.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.13",
+    "@types/node": "^24.3.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "postcss": "^8.5.6",
+    "puppeteer-core": "^25.10.0",
+    "tailwindcss": "^4.1.13",
+    "typescript": "^5.9.2"
+  }
+}
