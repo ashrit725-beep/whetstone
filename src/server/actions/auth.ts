@@ -11,7 +11,6 @@
  */
 
 import { randomBytes } from 'node:crypto'
-import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { after } from 'next/server'
 import {
@@ -24,7 +23,7 @@ import {
   verifyPassword,
 } from '@/lib/auth'
 import { now } from '@/lib/utils'
-import type { UserRow } from '@/lib/types'
+import type { UserRow, UserStatus } from '@/lib/types'
 import { linkOrigin, mailDelivery, sendPasswordReset, type MailDelivery } from '@/server/mail'
 import {
   consumeAuthToken,
@@ -129,12 +128,20 @@ function decoy(): Promise<string> {
   return decoyHash
 }
 
+/*
+ * Nothing is revalidated here on purpose. Every surface that renders the reader
+ * reads the session cookie, which makes it dynamic already, so a sign-in has no
+ * cached page to correct. The one call this used to make — `revalidatePath('/',
+ * 'layout')` — expired the implicit `/layout` tag, which every cached page and
+ * every `unstable_cache` entry in the app carries, so one sign-in threw away the
+ * whole public site: the next visitor to `/` waited 2.5–7.8s on a rebuild that
+ * had nothing to do with them.
+ */
 async function startSession(userId: string, handle: string, stay: boolean): Promise<void> {
   const ttl = stay ? LONG_SESSION_S : SHORT_SESSION_S
   const token = await signSession({ uid: userId, handle }, ttl)
   await setSessionCookie(token, stay)
   await recordSession({ userId, token, expiresAt: now() + ttl * 1000 })
-  revalidatePath('/', 'layout')
 }
 
 /* ------------------------------------------------------------------------- *
@@ -143,6 +150,24 @@ async function startSession(userId: string, handle: string, stay: boolean): Prom
 
 const CREDENTIALS_WRONG =
   'Email or password is incorrect. Check both, or reset your password if you no longer have it.'
+
+/**
+ * What an account that cannot sign in is told once its password has verified.
+ *
+ * Saying this to somebody holding the right password reveals nothing they could
+ * not already see, and the alternative was worse than silence: a closed account
+ * heard CREDENTIALS_WRONG and was sent to reset a password that was correct,
+ * where the reset quietly issues no link because the account is not active.
+ * None of these mentions resetting, because none of them would be fixed by it.
+ */
+const CANNOT_SIGN_IN: Record<Exclude<UserStatus, 'active'>, string> = {
+  deactivated:
+    'This account was closed, so it can no longer be signed in to. The password was right: closing an account is what stops it, and there is no undo. Its email address and handle stay reserved to it, so a new account needs a different address.',
+  suspended:
+    'This account is suspended, so it cannot be signed in to at the moment. The password was right. A moderator has to lift the suspension before the account works again.',
+  banned:
+    'This account has been closed by a moderator and cannot be signed in to. The password was right; nothing entered here will change that.',
+}
 
 export async function signInAction(
   _prev: AuthFormState,
@@ -206,7 +231,17 @@ export async function signInAction(
   }
 
   const ok = await verifyPassword(password, user.password_hash)
-  if (!ok || user.status !== 'active') return refused(CREDENTIALS_WRONG)
+  if (!ok) return refused(CREDENTIALS_WRONG)
+
+  // The password verified, so this is not a guess and must not be counted as
+  // one: the person would otherwise read the same refusal five times and then
+  // be told to wait fifteen minutes for a sign-in that will never work.
+  if (user.status !== 'active') {
+    clearRateLimit(RATE_POLICIES.signIn, subject)
+    clearRateLimit(RATE_POLICIES.signInAccount, account)
+    refundRateLimit(RATE_POLICIES.signInNetwork, ipSubject)
+    return refused(CANNOT_SIGN_IN[user.status])
+  }
 
   if (needsRehash(user.password_hash)) {
     setPasswordHash(user.id, await hashPassword(password))
@@ -340,7 +375,7 @@ const RESET_SENT = 'If an account exists for that address, a reset link is on it
 
 /** MAIL_TRANSPORT=outbox: the link is a file on this server, not an email. */
 const RESET_OUTBOX =
-  "If an account exists for that address, a reset link is waiting in this server's outbox for whoever runs it to pass on."
+  'If an account exists for that address, a reset link is waiting in this server’s outbox for whoever runs it to pass on.'
 
 /** Outside production with no mail provider, where the link goes to the log. */
 const RESET_LOGGED =
@@ -360,7 +395,10 @@ export async function forgotPasswordAction(
   _prev: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
-  const parsed = ForgotSchema.safeParse({ email: formData.get('email') ?? '' })
+  const parsed = ForgotSchema.safeParse({
+    email: formData.get('email') ?? '',
+    next: formData.get('next') ?? undefined,
+  })
 
   if (!parsed.success) {
     return invalid(
@@ -373,6 +411,9 @@ export async function forgotPasswordAction(
   if (!delivery) return refused(RESET_UNAVAILABLE)
 
   const { email } = parsed.data
+  // Re-validated here rather than trusted from the form, because the value it
+  // ends up in is a link that leaves this server and comes back as a request.
+  const next = safeNextPath(parsed.data.next, '')
   const ipSubject = await requestSubject()
 
   // Every refusal below names its own limit and its own wait. None depends on
@@ -416,7 +457,9 @@ export async function forgotPasswordAction(
       tokenHash: hashToken(secret),
       expiresAt: now() + RESET_TTL_MS,
     })
-    const path = `/reset-password?token=${secret}`
+    const path = next
+      ? `/reset-password?token=${secret}&next=${encodeURIComponent(next)}`
+      : `/reset-password?token=${secret}`
     const url = `${await linkOrigin()}${path}`
     // Sent once the response has gone. A provider round trip inside the
     // request would make an address with an account measurably slower to
@@ -451,6 +494,7 @@ export async function resetPasswordAction(
   const parsed = ResetSchema.safeParse({
     token: formData.get('token') ?? '',
     password: formData.get('password') ?? '',
+    next: formData.get('next') ?? undefined,
   })
 
   if (!parsed.success) {
@@ -493,7 +537,10 @@ export async function resetPasswordAction(
   revokeAllSessions(user.id)
 
   await startSession(user.id, user.handle, true)
-  redirect('/discover')
+  // Where the reader was going when they were sent to sign in, carried through
+  // the emailed link. `safeNextPath` is what stops that link from becoming an
+  // open redirect, and it falls back to Discover for anything off this origin.
+  redirect(safeNextPath(parsed.data.next))
 }
 
 /* ------------------------------------------------------------------------- *

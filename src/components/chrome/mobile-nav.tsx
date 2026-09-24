@@ -49,6 +49,9 @@ export function MobileNav({ theme, account }: MobileNavProps) {
         ...SECONDARY_ITEMS,
         { href: '/dashboard', label: 'Your dashboard' },
         { href: `/u/${account.handle}`, label: 'Your profile' },
+        // The list the Save button on a project page writes to. The account
+        // menu it lives in on a wide screen is not rendered at this width.
+        { href: '/saved', label: 'Saved projects' },
       ]
     : SECONDARY_ITEMS
 

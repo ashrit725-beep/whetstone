@@ -8,7 +8,7 @@
  * frames around a review (stock.mjs), and the writer's own persona.
  */
 
-import { makeRandom, makeRenderer, tidy, voice, count, subject, cap, Ledger, makePersona, isPlural, splitSentences, repeatsAWord } from './compose.mjs'
+import { makeRandom, makeRenderer, tidy, voice, count, subject, cap, Ledger, makePersona, isPlural, splitSentences, repeatsAWord, runsOf } from './compose.mjs'
 import { KINDS, GENERIC, BUG_FRAMES, MISSING_FRAMES, LEAD_IN, FOLLOW, WHEN } from './kinds.mjs'
 import { TYPES } from './types/index.mjs'
 import { makeTitle } from './titles.mjs'
@@ -134,6 +134,30 @@ export class Writer {
     return false
   }
 
+  /**
+   * A project page keeps its own ledger of the word runs it has already
+   * printed, beside the corpus-wide one the Budget holds. `runsOf` and the
+   * eight-word length live in compose.mjs, because the audit asks the built
+   * database the same question and the two must not drift apart.
+   *
+   * Frames and runs answer different questions and both are asked. A frame is
+   * the shape ("{Subj} gets in the way of {main}"), and two notes built on one
+   * shape read alike even when every word in the slots differs. A run is the
+   * words as printed, which is what catches the fixed tail of a shape nothing
+   * tracks: the follow-on sentence, the session opener, the closing line.
+   */
+  freshOnPage(p, text) {
+    p.runs ??= new Set()
+    for (const run of runsOf(text)) if (p.runs.has(run)) return false
+    return true
+  }
+
+  /** Spend this text's runs on the page, once the draw is kept. */
+  spendOnPage(p, text) {
+    p.runs ??= new Set()
+    for (const run of runsOf(text)) p.runs.add(run)
+  }
+
   /* --------------------------------------------------------------- people */
 
   reserveNames(names) {
@@ -241,7 +265,9 @@ export class Writer {
       title = this.uniqueTitle(() => makeTitle(R, typeSlug, world))
     }
     const p = { type: typeSlug, T, world, title, currency, owner, stage, askSentences: new Set(),
-      headlines: new Set(), summaries: new Set(), points: new Set(), replies: new Set(), changes: new Set(), suggestions: new Set() }
+      headlines: new Set(), summaries: new Set(), points: new Set(), replies: new Set(), changes: new Set(), suggestions: new Set(),
+      // Every run of words this project's page has already printed. See freshOnPage.
+      runs: new Set() }
     p.ctx = this.baseCtx(p)
     // Two projects with the same one-line description is the same tell as two with the same name.
     this.taglines ??= new Set()
@@ -414,7 +440,7 @@ export class Writer {
    * words, adds the follow-up sentences this reviewer would add, and returns
    * the noun phrase the note summary can refer back to.
    */
-  point(p, persona, { tone, severity, label, avoid = null }) {
+  point(p, persona, { tone, severity, label, avoid = null, frames = null }) {
     const R = this.R
     const T = p.T
     const fit = (list) => this.fit(list, T)
@@ -494,11 +520,17 @@ export class Writer {
       if (R.chance(persona.hedge * 0.3)) parts.push(this.render(R.pick(fit(FOLLOW.hedge)), ctx))
       const kept = attempt > 24 ? parts.slice(0, 1) : parts
       return voice(tidy(kept.join(' ')), persona, R)
-    }, 48, (t) => !p.points.has(t) && !this.repeatsWorld(p, t) && !(avoid !== null && tplUsed !== null && avoid.has(`tpl:${tplUsed}`)))
+    }, 48, (t) => !p.points.has(t) && !this.repeatsWorld(p, t) && this.freshOnPage(p, t)
+      && !(frames !== null && tplUsed !== null && frames.has(tplUsed)))
     p.points.add(text)
+    this.spendOnPage(p, text)
+    // The subject set is this note's: two points in one note about the same
+    // thing read as one point said twice, but two reviewers landing on the same
+    // thing is the whole reason a creator reads a page of notes.
     avoid?.add(about.text)
-    // One note does not use the same sentence shape twice.
-    if (tplUsed !== null) avoid?.add(`tpl:${tplUsed}`)
+    // The frame set is the project's. A sentence shape is a tic, and a reader
+    // meets every note on one page, so a shape spent here is spent for the page.
+    if (tplUsed !== null) frames?.add(tplUsed)
     return { text, noun, tone, severity, kind: about.kind, subj: about.text }
   }
 
@@ -528,8 +560,9 @@ export class Writer {
       let h = this.render(R.pick(usable), ctx)
       if (attempt < 20 && R.chance(0.14) && !/[,;]/.test(h)) h += this.render(R.pick(S.HEADLINE_TAIL), ctx)
       return voice(tidy(h).replace(/`/g, '').replace(/\.$/, ''), persona, R)
-    }, 40, (t) => !p.headlines.has(t))
+    }, 40, (t) => !p.headlines.has(t) && this.freshOnPage(p, t))
     p.headlines.add(headline)
+    this.spendOnPage(p, headline)
 
     const summary = this.b.noteSummary.draw((attempt) => {
       const parts = []
@@ -555,8 +588,9 @@ export class Writer {
         parts.push(R.pick(closes))
       }
       return voice(tidy(parts.map((x) => this.render(x, ctx)).join(' ')), persona, R)
-    }, 40, (t) => !p.summaries.has(t))
+    }, 40, (t) => !p.summaries.has(t) && this.freshOnPage(p, t))
     p.summaries.add(summary)
+    this.spendOnPage(p, summary)
     return { headline, summary, main, praise, mainKind: issues[0]?.kind ?? null }
 
   }
@@ -577,7 +611,7 @@ export class Writer {
       const usable = this.fit(list, T).filter(ok)
       return (usable.length > 0 ? R.pick(usable) : R.pick(this.fit(list, T).filter((f) => !/^[!#%]/.test(f) && !/\{[Mm]ain\}/.test(f)))).replace(/^[!#%]+/, '')
     }
-    return this.b.reply.draw((attempt) => {
+    const text = this.b.reply.draw((attempt) => {
       const ctx = this.withNumbers(p.ctx, persona, {
         main: main ?? p.ctx.spot, praise: praise ?? p.ctx.feature,
         mainPlural: isPlural(main ?? p.ctx.spot), praisePlural: isPlural(praise ?? p.ctx.feature),
@@ -595,7 +629,14 @@ export class Writer {
         parts.push(pick(S.REPLY_CREATOR_LAST))
       }
       return voice(tidy(parts.map((x) => this.render(x, ctx)).join(' ')), persona, R)
-    }, 40, (t) => !this.repeatsWorld(p, t))
+      // Replies hang under the notes on the same page, so they draw on the same
+      // ledger: "a change to the allergen labels would help" under two
+      // different notes is the creator with a tic, exactly as it would be in a
+      // note. p.replies had been declared and never used; this is what it is for.
+    }, 40, (t) => !this.repeatsWorld(p, t) && !p.replies.has(t) && this.freshOnPage(p, t))
+    p.replies.add(text)
+    this.spendOnPage(p, text)
+    return text
   }
 
   /* ---------------------------------------------------------- discussions */

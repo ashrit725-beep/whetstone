@@ -7,7 +7,11 @@
  * fail loudly on any disagreement. Run it after any change to the seed or the
  * population, and before claiming the data is sound.
  *
- *   node scripts/audit.mjs
+ *   node scripts/audit.mjs [--db path]
+ *
+ * It reads `--db` if given, otherwise DATABASE_PATH like the app does, so a
+ * rehearsed rebuild can be audited without opening the file the running
+ * servers hold. Nothing here writes.
  */
 
 import { DatabaseSync } from 'node:sqlite'
@@ -15,14 +19,24 @@ import fs from 'node:fs'
 import path from 'node:path'
 // The feed's own constants and the hand-written content, read from the files
 // the application and the seed read, so a retuned threshold moves the check.
-import { FEED } from '../src/lib/taxonomy.ts'
+import { FEED, REPUTATION_TIERS } from '../src/lib/taxonomy.ts'
 import { PROJECTS } from '../src/server/db/seed-data.ts'
-// Which categories bear on which rating axis, as the population writes them.
-import { AXIS_EVIDENCE } from './scale/vocab.mjs'
+// Which categories bear on which rating axis, as the population writes them,
+// and which of them name a fault rather than a subject.
+import { AXIS_EVIDENCE, FAULT_CATEGORIES } from './scale/vocab.mjs'
+// The writer's own definition of a run of words long enough to be a tell, so
+// the check and the generator cannot drift apart.
+import { PAGE_RUN, runsOf } from './scale/compose.mjs'
 
-const db = new DatabaseSync(path.resolve(process.cwd(), 'data/whetstone.db'))
+const dbFlag = process.argv.indexOf('--db')
+const db = new DatabaseSync(
+  path.resolve(
+    process.cwd(),
+    dbFlag === -1 ? (process.env.DATABASE_PATH ?? 'data/whetstone.db') : process.argv[dbFlag + 1],
+  ),
+)
 const checks = []
-const check = (label, sql) => checks.push({ label, n: db.prepare(sql).get().n })
+const check = (label, sql, params = []) => checks.push({ label, n: db.prepare(sql).get(...params).n })
 
 /** The instant the database was built as of, which is what "recent" is measured from. */
 const BUILT = Number(db.prepare(`SELECT meta_value AS v FROM schema_meta WHERE meta_key = 'seeded_at'`).get()?.v ?? Date.now())
@@ -98,6 +112,15 @@ check('posts dated before their thread',
 check('projects published before their owner joined',
   `SELECT COUNT(*) n FROM projects p JOIN users u ON u.id = p.owner_id
     WHERE p.published_at < u.created_at`)
+// `/p/<slug>` is one namespace for every member, so a slug belongs to one
+// project or the older one becomes unreachable at its own address. The unique
+// index says so too; this catches a generator that stopped agreeing with it
+// before the index refuses to be built.
+check('project slugs shared by more than one project',
+  `SELECT COUNT(*) n FROM (SELECT slug FROM projects GROUP BY slug HAVING COUNT(*) > 1)`)
+check('project slugs a URL cannot carry',
+  `SELECT COUNT(*) n FROM projects WHERE slug <> LOWER(slug) OR slug GLOB '*[^a-z0-9-]*'
+     OR slug LIKE '-%' OR slug LIKE '%-' OR LENGTH(slug) = 0`)
 check('threads whose last post precedes them',
   `SELECT COUNT(*) n FROM discussion_threads WHERE last_post_at IS NOT NULL AND last_post_at < created_at`)
 check('rows updated before they were created',
@@ -210,6 +233,26 @@ check('project_stats.follower_count vs follows',
 check('project_stats.bookmark_count vs bookmarks',
   `SELECT COUNT(*) n FROM project_stats s WHERE s.bookmark_count <>
      (SELECT COUNT(*) FROM project_bookmarks pb WHERE pb.project_id = s.project_id)`)
+// A follow and a bookmark are standing subscriptions to a page, and a follow
+// also puts the project's title into somebody's bell on every new build. Work
+// its owner has not published is not a page anyone else may subscribe to: a row
+// here from a stranger is how somebody who guessed a slug learns the name of an
+// unfinished project, and then keeps being told about it.
+//
+// Who "anyone else" is, is canSeeProject()'s answer rather than a looser one of
+// our own: the owner and the collaborators can always open the row, everybody
+// else only once it is published and not private. So a subscription that
+// function would refuse is a row the product can no longer produce — including
+// the two shapes a status-only test misses, a published-but-private project and
+// a collaborator who is not the owner.
+const unseenBy = (table) =>
+  `SELECT COUNT(*) n FROM ${table} s JOIN projects p ON p.id = s.project_id
+    WHERE s.user_id <> p.owner_id
+      AND NOT EXISTS (SELECT 1 FROM project_collaborators c
+                       WHERE c.project_id = p.id AND c.user_id = s.user_id)
+      AND (p.deleted_at IS NOT NULL OR p.status <> 'published' OR p.visibility = 'private')`
+check('follows on work their follower cannot open', unseenBy('project_follows'))
+check('bookmarks on work their reader cannot open', unseenBy('project_bookmarks'))
 check('reputation feedback_count vs reviews written',
   `SELECT COUNT(*) n FROM reputation_scores r WHERE r.feedback_count <>
      (SELECT COUNT(*) FROM feedback f WHERE f.reviewer_id = r.user_id AND f.status = 'submitted')`)
@@ -228,6 +271,35 @@ check('reputation figures outside the 0..1000 scale',
     WHERE reviewer_score NOT BETWEEN 0 AND 1000 OR creator_score NOT BETWEEN 0 AND 1000
        OR community_score NOT BETWEEN 0 AND 1000 OR expert_score NOT BETWEEN 0 AND 1000
        OR total_score NOT BETWEEN 0 AND 1000`)
+// Every card prints the tier beside the number, both out of this one row, so a
+// level that does not follow from the score puts "New" next to 147.
+check('reputation level disagreeing with the tier its score falls in',
+  `SELECT COUNT(*) n FROM reputation_scores WHERE level <> (CASE ${REPUTATION_TIERS
+    .map((t) => `WHEN total_score >= ${t.min} THEN ${t.level}`)
+    .reverse()
+    .join(' ')} ELSE 1 END)`)
+check('reputation helpful_rate disagreeing with its own counts',
+  `SELECT COUNT(*) n FROM reputation_scores
+    WHERE (feedback_count = 0 AND helpful_rate <> 0.0)
+       OR (feedback_count > 0
+           AND ABS(helpful_rate - (CAST(helpful_count AS REAL) / feedback_count)) > 0.01)`)
+// A rollup is a cache of the evidence, and the application refreshes it on
+// every write that could move it. One older than its own newest event is a
+// write path that recorded the evidence and never rewrote the summary — which
+// is how an account can read "New · 0 credibility" on a thread while its own
+// reputation tab computes a real score from the same rows.
+check('reputation rollups older than the evidence they summarise',
+  `SELECT COUNT(*) n FROM reputation_scores r
+    WHERE r.computed_at < COALESCE(
+      (SELECT MAX(e.created_at) FROM reputation_events e WHERE e.user_id = r.user_id), 0)
+       OR r.computed_at < COALESCE(
+      (SELECT MAX(f.submitted_at) FROM feedback f
+        WHERE f.reviewer_id = r.user_id AND f.status = 'submitted'), 0)`)
+// Every card reads this row through COALESCE(rs.total_score, 0), so a member
+// without one is indistinguishable from a member worth nothing.
+check('members with no reputation rollup at all',
+  `SELECT COUNT(*) n FROM users u WHERE u.deleted_at IS NULL
+     AND NOT EXISTS (SELECT 1 FROM reputation_scores r WHERE r.user_id = u.id)`)
 
 /* -- values on the scale the application reads ---------------------------- */
 
@@ -237,6 +309,27 @@ check('reputation figures outside the 0..1000 scale',
 check('quality_score outside the 0..1 scale',
   `SELECT COUNT(*) n FROM feedback WHERE quality_score IS NOT NULL
      AND (quality_score < 0 OR quality_score > 1)`)
+// The public thread's default tab is "Most helpful", and its order is
+// helpful_count, then quality_score, then submitted_at — the three columns
+// ix_feedback_public is built on. Almost no note has ever been voted helpful,
+// so on a normal project the whole order is the second and third keys. A note
+// with no quality score drops out of the middle of it and falls through to the
+// last resort, which is the primary key, which is a random UUID: the best note
+// on the project can then be printed last and cut off by the five-note preview.
+// With this check and 'two reviews of one project at one instant' below, the
+// order is total and the same on every load.
+check('submitted reviews with no quality score to sort on',
+  `SELECT COUNT(*) n FROM feedback
+    WHERE status = 'submitted' AND deleted_at IS NULL AND quality_score IS NULL`)
+// A headline and a summary do different jobs, and the profile's review row
+// prints one directly above the other. The same sentence in both is that
+// sentence twice in one card — and because the row falls back to the first
+// point's body when there is no summary, the honest shape when a reviewer has
+// written only an impression is a headline and no summary at all.
+check('reviews whose summary is a copy of their own headline',
+  `SELECT COUNT(*) n FROM feedback
+    WHERE headline IS NOT NULL AND summary_md IS NOT NULL
+      AND TRIM(headline) = TRIM(summary_md)`)
 check('notes badged expert by a non-expert',
   `SELECT COUNT(*) n FROM feedback f JOIN users u ON u.id = f.reviewer_id
     WHERE f.reviewer_is_expert = 1 AND u.is_expert = 0`)
@@ -371,6 +464,29 @@ check('ratings outside their axis scale',
       WHERE (s.blocker = 1 AND r.rating_value = s.scale_max)
          OR (s.praise = 1 AND s.serious = 0 AND r.rating_value = 1)`)
 }
+
+/* -- what one point card says about itself --------------------------------- */
+
+// A point card prints its category, its severity and its actionability in one
+// block above the sentence, so the three have to agree with each other and with
+// what is written underneath. Two ways they can contradict:
+//
+//   * a compliment filed under a category that names a fault — "Broken link",
+//     severity "Keep this", body "Clean, technically: no glitches";
+//   * a blocker typed "Preference", which the taxonomy defines as "a judgment
+//     with a direction, but no named change" — a blocker is not a taste.
+{
+  const faults = [...FAULT_CATEGORIES]
+  check('compliments filed under a category that names a fault',
+    `SELECT COUNT(*) n FROM feedback_points p
+       JOIN feedback_categories c ON c.id = p.category_id
+      WHERE p.severity = 'praise'
+        AND c.category_key IN (${faults.map(() => '?').join(', ')})`,
+    faults)
+}
+check('faults the same card calls a matter of preference',
+  `SELECT COUNT(*) n FROM feedback_points
+    WHERE severity IN ('blocker', 'major') AND actionability = 'opinion'`)
 // Counted the way recomputeProjectRating() counts.
 check('project_stats.rating_count vs ratings',
   `SELECT COUNT(*) n FROM project_stats s WHERE s.rating_count <>
@@ -469,6 +585,21 @@ check('paid reviews that are not the awarded work',
   `SELECT COUNT(*) n FROM bounty_awards a JOIN bounties b ON b.id = a.bounty_id JOIN feedback f ON f.id = a.feedback_id
     WHERE f.reviewer_id <> a.expert_id OR f.project_id <> b.project_id OR f.origin <> 'bounty' OR f.bounty_id IS NOT b.id
        OR f.submitted_at < a.created_at OR f.submitted_at > a.delivered_at`)
+// The other direction of the same link. `origin` and `bounty_id` are what the
+// reputation formula reads to refuse a paying creator's helpful mark — "money
+// cannot buy the helpful mark" — so a review that claims to be paid and has no
+// award behind it would be silently excused from the rule.
+check('reviews filed as paid with no award behind them',
+  `SELECT COUNT(*) n FROM feedback f
+    WHERE (f.origin = 'bounty') <> (f.bounty_id IS NOT NULL)
+       OR (f.bounty_id IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM bounty_awards a WHERE a.feedback_id = f.id))`)
+// One review, one bounty. Work already delivered and paid for cannot be handed
+// to a second award and collect twice; ux_bounty_awards_feedback refuses the
+// row now, and this names the rows to look at in a database written before it.
+check('reviews paid for by more than one bounty',
+  `SELECT COUNT(*) n FROM (SELECT feedback_id FROM bounty_awards
+     WHERE feedback_id IS NOT NULL GROUP BY feedback_id HAVING COUNT(*) > 1)`)
 check('open bounties past their closing date',
   `SELECT COUNT(*) n FROM bounties WHERE status = 'open' AND closes_at IS NOT NULL AND closes_at < ${BUILT}`)
 check('market rows dated before their bounty',
@@ -520,8 +651,9 @@ check('credentials issued before their holder joined',
 // is measured on every unanswered review whatever its age, because today's
 // reviews are a week old next week and the database keeps being used.
 {
-  // A generated project can share a slug under another owner, so each one is
-  // matched on its owner as well.
+  // Slugs are a single namespace now, so each hand-written project is still
+  // matched on its owner: that is what proves the row found is the seeded one
+  // and not a generated project that happened to be named the same thing.
   const own = PROJECTS.map((p) => `${p.ownerHandle}/${p.slug}`)
   const rows = db.prepare(
     `SELECT p.slug, COUNT(*) AS n FROM feedback f
@@ -581,6 +713,62 @@ check('credentials issued before their holder joined',
   checks.push({ label: 'text repeating a word where two pieces meet', n })
 }
 
+/**
+ * No project page says the same eight words twice.
+ *
+ * A reader meets one project at a time: its notes, their headlines, their
+ * bodies, all on one scroll. Two reviewers reaching for the same sentence there
+ * is the one thing that makes a page of notes read as one writer rather than
+ * twelve, and it is not caught by the corpus-wide word ledger, which budgets a
+ * phrase across thirty thousand notes without caring where it lands.
+ *
+ * Measured on the text a reader actually sees on `/p/<slug>`: every submitted
+ * note's headline and summary, every one of its points, and the replies hanging
+ * under it. A run repeated inside a single note and its own replies is not
+ * counted — that thread is one exchange, and the per-note sets already refuse a
+ * verbatim repeat — only a run that turns up under two different notes on the
+ * same page.
+ */
+{
+  const rows = db.prepare(
+    `SELECT f.project_id AS pid, f.id AS fid, p.body_md AS v
+       FROM feedback_points p JOIN feedback f ON f.id = p.feedback_id
+      WHERE f.status = 'submitted' AND f.deleted_at IS NULL
+      UNION ALL
+     SELECT f.project_id, f.id, f.headline FROM feedback f
+      WHERE f.status = 'submitted' AND f.deleted_at IS NULL AND f.headline IS NOT NULL
+      UNION ALL
+     SELECT f.project_id, f.id, f.summary_md FROM feedback f
+      WHERE f.status = 'submitted' AND f.deleted_at IS NULL AND f.summary_md IS NOT NULL
+      UNION ALL
+     SELECT f.project_id, f.id, r.body_md FROM feedback_replies r
+       JOIN feedback f ON f.id = r.feedback_id
+      WHERE r.deleted_at IS NULL AND f.status = 'submitted' AND f.deleted_at IS NULL`,
+  ).all()
+  const pages = new Map()
+  for (const r of rows) {
+    let page = pages.get(r.pid)
+    if (page === undefined) { page = []; pages.set(r.pid, page) }
+    page.push(r)
+  }
+  let n = 0
+  for (const page of pages.values()) {
+    const spent = new Map()
+    let hit = null
+    for (const r of page) {
+      for (const run of new Set(runsOf(r.v))) {
+        const owner = spent.get(run)
+        if (owner === undefined) spent.set(run, r.fid)
+        else if (owner !== r.fid) hit ??= run
+      }
+    }
+    if (hit === null) continue
+    if (n < 6) console.log(`        ${page[0].pid.slice(0, 8)}: two notes both say "${hit}"`)
+    n++
+  }
+  checks.push({ label: `project pages where ${PAGE_RUN} words repeat across two notes`, n })
+}
+
 /* -- notification targets ------------------------------------------------- */
 
 /**
@@ -637,6 +825,109 @@ function routeExists(pathname) {
   checks.push({ label: 'notification links pointing at no route', n: dead.length })
   if (dead.length > 0) {
     for (const d of [...new Set(dead)].slice(0, 6)) console.log(`        dead: ${d}`)
+  }
+}
+
+// A notification names the work it is about, so it is also a way to learn a
+// title. The follow check above keeps a stranger from subscribing to work they
+// may not open; this is the other end of the same thread, because a bell row
+// outlives the subscription that produced it and says the name again every time
+// the bell is opened. Deleted work is left out on purpose: the schema calls a
+// dangling subject a rendering fallback, and work that was public when the row
+// was written is not a leak.
+check('notifications naming work their reader cannot open',
+  `SELECT COUNT(*) n FROM notifications nt
+     JOIN projects p ON p.id = CASE nt.subject_type
+       WHEN 'project' THEN nt.subject_id
+       WHEN 'project_version' THEN (SELECT v.project_id FROM project_versions v WHERE v.id = nt.subject_id)
+     END
+    WHERE nt.user_id <> p.owner_id
+      AND p.deleted_at IS NULL
+      AND (p.status <> 'published' OR p.visibility = 'private')
+      AND NOT EXISTS (SELECT 1 FROM project_collaborators c
+                       WHERE c.project_id = p.id AND c.user_id = nt.user_id)`)
+
+/**
+ * Following a project is the promise to hear about its next build, and the bell
+ * is where that promise is kept: postVersion() fans a `new_version` row out to
+ * every follower whose subscription is 'all' or 'versions'.
+ *
+ * It is the one fan-out a built world can be missing with every page still
+ * looking right, because a notification nobody was sent shows up nowhere — so
+ * it needs a check of its own. Counted per (build, follower) pair, the way
+ * notifyMany() writes them, and only for a follow already standing when the
+ * build landed. The owner is not a recipient of their own build, and a follower
+ * who turned the kind off in-app was never going to get the row.
+ */
+check('builds their followers were never told about',
+  `SELECT COUNT(*) n FROM project_versions v
+     JOIN project_follows pf ON pf.project_id = v.project_id
+     JOIN projects p ON p.id = v.project_id
+    WHERE pf.notify IN ('all', 'versions')
+      AND pf.user_id <> p.owner_id
+      AND pf.created_at <= v.released_at
+      AND NOT EXISTS (SELECT 1 FROM notification_preferences np
+                       WHERE np.user_id = pf.user_id AND np.kind = 'new_version' AND np.in_app = 0)
+      AND NOT EXISTS (SELECT 1 FROM notifications nt
+                       WHERE nt.user_id = pf.user_id AND nt.kind = 'new_version'
+                         AND nt.subject_type = 'project_version' AND nt.subject_id = v.id)`)
+
+/**
+ * Every notification kind in the database has to be one the running product can
+ * write, and every stored switch has to govern one.
+ *
+ * A row of a kind nothing produces is a notification that could only have come
+ * from the build, and the surface whose whole job is to bring somebody back is
+ * the worst place to keep one. A preference row for such a kind is worse: the
+ * member turns the switch off, nothing changes, and turning it back on changes
+ * nothing either.
+ *
+ * Both sides are read out of the tree rather than listed here, so wiring a
+ * producer or retiring one moves the check. The vocabulary is the CHECK on
+ * notifications.kind, which is what the database will actually accept; a
+ * producer is the kind named anywhere under src/server, which is the only place
+ * a notify() call lives. Naming it is counted as writing it, which is the
+ * lenient reading on purpose: this is here to catch a kind nothing has ever
+ * heard of, not to referee how a call site spells its argument.
+ */
+const NOTIFICATION_KINDS = (() => {
+  const schema = fs.readFileSync(path.resolve(process.cwd(), 'src/server/db/schema.sql'), 'utf8')
+  const table = /CREATE TABLE IF NOT EXISTS notifications \(([\s\S]*?)\n\) STRICT;/.exec(schema)?.[1] ?? ''
+  const list = /kind\s+TEXT NOT NULL CHECK \(kind IN\s*\(([\s\S]*?)\)\)/.exec(table)?.[1] ?? ''
+  return [...list.matchAll(/'([a-z_]+)'/g)].map((m) => m[1])
+})()
+
+const PRODUCED = (() => {
+  const seen = new Set()
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name)
+      if (entry.isDirectory()) { walk(full); continue }
+      if (!entry.name.endsWith('.ts')) continue
+      const source = fs.readFileSync(full, 'utf8')
+      for (const kind of NOTIFICATION_KINDS) if (source.includes(`'${kind}'`)) seen.add(kind)
+    }
+  }
+  walk(path.resolve(process.cwd(), 'src/server'))
+  return seen
+})()
+
+{
+  // If the two regexes above stop matching the schema, every kind reads as
+  // produced and the two checks below pass on anything. Say so instead.
+  checks.push({ label: 'notification kinds the audit could not read out of the schema', n: NOTIFICATION_KINDS.length === 0 ? 1 : 0 })
+
+  const orphans = NOTIFICATION_KINDS.filter((kind) => !PRODUCED.has(kind))
+  for (const [label, table] of [
+    ['notifications of a kind nothing in the product writes', 'notifications'],
+    ['notification switches that silence nothing', 'notification_preferences'],
+  ]) {
+    const rows = orphans.length === 0 ? [] : db.prepare(
+      `SELECT kind, COUNT(*) AS n FROM ${table}
+        WHERE kind IN (${orphans.map(() => '?').join(', ')}) GROUP BY kind ORDER BY kind`,
+    ).all(...orphans)
+    for (const r of rows) console.log(`        ${table}.${r.kind}: ${r.n} rows, and no producer under src/server`)
+    checks.push({ label, n: rows.reduce((sum, r) => sum + Number(r.n), 0) })
   }
 }
 

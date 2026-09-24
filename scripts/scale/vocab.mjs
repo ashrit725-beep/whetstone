@@ -66,6 +66,34 @@ export const TONE_ACTIONABILITY = {
 }
 
 /**
+ * What a point may be when its severity already says the work is wrong. The
+ * product prints 'opinion' as "Preference", which reads as a matter of taste,
+ * and a blocker is not one: the card would say "this stopped me" and "no change
+ * implied" in the same breath. So a blocker or a major draws from here instead
+ * of from its tone.
+ */
+export const DECISIVE_ACTIONABILITY = ['actionable', 'actionable', 'suggestion']
+
+/**
+ * The categories that name a fault rather than a subject. Nothing written as a
+ * compliment may be filed under one: "Delight, keep this" beside a body about
+ * what works is the point of the card, "Broken link" beside the same body is a
+ * contradiction a reader sees at a glance.
+ *
+ * Keyed on `feedback_categories.category_key`, which is the stable identifier
+ * the seed writes, so relabelling a category in the product's voice cannot
+ * quietly drop it out of this set the way matching on the label did.
+ */
+export const FAULT_CATEGORIES = new Set([
+  'bug',          // Bug or defect — every type
+  'confusion',    // Confusion — every type
+  'friction',     // Friction — every type
+  'missing',      // Missing — every type
+  'crash',        // Crash — mobile_app
+  'broken_link',  // Broken link — website
+])
+
+/**
  * Which categories speak to which rating axis, per type. A rating is a verdict
  * between the axis's two written anchors, so a reviewer who filed a crash
  * rates "Performance & stability" towards "Crashed or stuttered", and one who

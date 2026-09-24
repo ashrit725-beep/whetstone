@@ -6,10 +6,12 @@
  * Three actions, graded by how hard they are to undo, and each one states the
  * real count it is about to affect rather than a generic warning:
  *
- *   Close feedback   reversible from the project page, so it is one button with
- *                    no confirmation. A confirm dialog on a reversible action is
- *                    a habit that teaches people to click through the ones that
- *                    matter.
+ *   Close feedback   reversible here — “Take feedback again” sits beside it —
+ *                    so it is one button with no confirmation. A confirm dialog
+ *                    on a reversible action is a habit that teaches people to
+ *                    click through the ones that matter. The reverse used to be
+ *                    promised “from its project page”, where no such control
+ *                    existed, and the only way back was to post a new build.
  *   Sign out         disruptive but not destructive, and it names the number of
  *                    devices before you press it.
  *   Close account    confirm by typing your own handle. Not a checkbox and not a
@@ -28,7 +30,7 @@
  * so paste works.
  */
 
-import { LogOut, Lock, TriangleAlert } from 'lucide-react'
+import { Lock, LockOpen, LogOut, TriangleAlert } from 'lucide-react'
 import {
   Banner,
   Field,
@@ -40,13 +42,18 @@ import {
 import {
   closeFeedbackEverywhere,
   deactivate,
+  reopenFeedbackEverywhere,
   signOutEverywhere,
 } from '@/app/(app)/settings/actions'
 
 export interface DangerZoneProps {
   handle: string
+  /** Every project the account owns, drafts included. */
   projects: number
+  /** Projects still taking notes, so the ones closing would affect. */
   openProjects: number
+  /** Projects already closed, so the ones reopening would affect. */
+  closedProjects: number
   feedbackReceived: number
   feedbackWritten: number
   openSuggestions: number
@@ -55,27 +62,30 @@ export interface DangerZoneProps {
 
 /** The first paragraph, which names what closing touches in the right number. */
 function closeFeedbackCopy(open: number, total: number): string {
+  const undo = 'Nothing already written is lost, and you can take feedback again from this page — posting a new build reopens a project too.'
   if (total === 0) return 'You do not own a project, so nothing is taking feedback.'
   if (open === 0) {
     return total === 1
-      ? 'Your project is already closed to new notes. Reopen it from its project page.'
-      : 'Every project you own is already closed to new notes. Reopen one from its project page.'
+      ? `Your project is closed to new notes. ${undo}`
+      : `Every project you own is closed to new notes. ${undo}`
   }
   if (total === 1) {
-    return 'Your project is open to new notes. Closing it keeps everything already written and stops anything new arriving. You can reopen it from its project page.'
+    return `Your project is open to new notes. Closing it stops anything new arriving. ${undo}`
   }
   if (open === total) {
     // Not "3 of your 3 projects".
     const all = total === 2 ? 'Both your projects are' : `All ${String(total)} of your projects are`
-    return `${all} open to new notes. Closing them keeps everything already written and stops anything new arriving. You can reopen each one from its project page.`
+    return `${all} open to new notes. Closing them stops anything new arriving. ${undo}`
   }
-  return `${String(open)} of your ${String(total)} projects ${open === 1 ? 'is' : 'are'} open to new notes. Closing ${open === 1 ? 'it' : 'them'} keeps everything already written and stops anything new arriving. You can reopen each one from its project page.`
+  return `${String(open)} of your ${String(total)} projects ${open === 1 ? 'is' : 'are'} open to new notes, and ${String(total - open)} ${total - open === 1 ? 'is' : 'are'} closed. Closing stops anything new arriving. ${undo}`
 }
 
 export function DangerZone(props: DangerZoneProps) {
   const devices =
     props.liveSessions === 1 ? 'this device' : `${String(props.liveSessions)} devices`
   const one = props.projects === 1
+  const closingOne = props.openProjects === 1
+  const reopeningOne = props.closedProjects === 1
 
   return (
     <div className="flex flex-col gap-2xl">
@@ -86,16 +96,37 @@ export function DangerZone(props: DangerZoneProps) {
         <p className="measure-ui text-sm text-text-2">
           {closeFeedbackCopy(props.openProjects, props.projects)}
         </p>
-        {/* With no project there is nothing for the button to do. */}
-        {props.projects > 0 ? (
+        {/* Each control is offered only when it has rows to act on: the close
+            button used to stay after everything was closed, and answered the
+            second press with "nothing changed". */}
+        {props.openProjects > 0 ? (
           <Form action={closeFeedbackEverywhere} showSummary={false}>
             {({ state }) => (
               <div className="flex flex-wrap items-center gap-md">
                 <SubmitButton
-                  pendingLabel={one ? 'Closing it…' : 'Closing them…'}
+                  pendingLabel={closingOne ? 'Closing it…' : 'Closing them…'}
                   iconLeading={<Lock size={20} strokeWidth={1.5} />}
                 >
-                  {one ? 'Close your project to new feedback' : 'Close every project to new feedback'}
+                  {closingOne
+                    ? 'Close your project to new feedback'
+                    : 'Close every project to new feedback'}
+                </SubmitButton>
+                <FormStatus state={state} />
+              </div>
+            )}
+          </Form>
+        ) : null}
+        {props.closedProjects > 0 ? (
+          <Form action={reopenFeedbackEverywhere} showSummary={false}>
+            {({ state }) => (
+              <div className="flex flex-wrap items-center gap-md">
+                <SubmitButton
+                  pendingLabel={reopeningOne ? 'Reopening it…' : 'Reopening them…'}
+                  iconLeading={<LockOpen size={20} strokeWidth={1.5} />}
+                >
+                  {reopeningOne
+                    ? 'Take feedback again on your project'
+                    : 'Take feedback again on every closed project'}
                 </SubmitButton>
                 <FormStatus state={state} />
               </div>
@@ -111,8 +142,12 @@ export function DangerZone(props: DangerZoneProps) {
         <h2 id="sign-out" className="text-md text-text-1">
           Sign out everywhere
         </h2>
+        {/* One device has no plural to refer back to, and "every one of those
+            sessions" had no antecedent on the common case. */}
         <p className="measure-ui text-sm text-text-2">
-          {`You are signed in on ${devices}. This ends every one of those sessions, including this one, and sends you back to the sign-in screen.`}
+          {props.liveSessions === 1
+            ? 'You are signed in on this device only. This ends that session and sends you back to the sign-in screen.'
+            : `You are signed in on ${devices}. This ends every one of those sessions, including this one, and sends you back to the sign-in screen.`}
         </p>
         <Form action={signOutEverywhere} showSummary={false}>
           {({ state }) => (
@@ -172,6 +207,10 @@ export function DangerZone(props: DangerZoneProps) {
                   : `${String(props.openSuggestions)} suggestions are not shipped or declined yet, and the reviewers behind them never hear what happened.`}
               </li>
             ) : null}
+            <li className="text-sm">
+              Your email address and handle stay attached to the closed account, so neither can be
+              used to sign up again.
+            </li>
             <li className="text-sm">
               You cannot sign back in to a closed account, so this one has no undo. Nothing is
               deleted: everything written here keeps its place.

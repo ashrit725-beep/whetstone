@@ -109,7 +109,9 @@ export function listPublishedExperts(limit = 500): readonly SitemapEntry[] {
     `SELECT u.handle, e.updated_at AS last_modified
        FROM expert_profiles e
        JOIN users u ON u.id = e.user_id
+       LEFT JOIN profiles pr ON pr.user_id = e.user_id
       WHERE e.is_listed = 1 AND u.deleted_at IS NULL AND u.status = 'active'
+        AND COALESCE(pr.is_searchable, 1) = 1
       ORDER BY last_modified DESC
       LIMIT ?`,
     [Math.min(Math.max(limit, 1), 2000)],

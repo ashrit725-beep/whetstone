@@ -1,11 +1,17 @@
 /**
  * One scale, 120 to 8000, explained once and drawn in ink.
  *
- * Each step is one column. The column's ink density is the step: 120 is the
- * faintest wash, 8000 is solid. How far the ink rises is how many published
- * projects are standing on that step right now, so the strip is a reading of
- * the site rather than a diagram of the idea. Both facts are stated in words
- * underneath, because a bar is not a number.
+ * Each step is one column, on the page's own grid: the band and its top rule run
+ * edge to edge, the five columns sit inside `max-w-page` with the rest of the
+ * page. They used to pad to `--pad-inline` instead, which is the band's own edge
+ * padding and not the page gutter, so at 1440 the first column began 32px left
+ * of the heading above it and at 1920 it began 272px left of it.
+ *
+ * The density swatch is a fixed 16px square, the same cell the grit reading
+ * draws, and the number of projects standing on the step is printed as a
+ * numeral. It used to be a bar whose height was the count and whose ink was the
+ * step, which encoded two different facts in one mark and read as a row of paint
+ * swatches.
  */
 
 import NextLink from 'next/link'
@@ -26,24 +32,22 @@ export interface ScaleStripProps {
 }
 
 export function ScaleStrip({ steps }: ScaleStripProps) {
-  const busiest = steps.reduce((most, step) => Math.max(most, step.count), 0)
-
   return (
-    <ol className={styles.scale} aria-label="The grit scale, and what is standing on each step">
-      {steps.map((step) => {
-        const share = busiest === 0 ? 0 : Math.round((step.count / busiest) * 100)
-        return (
+    <div className={styles.scaleBand}>
+      <ol className={styles.scale} aria-label="The grit scale, and what is standing on each step">
+        {steps.map((step) => (
           <li key={step.stageKey} className={styles.scaleStep}>
             <span
               aria-hidden="true"
-              className={styles.scaleBar}
+              className={styles.scaleSwatch}
               style={{ '--d': String(DENSITY[step.stageKey] ?? 0.1) } as CSSProperties}
-            >
-              <i style={{ blockSize: `${String(Math.max(share, 4))}%` }} />
-            </span>
+            />
 
             <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="tnum text-lg text-ink" style={{ fontVariationSettings: '"wght" 800' }}>
+              <span
+                className="tnum text-lg text-ink"
+                style={{ fontVariationSettings: '"wght" 800' }}
+              >
                 {step.grit}
               </span>
               <span
@@ -71,8 +75,8 @@ export function ScaleStrip({ steps }: ScaleStripProps) {
               )}
             </p>
           </li>
-        )
-      })}
-    </ol>
+        ))}
+      </ol>
+    </div>
   )
 }

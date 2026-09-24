@@ -3,8 +3,9 @@
  *
  * It reads nothing from the request, so it stays static and cannot itself fail.
  * The copy names what happened, says why a link goes stale here in particular,
- * and offers the routes that actually resolve the situation: the feed, search
- * by name, and the community for anything that moved.
+ * and offers the routes that actually resolve the situation: the feed, the
+ * search scopes that exist — projects, discussions and listed reviewers, not
+ * people in general — and the community for anything that moved.
  *
  * A missing page is an expected state, not a failure (ROUTES, error-state
  * contract), so it is set as a page with a heading rather than inside the red
@@ -30,14 +31,17 @@ export const metadata: Metadata = {
 export default function NotFound() {
   return (
     <div className="flex min-h-dvh flex-col bg-surface-1 text-text-1">
-      <div className="pad-inline border-b border-border-hair bg-surface-2">
+      {/* A <header>, not a div: this is the only banner on the page, and the 404
+          was the one surface in the product that had none for a screen reader
+          to jump to. */}
+      <header className="pad-inline border-b border-border-hair bg-surface-2">
         <div
           className="mx-auto flex w-full max-w-detail items-center"
           style={{ blockSize: 'var(--nav-h)' }}
         >
           <Wordmark size="lg" href="/" />
         </div>
-      </div>
+      </header>
 
       <main id="main" tabIndex={-1} className="pad-inline grow py-2xl">
         <div className="mx-auto flex w-full max-w-detail flex-col items-start gap-lg">
@@ -45,7 +49,7 @@ export default function NotFound() {
           <p className="measure-ui text-base text-text-2">
             A project can be unpublished, a thread can be removed, and handles change when people
             rename themselves, so links into Whetstone do go stale. Discover lists every public
-            project, and search finds people and threads by name.
+            project, and search covers projects, discussions and listed reviewers.
           </p>
 
           <div className="flex flex-wrap items-center gap-lg">
@@ -53,7 +57,7 @@ export default function NotFound() {
               Open Discover
             </Button>
             <Link href="/search" variant="standalone">
-              Search projects, people and discussions
+              Search projects, discussions and reviewers
             </Link>
           </div>
 
@@ -67,7 +71,9 @@ export default function NotFound() {
         </div>
       </main>
 
-      <Footer />
+      {/* This surface renders its own header rather than the product nav, so
+          the footer carries the theme control it would otherwise inherit. */}
+      <Footer showTheme />
     </div>
   )
 }

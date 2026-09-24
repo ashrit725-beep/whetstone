@@ -61,6 +61,11 @@ export interface ThemeToggleProps {
 
 export function ThemeToggle({ initial = 'system', showLabel = false, className }: ThemeToggleProps) {
   const [setting, setSetting] = useState<ThemeSetting>(initial)
+  // A status region reports what the reader just did, so it stays empty until
+  // they press. Rendered with the setting in it, the effect below rewrote it on
+  // every page whose server could not pass `initial` (the statically rendered
+  // marketing shell), and a screen reader announced a theme change nobody made.
+  const [announce, setAnnounce] = useState(false)
 
   // The cookie is the source of truth; the server may not have passed it. The
   // appearance form writes it too and says so with a `ws-theme` event.
@@ -82,21 +87,26 @@ export function ThemeToggle({ initial = 'system', showLabel = false, className }
 
   return (
     <span className={cn('inline-flex items-center gap-2xs', className)}>
+      {/* 44px, the height the search field, the bell and the account button
+          beside it in the masthead all use. At 48 this was the one control
+          whose box broke the row's top and bottom edges, and the only one
+          drawing a permanent border while it did it. */}
       <button
         type="button"
         onClick={() => {
           apply(next)
           setSetting(next)
+          setAnnounce(true)
           window.dispatchEvent(new Event('ws-theme'))
         }}
         aria-label={`Theme: ${current.word}. Switch to ${META[next].word}.`}
-        className="inline-flex min-h-2xl min-w-2xl items-center justify-center gap-2xs rounded-sm border border-border-control bg-surface-2 px-sm text-sm text-text-2 transition-[background-color,border-color,color] duration-[120ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-border-strong hover:bg-surface-3 hover:text-text-1 active:translate-y-px"
+        className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2xs rounded-sm border border-border-control bg-surface-2 px-sm text-sm text-text-2 transition-[background-color,border-color,color] duration-[120ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-border-strong hover:bg-surface-3 hover:text-text-1 active:translate-y-px"
       >
         <Icon size={20} strokeWidth={1.5} aria-hidden="true" />
         {showLabel ? <span aria-hidden="true">{current.word}</span> : null}
       </button>
       <span role="status" aria-live="polite" className="sr-only">
-        Theme set to {current.word}.
+        {announce ? `Theme set to ${current.word}.` : null}
       </span>
     </span>
   )

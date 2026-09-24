@@ -9,6 +9,15 @@
 const NBSP = ' '
 const ENDASH = '–'
 
+/**
+ * What a bounty may be worth. One table, read by the composer that prices the
+ * amount live and by the Server Action that refuses it: two copies of this rule
+ * had drifted, so the form's ledger costed $1 and $15,050,007 down to the cent
+ * and the submit was then refused by a floor the reader was never shown.
+ */
+export const MIN_BOUNTY_CENTS = 5_000
+export const MAX_BOUNTY_CENTS = 500_000
+
 /** Whole dollars when the amount is whole, cents when it is not. */
 export function money(cents: number, currency = 'USD'): string {
   return new Intl.NumberFormat('en-US', {

@@ -18,9 +18,9 @@
  * the request-cached `currentUser()`, and nothing below awaits: the theme
  * control is the client primitive, handed the cookie value read here, and the
  * palette is told from the user agent whether its key cap says ⌘ or Ctrl, so
- * neither corrects itself after the first paint. Being
- * async makes this component a flight row of its own; `HydrationGate` in the
- * root layout explains why that can no longer fail hydration.
+ * neither corrects itself after the first paint. Being async means the shell
+ * can be flushed before the page below it; `HydrationGate` in the root layout
+ * explains why a response that arrives in pieces can no longer fail hydration.
  *
  * The links are a client island only so `aria-current` survives client-side
  * navigation: a layout does not re-render when the page beneath it changes.
@@ -42,10 +42,11 @@ import { Separator, ThemeToggle } from '@/components/ui'
 import { AuthButton } from './auth-button'
 import { ChromeStyles } from './chrome-styles'
 import { CommandPalette } from './command-palette'
-import { resolveChromeHref, type ChannelLookup } from './links'
+import { homeHref, resolveChromeHref, type ChannelLookup } from './links'
 import { MobileNav } from './mobile-nav'
 import { NavLinks } from './nav-links'
 import { NotificationBell } from './notification-bell'
+import { SessionSync } from './session-sync'
 import { APPLE_UA } from './platform'
 import { readThemeSetting } from './theme-setting'
 import { UserMenu } from './user-menu'
@@ -98,6 +99,10 @@ export async function AppNav() {
       style={{ zIndex: 'var(--z-sticky-nav)' }}
     >
       <ChromeStyles />
+      {/* A layout is not re-rendered on client-side navigation, so the identity
+          read above would otherwise survive a sign-out that happened in another
+          browser until a full reload. This asks. */}
+      <SessionSync handle={user?.handle ?? null} />
 
       <div
         className="mx-auto flex w-full max-w-detail items-center gap-xs"
@@ -109,7 +114,7 @@ export async function AppNav() {
         />
 
         <div className="me-sm flex shrink-0 items-center">
-          <Wordmark size="lg" href={user ? '/discover' : '/'} />
+          <Wordmark size="lg" href={homeHref(user !== null)} />
         </div>
 
         <nav aria-label="Primary" className="hidden h-full md:block">
@@ -117,7 +122,7 @@ export async function AppNav() {
         </nav>
 
         <div className="ms-auto flex items-center gap-xs">
-          <CommandPalette apple={apple} />
+          <CommandPalette apple={apple} signedIn={Boolean(user)} />
 
           {user ? (
             <>

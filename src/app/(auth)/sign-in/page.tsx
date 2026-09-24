@@ -7,7 +7,7 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { Banner, Link } from '@/components/ui'
 import { currentUser } from '@/server/queries/auth'
-import { firstParam, safeNextPath, type RawSearchParams } from '../schema'
+import { firstParam, safeNextPath, withNext, type RawSearchParams } from '../schema'
 import { SignInForm } from '../_components/sign-in-form'
 
 export const metadata: Metadata = {
@@ -77,7 +77,7 @@ export default async function SignInPage({
 
       <p className="measure-ui text-sm text-text-2">
         No account yet?{' '}
-        <Link href={`/sign-up?next=${encodeURIComponent(next)}`}>Create one</Link>.
+        <Link href={withNext('/sign-up', next)}>Create one</Link>.
       </p>
     </div>
   )

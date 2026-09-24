@@ -25,7 +25,11 @@
  * severity. writer.mjs decides the words, so a sentence can be reworded
  * without moving a single count or date.
  *
- * Run: node scripts/scale/populate.mjs [--users 5000] [--projects 3500]
+ * Run: node scripts/scale/populate.mjs [--users 5000] [--projects 3500] [--db path]
+ *
+ * It grows `--db` if given, otherwise DATABASE_PATH like the app does, so a
+ * population can be rehearsed against a copy without touching the file the
+ * running servers hold open.
  */
 
 import { DatabaseSync } from 'node:sqlite'
@@ -79,7 +83,11 @@ const argOf = (n, d) => {
 const WANT_USERS = argOf('users', 5000)
 const WANT_PROJECTS = argOf('projects', 3500)
 
-const DB = path.resolve(process.cwd(), 'data/whetstone.db')
+const dbFlag = args.indexOf('--db')
+const DB = path.resolve(
+  process.cwd(),
+  dbFlag === -1 ? (process.env.DATABASE_PATH ?? 'data/whetstone.db') : args[dbFlag + 1],
+)
 const db = new DatabaseSync(DB)
 db.exec('PRAGMA journal_mode = WAL')
 db.exec('PRAGMA synchronous = NORMAL')
@@ -119,10 +127,12 @@ const ON_PAPER = new Set(['business_idea', 'design'])
  */
 const categoriesByType = new Map()
 for (const t of types) {
-  const rows = db.prepare('SELECT id, label FROM feedback_categories WHERE project_type_id = ?').all(t.id)
-  const delight = rows.filter((r) => /delight/i.test(r.label)).map((r) => r.id)
-  const faults = rows.filter((r) => /bug|defect|security|crash/i.test(r.label)).map((r) => r.id)
-  const plain = rows.filter((r) => !/delight/i.test(r.label)).map((r) => r.id)
+  const rows = db
+    .prepare('SELECT id, category_key FROM feedback_categories WHERE project_type_id = ?')
+    .all(t.id)
+  const delight = rows.filter((r) => r.category_key === 'delight').map((r) => r.id)
+  const faults = rows.filter((r) => V.FAULT_CATEGORIES.has(r.category_key)).map((r) => r.id)
+  const plain = rows.filter((r) => r.category_key !== 'delight').map((r) => r.id)
   const calm = plain.filter((id) => !faults.includes(id))
   categoriesByType.set(t.id, {
     praise: delight.length > 0 ? delight : plain,
@@ -389,6 +399,14 @@ const leanOf = new Map()
 /** Where each project is strong and weak, one offset per axis, shared by every reviewer. */
 const strengthOf = new Map()
 /**
+ * Sentence frames already spent on a project, so the writer does not hand the
+ * same one to two reviewers. It is per project, not per note, because the
+ * repetition a reader notices is the one on the page in front of them: two
+ * notes on one project ending "the cheap fix is probably…" reads as generated
+ * text, while the same frame on another project is simply a way of putting it.
+ */
+const framesByProject = new Map()
+/**
  * How good each project is, on -1..1, drawn once. Reviews of one project are
  * not independent coin flips: a good one draws mostly warm notes and a weak
  * one mostly critical ones, which is what keeps a crowd of reviewers from
@@ -504,7 +522,13 @@ function writeNote(p, r, at, { id, origin = 'organic', bountyId = null, expert =
       // else is kept out of that category entirely.
       const pool = tone === 'praise' ? (chance(0.72) ? cats.praise : cats.neutral) : cats[tone]
       const cat = pool.length > 0 ? pool[Math.floor(rnd() * pool.length)] : cats.all[0]
-      plan.push({ tone, severity, cat, actionability: pick(V.TONE_ACTIONABILITY[tone]) })
+      // Actionability follows the severity that was just drawn, not the tone
+      // alone: tone decides how the sentence reads, severity decides whether a
+      // change is owed, and only the second of those can make "Preference" a
+      // lie on the card.
+      const decisive = severity === 'blocker' || severity === 'major'
+      const actionability = pick(decisive ? V.DECISIVE_ACTIONABILITY : V.TONE_ACTIONABILITY[tone])
+      plan.push({ tone, severity, cat, actionability })
     }
   }
 
@@ -512,7 +536,12 @@ function writeNote(p, r, at, { id, origin = 'organic', bountyId = null, expert =
   // so the note's opening paragraph can name what its worst point is about.
   const persona = personaOf(r.id)
   const avoid = new Set()
-  const written = plan.map((pl) => writer.point(p.wp, persona, { tone: pl.tone, severity: pl.severity, label: labelById.get(pl.cat) ?? '', avoid }))
+  let frames = framesByProject.get(p.id)
+  if (frames === undefined) {
+    frames = new Set()
+    framesByProject.set(p.id, frames)
+  }
+  const written = plan.map((pl) => writer.point(p.wp, persona, { tone: pl.tone, severity: pl.severity, label: labelById.get(pl.cat) ?? '', avoid, frames }))
   const note = writer.note(p.wp, persona, sentiment, minutes, written)
   noteInfo.set(id, note)
 

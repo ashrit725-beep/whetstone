@@ -119,6 +119,8 @@ interface ReplyComposerProps {
   submitLabel: string
   action: (state: FormState, formData: FormData) => Promise<FormState>
   onCancel?: () => void
+  /** Set by the inline composer, which closes itself once the reply is posted. */
+  onPosted?: () => void
   textareaRef?: Ref<HTMLTextAreaElement>
 }
 
@@ -131,6 +133,7 @@ function ReplyComposer({
   submitLabel,
   action,
   onCancel,
+  onPosted,
   textareaRef,
 }: ReplyComposerProps) {
   const [value, setValue] = useState('')
@@ -142,6 +145,7 @@ function ReplyComposer({
     setValue('')
     const result = await action(state, formData)
     if (result.status === 'error') setValue(written)
+    else onPosted?.()
     return result
   }
 
@@ -177,7 +181,9 @@ function ReplyComposer({
             ) : null}
           </p>
 
-          <div className="flex flex-wrap items-center gap-xs">
+          {/* Full width at phone size, side by side from 40rem: the same rule
+              the bounty composer states, so the three composers agree. */}
+          <div className="flex flex-col gap-xs sm:flex-row sm:flex-wrap sm:items-center">
             <SubmitButton variant="primary" pendingLabel="Posting the reply…">
               {submitLabel}
             </SubmitButton>
@@ -205,6 +211,8 @@ interface BranchApi {
   /** Your own replies show their score but cannot be voted on or reported. */
   viewerId: string | null
   viewerIsThreadAuthor: boolean
+  /** Replies this reader has an open report against. Their flag says so. */
+  reportedPostIds: ReadonlySet<string>
   acceptedPostId: string | null
   openReplyFor: string | null
   openReply: (postId: string) => void
@@ -308,6 +316,7 @@ function ReplyBranch({ post, level, replyingTo, api }: ReplyBranchProps) {
                 targetId={post.id}
                 what={`the reply by ${post.author.displayName}`}
                 triggerLabel={`Report the reply by ${post.author.displayName}`}
+                alreadyReported={api.reportedPostIds.has(post.id)}
                 iconOnly
               />
             ) : null}
@@ -328,6 +337,12 @@ function ReplyBranch({ post, level, replyingTo, api }: ReplyBranchProps) {
               submitLabel="Post the reply"
               action={api.makeAction(post.id)}
               onCancel={() => {
+                api.closeReply(post.id)
+              }}
+              /* A posted reply is its own confirmation, and it renders below
+                 this panel rather than above it, so the disclosure closes the
+                 way Cancel does and focus goes back to the Reply control. */
+              onPosted={() => {
                 api.closeReply(post.id)
               }}
             />
@@ -364,6 +379,8 @@ export interface ThreadConversationProps {
   /** Null for a signed-out reader, who can read and nothing else. */
   viewer: UserCard | null
   viewerIsThreadAuthor: boolean
+  /** Ids of the replies this reader already has an open report against. */
+  reportedPostIds: ReadonlySet<string>
   /** Where "Sign in" goes, carrying a return path back to this thread. */
   signInHref: string
 }
@@ -375,6 +392,7 @@ export function ThreadConversation({
   posts,
   viewer,
   viewerIsThreadAuthor,
+  reportedPostIds,
   signInHref,
 }: ThreadConversationProps) {
   const [tree, addDraft] = useOptimistic(posts, withDraft)
@@ -423,6 +441,7 @@ export function ThreadConversation({
     signedIn: viewer !== null,
     viewerId: viewer?.id ?? null,
     viewerIsThreadAuthor,
+    reportedPostIds,
     acceptedPostId,
     openReplyFor,
     openReply: (postId) => {

@@ -37,7 +37,7 @@ import {
   type ActionabilityKey,
   type SeverityKey,
 } from '@/lib/taxonomy'
-import { inSentence } from '@/lib/utils'
+import { inSentence, truncate } from '@/lib/utils'
 import type { ProjectDetail } from '@/lib/types'
 import { getProjectBySlug } from '@/server/repos/projects'
 import {
@@ -54,12 +54,16 @@ import { DRAFT_SCHEMA_VERSION, deleteComposerDraftForProject, saveComposerDraft 
 import { consume } from '@/server/api/rate-limit'
 import { LIMITS } from '@/server/api/limits'
 import { coachLabel, generate as coachGenerate } from '@/server/ai/coach'
+import { isProjectType } from '@/server/ai'
+import { projectVocabularyFor } from '@/server/queries/cluster-input'
+import { reviewerQualityScore } from '@/server/repos/stats'
 import {
   SavedNotesPayload,
   askAnsweredBy,
   defaultCategoryFor,
   hasBuildToOpen,
   isEmptyNotes,
+  keepClock,
   reviewRefusal,
   stepsIn,
   type ReviewRefusal,
@@ -177,6 +181,11 @@ export async function recordFirstImpression(_prev: FormState, formData: FormData
     headline: parsed.data.impression,
     dwellSeconds: parsed.data.seconds,
   })
+  // The row above keeps the dwell in whole minutes, which is the unit a posted
+  // review's context line is written in and no use to a clock: twenty seconds
+  // came back as 0:00 and started again. The exact number goes on the
+  // composer's own draft, beside any notes already saved there.
+  keepClock(claims.uid, project.id, parsed.data.seconds)
   await reveal(project.id)
   revalidatePath(`/p/${project.slug}`)
   redirect(`/p/${project.slug}/feedback?step=notes`)
@@ -299,7 +308,10 @@ export async function postFeedback(_prev: FormState, formData: FormData): Promis
     origin: 'organic',
     visibility: 'public',
     headline: parsed.data.impression && parsed.data.impression.length > 0 ? parsed.data.impression : null,
-    summaryMd: parsed.data.impression && parsed.data.impression.length > 0 ? parsed.data.impression : null,
+    // The impression is the headline and nothing else. Writing it to the body
+    // as well printed the same sentence twice in every profile review row,
+    // where `ReviewRow` falls back to the first specific point instead.
+    summaryMd: null,
     // Kept on the row as well, so the score can be recomputed with the dwell
     // it was first computed with.
     timeSpentMinutes: Math.round(parsed.data.seconds / 60),
@@ -350,7 +362,12 @@ export async function saveComposerNotes(input: { projectId: string; payload: Sav
   if (!project || project.id !== access.id || reviewRefusal(project)) return false
 
   if (isEmptyNotes(parsed.data.payload.notes)) {
-    deleteComposerDraftForProject(claims.uid, project.id)
+    // Every box cleared. The words go and nothing is brought back from a draft
+    // with none in it, but the clock stays: the reviewer has had this review
+    // open that long, and the only other copy of the number is the draft row's
+    // whole minutes, where a twenty-second read is zero.
+    if (parsed.data.payload.seconds > 0) keepClock(claims.uid, project.id, parsed.data.payload.seconds, {})
+    else deleteComposerDraftForProject(claims.uid, project.id)
     return true
   }
   saveComposerDraft({
@@ -444,7 +461,7 @@ export async function markFeedbackHelpful(formData: FormData): Promise<void> {
   if (!note) return
   const owns = note.projectOwnerId === claims.uid || isCollaborator(note.projectId, claims.uid)
   if (!owns) return
-  markHelpful(feedbackId, helpful)
+  markHelpful(feedbackId, helpful, claims.uid)
   if (slug) revalidatePath(`/p/${slug}`)
 }
 
@@ -467,8 +484,9 @@ export async function markPointShipped(_prev: FormState, formData: FormData): Pr
 
   const slug = String(formData.get('slug') ?? '')
   const pointId = String(formData.get('pointId') ?? '')
-  // The form fills this from the note it is about, cut at ninety characters.
-  const title = String(formData.get('title') ?? '').trim().slice(0, SHIP_TITLE_MAX)
+  // The form sends the note this is about in full; the tracker's title is cut
+  // here, where the limit lives, on a word boundary and with an ellipsis.
+  const title = truncate(String(formData.get('title') ?? ''), SHIP_TITLE_MAX)
   const note = String(formData.get('note') ?? '').trim()
   const versionId = String(formData.get('versionId') ?? '')
 
@@ -586,6 +604,7 @@ export async function coachNote(input: {
   const project = reviewable(access.slug, claims.uid)
   if (!project || project.id !== projectId || reviewRefusal(project)) return null
 
+  const quality = reviewerQualityScore(claims.uid)
   const result = await coachGenerate({
     // The coach's per-draft nudge budget keys on this string. The API route
     // namespaces it by viewer for exactly that reason and this action did not,
@@ -593,9 +612,18 @@ export async function coachNote(input: {
     draftId: `${claims.uid}:${draftId}`,
     draft,
     projectId,
+    // The type and the project's own words, both already in hand. Without them
+    // `scaffoldFor` fell through to the generic table on every project, so the
+    // per-type scaffolds were unreachable, and the `specific` check skipped its
+    // vocabulary pass — naming an in-product term stopped counting as specific.
+    ...(isProjectType(project.typeSlug) ? { projectType: project.typeSlug } : {}),
     axisKey,
     ask,
+    vocabulary: projectVocabularyFor(projectId),
     reviewerId: claims.uid,
+    // The rule that leaves a consistently good reviewer alone had no figure to
+    // read, so it never fired for anyone. Null until they have written ten.
+    ...(quality === null ? {} : { reviewerQuality: quality }),
   })
 
   return {

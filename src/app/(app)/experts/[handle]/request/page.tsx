@@ -68,10 +68,7 @@ export default async function RequestPage({
     areas.find((area) => area.label === verifiedArea?.label)?.value ?? null
 
   return (
-    <div
-      className="pad-inline mx-auto flex w-full flex-col gap-xl py-xl"
-      style={{ maxInlineSize: 'var(--container-prose)' }}
-    >
+    <div className="column-prose flex w-full flex-col gap-xl py-xl">
       <header className="flex flex-col gap-sm">
         <h1 className="text-2xl">Request a review from {expert.user.displayName}</h1>
         <p className="prose-human">{expert.headline}</p>

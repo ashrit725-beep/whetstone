@@ -27,6 +27,7 @@ import {
   Field,
   Form,
   FormStatus,
+  Link,
   Select,
   SubmitButton,
   Textarea,
@@ -80,35 +81,51 @@ export function AwardButton({
 
 export function DeliverForm({
   awardId,
-  feedbackHeadline,
+  deliverable,
+  composerHref,
+  projectTitle,
 }: {
   awardId: string
-  feedbackHeadline: string | null
+  /**
+   * The review this award can be delivered against, or null when none has been
+   * written yet. Whether the control is live turns on the review existing, not
+   * on it having a headline: a second review of the same build carries no
+   * headline of its own, and keying the button off one left the reviewer who
+   * had done the work looking at a disabled control.
+   */
+  deliverable: { readonly headline: string | null } | null
+  /** Where the review is written, so the disabled state points at the next step. */
+  composerHref: string
+  projectTitle: string
 }) {
   return (
-    <Form action={deliverAward} showSummary={false}>
+    <Form action={deliverAward} summaryTitle="This delivery was not recorded.">
       {({ state }) => (
         <div className="flex w-full flex-col items-start gap-xs" style={COLUMN}>
           <input type="hidden" name="awardId" value={awardId} />
-          {feedbackHeadline ? (
+          {deliverable ? (
             <p className="measure-ui text-sm text-text-2">
-              Delivery links the review you already posted, “{feedbackHeadline}”, so the
-              creator reads the same thing everyone else does.
+              Delivery links the review you posted for this bounty
+              {deliverable.headline ? `, “${deliverable.headline}”,` : ','} so the creator
+              reads the same thing everyone else does.
             </p>
           ) : (
             <p className="measure-ui text-sm text-text-2">
-              Delivery links a submitted review. Post your review on the project first,
-              then deliver it here.
+              Delivery links the review this bounty is paying for.{' '}
+              <Link href={composerHref} variant="inline">
+                Write it on {projectTitle}
+              </Link>
+              , then deliver it here.
             </p>
           )}
-          {feedbackHeadline ? (
+          {deliverable ? (
             <SubmitButton variant="primary" pendingLabel="Marking it delivered…">
               Deliver the review
             </SubmitButton>
           ) : (
             <Button
               disabled
-              disabledReason="No submitted review of yours was found on this project yet."
+              disabledReason="No review of yours has been posted on this project since this bounty was awarded to you."
             >
               Deliver the review
             </Button>
@@ -169,7 +186,7 @@ export function AcceptForm({
           <Field
             id="review"
             label="A note back to the reviewer"
-            hint="Optional. What you are acting on first is the most useful thing you can say."
+            hint="Optional. It reaches the reviewer with the payment, so what you are acting on first is the most useful thing you can say."
             error={state.fieldErrors?.['review']}
             optional
           >
@@ -248,7 +265,7 @@ export function CancelForm({
   currency: string
 }) {
   return (
-    <Form action={cancelBountyAction} showSummary={false}>
+    <Form action={cancelBountyAction} summaryTitle="This bounty was not cancelled.">
       {({ state }) => (
         <div className="flex flex-col items-start gap-xs">
           <input type="hidden" name="bountyId" value={bountyId} />

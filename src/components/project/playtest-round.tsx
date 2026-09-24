@@ -84,7 +84,7 @@ export function PlaytestRoundView({ round, children, taskForms }: PlaytestRoundV
       <ol className="m-0 flex list-none flex-col p-0">
         {round.tasks.map((task, index) => (
           <li key={task.id} className={cn('flex flex-col gap-3 py-4', index > 0 && 'border-t border-rule')}>
-            <TaskResults task={task} index={index} />
+            <TaskResults task={task} />
             {taskForms?.[task.id] ?? null}
           </li>
         ))}
@@ -93,7 +93,7 @@ export function PlaytestRoundView({ round, children, taskForms }: PlaytestRoundV
   )
 }
 
-function TaskResults({ task, index }: { task: PlaytestTask; index: number }) {
+function TaskResults({ task }: { task: PlaytestTask }) {
   const segments = TASK_OUTCOMES.filter((outcome) => task.results[outcome.key] > 0).map((outcome) => ({
     label: outcome.label,
     value: task.results[outcome.key],
@@ -135,8 +135,12 @@ function TaskResults({ task, index }: { task: PlaytestTask; index: number }) {
             {duration ? ` Median ${duration}.` : ''}
           </p>
 
+          {/* The caption says what is being split; the task it belongs to is
+              the heading three lines above it, so only assistive technology,
+              which may meet the bar out of that context, is told again. */}
           <Meter
-            label={`Outcomes on task ${String(index + 1)}, ${task.title}`}
+            label="Outcomes"
+            srLabel={`on ${task.title}`}
             segments={segments}
             valueText={`${String(finished)} of ${String(task.reported)} finished unaided`}
           />

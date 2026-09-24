@@ -8,14 +8,15 @@
  * starting a different one. A picture of a product goes stale, cannot be read
  * by a screen reader and cannot be clicked. This can be clicked.
  *
- * Keyboard contract: one tab stop per row, on the title link. The row's hit
- * area is a stretched pseudo-element on that anchor, so middle click, modifier
- * click and the browser's own URL preview all still work.
+ * Keyboard contract: one tab stop per row, on the title link, plus the footer
+ * link. The row's hit area is a stretched pseudo-element on that anchor, so
+ * middle click, modifier click and the browser's own URL preview all still work.
  */
 
 import NextLink from 'next/link'
 import type { ProofRow } from '@/app/(marketing)/_data'
 import { GritReading } from './grit-reading'
+import { InlineAsk } from './inline-ask'
 import styles from './paper.module.css'
 
 export interface ProofPanelProps {
@@ -24,15 +25,18 @@ export interface ProofPanelProps {
   openTotal: number
 }
 
-function splitLine(row: ProofRow): string {
-  if (row.spread === null) return 'not enough ratings to compare yet'
-  if (row.spread === 0) return 'reviewers agreed'
-  return `split ${String(row.spread)} ${row.spread === 1 ? 'step' : 'steps'}`
+/**
+ * What its reviewers actually did with the scale. "Split 4 steps" was the
+ * product's own shorthand printed at a stranger: the two numbers say the same
+ * thing and need no glossary.
+ */
+function ratingLine(row: ProofRow): string {
+  if (row.low === null || row.high === null) return 'too few ratings to compare yet'
+  if (row.low === row.high) return `every rating a ${String(row.low)}`
+  return `ratings ran ${String(row.low)}–${String(row.high)}`
 }
 
 export function ProofPanel({ rows, openTotal }: ProofPanelProps) {
-  const remaining = Math.max(0, openTotal - rows.length)
-
   return (
     <figure className={styles.panel}>
       <div className={styles.panelHead}>
@@ -73,17 +77,19 @@ export function ProofPanel({ rows, openTotal }: ProofPanelProps) {
               <GritReading value={row.grit} />
             </div>
 
-            <p className="voice mt-3 text-voice italic text-ink-2">“{row.ask}”</p>
+            <p className="voice mt-3 text-voice italic text-ink-2">
+              “<InlineAsk text={row.ask} />”
+            </p>
 
             <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-2xs uppercase text-ink-3">
               <span className="tnum" style={{ fontVariationSettings: '"wght" 700' }}>
                 {row.reviews.toLocaleString('en')} {row.reviews === 1 ? 'review' : 'reviews'}
               </span>
               {/* The mark is spent once per viewport, on the dot above that
-                  says these projects are asking. The split is carried by the
+                  says these projects are asking. The ratings are carried by the
                   words and the weight instead. */}
-              <span className="text-ink-2" style={{ fontVariationSettings: '"wght" 700' }}>
-                {splitLine(row)}
+              <span className="tnum text-ink-2" style={{ fontVariationSettings: '"wght" 700' }}>
+                {ratingLine(row)}
               </span>
             </p>
           </li>
@@ -91,17 +97,17 @@ export function ProofPanel({ rows, openTotal }: ProofPanelProps) {
       </ul>
 
       <div className={styles.panelFoot}>
-        <span className="text-xs text-ink-3">
-          {remaining > 0
-            ? `${remaining.toLocaleString('en')} more open for feedback`
-            : 'That is every project open for feedback'}
+        {/* One number, said once. The footer used to print the remainder and the
+            total side by side, which read as two different figures. */}
+        <span className="tnum text-xs text-ink-3">
+          Showing {rows.length.toLocaleString('en')} of {openTotal.toLocaleString('en')}
         </span>
         <NextLink
           href="/discover?open=1&sort=discussed"
-          className="link text-xs whitespace-nowrap text-ink"
+          className="link tap-44 text-xs whitespace-nowrap text-ink"
           style={{ fontVariationSettings: '"wght" 650' }}
         >
-          See all <span className="tnum">{openTotal.toLocaleString('en')}</span>
+          See all
         </NextLink>
       </div>
     </figure>

@@ -16,7 +16,7 @@
 import { useState } from 'react'
 import { Checkbox, Field, Form, Input, Link, SubmitButton } from '@/components/ui'
 import { signInAction } from '@/server/actions/auth'
-import { idleAuthState } from '../schema'
+import { idleAuthState, withNext } from '../schema'
 import { useKeepFieldValues } from './keep-field-values'
 import { PasswordField } from './password-field'
 import { useAuthFields } from './use-auth-fields'
@@ -123,7 +123,11 @@ function SignInFields({
         <SubmitButton variant="primary" pendingLabel="Signing you in…">
           Sign in
         </SubmitButton>
-        <Link href="/forgot-password" variant="standalone">
+        {/* The reset path carries the destination too, so somebody who was sent
+            here from a page they wanted lands on it after setting a password
+            rather than on Discover. "Create one" under this form does the same,
+            and `withNext` is the one place that decides when to attach it. */}
+        <Link href={withNext('/forgot-password', next)} variant="standalone">
           Reset your password
         </Link>
       </div>

@@ -8,6 +8,11 @@
  *
  * The wording names what happened, not the notification kind: “someone reviewed
  * your project” rather than `feedback_received`.
+ *
+ * Every switch here governs a notification something really sends. A switch for
+ * a kind with no producer is a setting that cannot be observed to work, so
+ * “Someone mentioned you” is not offered: nothing parses `@handle` anywhere in
+ * the product, and the kind stays in the schema until a writer exists for it.
  */
 
 import type { Metadata } from 'next'
@@ -54,13 +59,10 @@ const KINDS: readonly { kind: NotificationKind; label: string; detail: string }[
   },
   {
     kind: 'new_follower',
+    // Not "they see your projects in their feed": there is no feed, and
+    // nothing reads a follow but the two counts on a profile.
     label: 'Someone followed you',
-    detail: 'They see your projects and reviews in their feed.',
-  },
-  {
-    kind: 'mention',
-    label: 'Someone mentioned you',
-    detail: 'In a note, a reply or a discussion thread.',
+    detail: 'Someone started following your profile.',
   },
   {
     kind: 'bounty_awarded',

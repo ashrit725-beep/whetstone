@@ -15,13 +15,17 @@
 import Link from 'next/link'
 import type { ProjectDetail } from '@/lib/types'
 import type { ReviewStamp } from '@/server/queries/project-surface'
+// Imported rather than passed in like the two personal toggles: this one is the
+// creator's own switch on their own project, so every page that renders this
+// header for them gets it without threading a prop through four call sites.
+import { setFeedbackState } from '@/server/actions/project'
 import { GritReading, Initials, SectionLabel, plural } from './paper'
 import { FollowButton } from './follow-button'
 import { SaveButton } from './save-button'
 
 export interface ProjectHeaderProps {
   project: ProjectDetail
-  section: 'overview' | 'versions' | 'playtest'
+  section: 'overview' | 'versions' | 'playtest' | 'edit'
   versionCount: number
   roundCount: number
   /** A round taking testers right now, if there is one. */
@@ -115,6 +119,23 @@ export function ProjectHeader({
                       Open a round
                     </Link>
                   )}
+                  {/* This one project's switch. The publish step promises the
+                      creator they can close feedback whenever they like, and the
+                      danger zone says each project reopens from its own page:
+                      until this button, neither was true, and reopening meant
+                      posting a build. No confirmation, because the button that
+                      undoes it is this one with the other label. */}
+                  <form action={setFeedbackState}>
+                    <input type="hidden" name="slug" value={project.slug} />
+                    <input
+                      type="hidden"
+                      name="open"
+                      value={project.feedbackState === 'closed' ? 'true' : 'false'}
+                    />
+                    <button type="submit" className="btn btn-secondary">
+                      {project.feedbackState === 'closed' ? 'Take notes again' : 'Stop taking notes'}
+                    </button>
+                  </form>
                 </>
               ) : (
                 <>
@@ -170,8 +191,11 @@ export function ProjectHeader({
 
           {project.feedbackState === 'closed' ? (
             <p className="max-w-[46ch] text-xs text-ink-3">
-              The creator has stopped taking notes on this build. Everything already written stays
-              readable, and a new build reopens it.
+              {isOwner
+                ? // Said to the person who can change it, beside the button that
+                  // changes it. It used to read as though only a new build could.
+                  'You have stopped taking notes on this build. Everything already written stays readable, and Take notes again opens it without posting anything.'
+                : 'The creator has stopped taking notes on this build. Everything already written stays readable, and a new build reopens it.'}
             </p>
           ) : uninvited ? (
             <p className="max-w-[46ch] text-xs text-ink-3">
@@ -198,6 +222,14 @@ export function ProjectHeader({
           <TabLink href={`/p/${project.slug}/playtest`} current={section === 'playtest'} count={roundCount}>
             Playtest
           </TabLink>
+          {/* Owner-only, and in the navigation rather than among the actions:
+              editing a live project is a place to go, not a thing to do once,
+              and it is reachable from all four of its pages. */}
+          {isOwner && project.status !== 'draft' ? (
+            <TabLink href={`/p/${project.slug}/edit`} current={section === 'edit'}>
+              Edit
+            </TabLink>
+          ) : null}
         </ul>
       </nav>
     </header>

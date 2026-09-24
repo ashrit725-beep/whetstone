@@ -545,29 +545,55 @@ export function awardBounty(input: {
   return id
 }
 
-/** Delivery links the review. The schema refuses "delivered" with nothing to read. */
-export function deliverBounty(awardId: string, feedbackId: string): void {
+/**
+ * Delivery links the review. The schema refuses "delivered" with nothing to
+ * read, and the two conditions on the UPDATE are what make delivery happen
+ * once: the award has to still be open for delivery, and no other award may
+ * already be carrying this review. Two deliveries racing therefore settle to
+ * one, and one review can never collect a second amount out of escrow.
+ *
+ * The review is stamped as bounty work in the same transaction. That is the
+ * column reputation reads to keep the paying creator's helpful mark out of the
+ * reviewer's public score, so the stamp has to land with the delivery rather
+ * than being inferred from the award later.
+ *
+ * Returns false when nothing was written, which the caller turns into a
+ * sentence rather than a silent no-op.
+ */
+export function deliverBounty(awardId: string, feedbackId: string): boolean {
   const ts = now()
-  tx(() => {
-    run(
+  return tx(() => {
+    const applied = run(
       `UPDATE bounty_awards SET status = 'delivered', feedback_id = ?, delivered_at = ?, updated_at = ?
-        WHERE id = ?`,
-      [feedbackId, ts, ts, awardId],
+        WHERE id = ? AND status IN ('assigned', 'in_progress')
+          AND NOT EXISTS (
+            SELECT 1 FROM bounty_awards other
+             WHERE other.feedback_id = ? AND other.id <> bounty_awards.id)`,
+      [feedbackId, ts, ts, awardId, feedbackId],
     )
+    if (applied.changes === 0) return false
+
     const award = get<Row>(
       `SELECT ba.bounty_id, b.created_by, b.title FROM bounty_awards ba
          JOIN bounties b ON b.id = ba.bounty_id WHERE ba.id = ?`,
       [awardId],
     )
-    run(`UPDATE bounties SET status = 'delivered', updated_at = ? WHERE id = ?`, [ts, str(award, 'bounty_id')])
+    const bountyId = str(award, 'bounty_id')
+    run(`UPDATE feedback SET origin = 'bounty', bounty_id = ?, updated_at = ? WHERE id = ?`, [
+      bountyId,
+      ts,
+      feedbackId,
+    ])
+    run(`UPDATE bounties SET status = 'delivered', updated_at = ? WHERE id = ?`, [ts, bountyId])
     notify({
       userId: str(award, 'created_by'),
       kind: 'bounty_delivered',
       subjectType: 'bounty_award',
       subjectId: awardId,
       title: `Review delivered for ${str(award, 'title')}`,
-      url: bountyUrl(str(award, 'bounty_id')),
+      url: bountyUrl(bountyId),
     })
+    return true
   })
 }
 
@@ -616,6 +642,8 @@ export function acceptDelivery(input: {
       subjectId: str(award, 'bounty_id'),
       actorId: input.actorId,
     })
+    // The creator's note is addressed to the reviewer, so it travels with the
+    // notification that tells them they were paid, not only into the column.
     notify({
       userId: expertId,
       actorId: input.actorId,
@@ -623,6 +651,7 @@ export function acceptDelivery(input: {
       subjectType: 'bounty_award',
       subjectId: input.awardId,
       title: `Accepted: ${str(award, 'title')}`,
+      body: input.review ?? null,
       url: bountyUrl(str(award, 'bounty_id')),
     })
   })

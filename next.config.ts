@@ -25,6 +25,20 @@ const config: NextConfig = {
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
         ],
       },
+      {
+        // Everything under `public/` is served `public, max-age=0`, which makes
+        // the preloaded face in the root layout stale the moment it lands: the
+        // @font-face request that follows revalidates instead of consuming the
+        // preload, and Chrome then reports the preload as unused on every page
+        // after the first. A year and `immutable` lets the same response serve
+        // both, which is also what a face that never changes deserves.
+        //
+        // These filenames carry no content hash, so a new cut of a face must
+        // ship under a new filename (bricolage-var-2.woff2), not over the old
+        // one: a reader holding the old bytes would keep them for a year.
+        source: '/fonts/:file*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
     ]
   },
 }

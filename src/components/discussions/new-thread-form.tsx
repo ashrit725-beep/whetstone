@@ -82,13 +82,11 @@ export function NewThreadForm({ channelSlug, channelLabel }: NewThreadFormProps)
             allow="article"
           />
 
-          <p aria-live="polite" className="measure-ui text-xs" style={{ minHeight: '1lh' }}>
-            {state.status === 'error' && !state.fieldErrors ? (
-              <span className="text-critical">{state.message}</span>
-            ) : null}
-          </p>
-
-          <div>
+          {/* No second copy of the form-level error here. The summary above
+              already carries it, takes focus once per failed submit and has
+              role="alert", so printing it again above the button stated one
+              refusal twice on one screen. */}
+          <div className="flex flex-col gap-xs sm:items-start">
             <SubmitButton variant="primary" pendingLabel="Posting the thread…">
               Post the thread
             </SubmitButton>

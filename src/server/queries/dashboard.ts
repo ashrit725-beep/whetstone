@@ -17,8 +17,8 @@ import { after } from 'next/server'
 import { aiAvailability } from '@/lib/env'
 import { FEATURE_POLICY } from '@/server/ai/config'
 import { all } from '@/server/db/client'
-import { digest as digestFeature, themes as themesFeature } from '@/server/ai'
-import type { AiResult, FeedbackInput, ReviewerTier } from '@/server/ai'
+import { digest as digestFeature, lastRunAnswered, themes as themesFeature } from '@/server/ai'
+import type { AiResult, FeatureKey, FeedbackInput, ReviewerTier } from '@/server/ai'
 import { METRIC_LABEL, type Digest, type DigestTheme, type MetricKey } from '@/server/ai/digest'
 import type { Theme, ThemeReport } from '@/server/ai/schemas'
 import { isProjectType } from '@/server/ai/taxonomy'
@@ -431,31 +431,38 @@ export const themeBoard = cache(
 interface RunRegistry {
   readonly inFlight: Set<string>
   readonly startedAt: Map<string, number>
+  /** Whether the last finished run under a key produced what it promised. */
+  readonly lastOutcome: Map<string, 'ok' | 'failed'>
 }
 
 const RUNS = Symbol.for('whetstone.dashboard.background-runs')
 
 function runRegistry(): RunRegistry {
   const host = globalThis as typeof globalThis & { [RUNS]?: RunRegistry }
-  host[RUNS] ??= { inFlight: new Set(), startedAt: new Map() }
+  host[RUNS] ??= { inFlight: new Set(), startedAt: new Map(), lastOutcome: new Map() }
   return host[RUNS]
 }
 
 /**
  * Starts `work` after the response unless a run under `key` is in flight or
- * started within `cooldownMs`. True when a run is in flight once this returns,
- * which is what lets a panel say its fuller version is on the way.
+ * started within `cooldownMs`. True when a run is in flight once this returns.
+ *
+ * `work` resolves to whether the run produced what the panel would promise —
+ * a model answer, not a second local pass. A provider that refuses every call
+ * returns cleanly, so the outcome cannot be read from a thrown error; it is
+ * recorded here so the next render does not repeat a promise that just failed.
  */
-function startBackgroundRun(key: string, cooldownMs: number, work: () => Promise<unknown>): boolean {
-  const { inFlight, startedAt } = runRegistry()
+function startBackgroundRun(key: string, cooldownMs: number, work: () => Promise<boolean>): boolean {
+  const { inFlight, startedAt, lastOutcome } = runRegistry()
   if (inFlight.has(key)) return true
   if (Date.now() - (startedAt.get(key) ?? 0) < cooldownMs) return false
   inFlight.add(key)
   startedAt.set(key, Date.now())
   after(async () => {
     try {
-      await work()
+      lastOutcome.set(key, (await work()) ? 'ok' : 'failed')
     } catch (error) {
+      lastOutcome.set(key, 'failed')
       console.warn(`[ai] background run ${key} failed: ${String(error)}`)
     } finally {
       inFlight.delete(key)
@@ -464,16 +471,39 @@ function startBackgroundRun(key: string, cooldownMs: number, work: () => Promise
   return true
 }
 
+/**
+ * Whether a panel may say a model run is on its way: it started one, and the
+ * last one that finished answered. The run still fires when the last one
+ * failed, so a provider that comes back is picked up on the next visit — the
+ * creator is simply not invited to reload for something that has just failed
+ * three times in a row. A provenance label that lies is worse than no label
+ * (`src/server/ai/status.ts`).
+ *
+ * The registry above knows only what this process has done, and it starts
+ * empty: on the first render after a restart it would let the invitation
+ * through again, every ten minutes of uptime notwithstanding. The run ledger
+ * survives the restart, so it answers for the runs this process never saw.
+ */
+function promises(key: string, feature: FeatureKey, started: boolean): boolean {
+  if (!started) return false
+  const remembered = runRegistry().lastOutcome.get(key)
+  if (remembered) return remembered === 'ok'
+  return lastRunAnswered(feature) !== false
+}
+
 /** One background attempt per project per ten minutes, whatever the outcome. */
 const THEME_RUN_COOLDOWN_MS = 10 * 60_000
 
 function scheduleThemeRun(input: Parameters<typeof themesFeature.generate>[0], userId: string): boolean {
-  return startBackgroundRun(`themes:${input.projectId}`, THEME_RUN_COOLDOWN_MS, () =>
-    themesFeature.generate(input, {
+  const key = `themes:${input.projectId}`
+  const started = startBackgroundRun(key, THEME_RUN_COOLDOWN_MS, async () => {
+    const run = await themesFeature.generate(input, {
       userId,
       signal: AbortSignal.timeout(FEATURE_POLICY.themes.timeoutMs * 2),
-    }),
-  )
+    })
+    return run.source === 'ai'
+  })
+  return promises(key, 'themes', started)
 }
 
 /* -------------------------------------------------------------------------- *
@@ -756,11 +786,14 @@ const DIGEST_RUN_COOLDOWN_MS = 5 * 60_000
 function scheduleDigestRun(input: Parameters<typeof digestFeature.generate>[0]): boolean {
   // Per project: keyed on the creator alone, opening a second project while
   // the first one's brief was being written reported a draft that did not exist.
-  return startBackgroundRun(
-    `digest:${input.creatorId}:${input.projectId}:${input.isoWeek}`,
-    DIGEST_RUN_COOLDOWN_MS,
-    () => digestFeature.generate(input, { signal: AbortSignal.timeout(DIGEST_DEADLINE_MS * 3) }),
-  )
+  const key = `digest:${input.creatorId}:${input.projectId}:${input.isoWeek}`
+  const started = startBackgroundRun(key, DIGEST_RUN_COOLDOWN_MS, async () => {
+    const run = await digestFeature.generate(input, {
+      signal: AbortSignal.timeout(DIGEST_DEADLINE_MS * 3),
+    })
+    return run.source === 'ai'
+  })
+  return promises(key, 'digest', started)
 }
 
 /* -------------------------------------------------------------------------- *

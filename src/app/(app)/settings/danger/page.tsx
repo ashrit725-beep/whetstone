@@ -11,8 +11,7 @@ import { redirect } from 'next/navigation'
 // so a cookie that has been signed out elsewhere stops looking signed in here,
 // rather than rendering a signed-in page whose every write would be refused.
 import { currentClaimsLive } from '@/server/queries/auth'
-import { listMyProjects } from '@/server/repos/projects'
-import { accountFootprint } from '@/server/queries/settings'
+import { accountFootprint, feedbackStates } from '@/server/queries/settings'
 import { PageHeader } from '@/components/dashboard/section'
 import { DangerZone } from '@/components/dashboard/danger-zone'
 
@@ -23,20 +22,23 @@ export default async function DangerSettingsPage() {
   if (!claims) redirect('/sign-in?next=%2Fsettings%2Fdanger')
 
   const footprint = accountFootprint(claims.uid)
-  const projects = listMyProjects(claims.uid, { limit: 50 })
-  const openProjects = projects.filter((project) => project.feedbackState === 'open').length
+  // Counted in SQL rather than from a page of rows, and counted as the write
+  // does: `closeAllFeedback` closes an invite-only project too, so anything
+  // not already closed is something the button would act on.
+  const feedback = feedbackStates(claims.uid)
 
   return (
     <>
       <PageHeader
         title="Danger zone"
-        lede="Three things that are hard to undo, in order of how hard. Each one says what it will actually do to your rows."
+        lede="Three settings you will not want to press by accident, in order of how hard each is to undo. Each one says what it will actually do to your rows."
       />
       <div className="max-w-prose">
         <DangerZone
           handle={claims.handle}
           projects={footprint.projects}
-          openProjects={openProjects}
+          openProjects={feedback.taking}
+          closedProjects={feedback.closed}
           feedbackReceived={footprint.feedbackReceived}
           feedbackWritten={footprint.feedbackWritten}
           openSuggestions={footprint.openSuggestions}

@@ -42,6 +42,12 @@ export interface ThreadNote {
   readonly creatorMarkedHelpful: boolean
   readonly helpfulCount: number
   readonly viewerVote: -1 | 0 | 1
+  /**
+   * True when the person reading is the person who wrote it. Voting on your own
+   * review is refused by the server, so the controls are not offered: the note
+   * carries the identity because the display name is not one.
+   */
+  readonly viewerIsReviewer: boolean
   readonly points: readonly ThreadPoint[]
   readonly replies: readonly ThreadReply[]
   /** True only for a row inserted optimistically, before the server answers. */

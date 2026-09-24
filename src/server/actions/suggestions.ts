@@ -45,6 +45,13 @@ const MOVE_TARGETS = [
   'wont_fix',
 ] as const
 
+/**
+ * Statuses whose dialog marks the note field `required` and tells the creator
+ * the sentence will be read. `<Form>` renders `noValidate`, so that promise is
+ * kept here rather than by the browser.
+ */
+const NEEDS_A_LINE: ReadonlySet<string> = new Set(['shipped', 'declined', 'wont_fix'])
+
 const MoveSchema = z.object({
   suggestionId: z.string().min(1),
   status: z.enum(MOVE_TARGETS),
@@ -55,8 +62,13 @@ const MoveSchema = z.object({
   total: z.coerce.number().int().min(0).optional(),
 })
 
-function fail(message: string, field?: string): FormState {
-  return { status: 'error', message, ...(field ? { fieldErrors: { [field]: message } } : {}) }
+/**
+ * A refusal. The summary sentence says what did not happen and the field error
+ * says what to do about it, because the dialog prints both: one string in both
+ * places was the same line three times in one box.
+ */
+function fail(message: string, fieldErrors?: Record<string, string>): FormState {
+  return { status: 'error', message, ...(fieldErrors ? { fieldErrors } : {}) }
 }
 
 /**
@@ -80,6 +92,25 @@ export async function moveSuggestion(_prev: FormState, formData: FormData): Prom
   }
 
   const { suggestionId, status, note, version } = parsed.data
+  // The repository refuses a ship with neither a version nor a note, which a
+  // linked build alone satisfied; the dialog asks for the line regardless, so
+  // the stricter rule the creator is actually shown is enforced here.
+  // Neither sentence claims an audience: a card with no reviewer notes behind
+  // it notifies nobody, and the dialog says so four lines above this error.
+  if (NEEDS_A_LINE.has(status) && (note ?? '').length === 0) {
+    return fail(
+      status === 'shipped'
+        ? 'This was not moved to Shipped.'
+        : 'This was not declined.',
+      {
+        note:
+          status === 'shipped'
+            ? 'Say what changed. It goes on the card, and to anyone whose note asked for it.'
+            : 'Say why. Declining without a reason is what makes people stop reviewing.',
+      },
+    )
+  }
+
   const current = getSuggestion(suggestionId, claims.uid)
   if (!current) return fail('That suggestion no longer exists. Reload the tracker.')
 
@@ -108,7 +139,7 @@ export async function moveSuggestion(_prev: FormState, formData: FormData): Prom
     })
   } catch (error) {
     if (error instanceof SuggestionStatusError) {
-      return fail(error.message, error.field)
+      return fail('That move was not applied.', { [error.field]: error.message })
     }
     return fail('The tracker did not save that move. The card is back where it was. Try again.')
   }

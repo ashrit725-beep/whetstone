@@ -36,6 +36,18 @@ export interface StepChrome {
   draftId: string
   /** Where publishing should land, carried from step to step. See `./then`. */
   then: string | null
+  /**
+   * The submit's words, when the step is not being walked forward. The wizard
+   * leaves it out and keeps its own "Save and <next step>"; the editor at
+   * /p/[slug]/edit passes "Save the ask", because there is no next step there.
+   */
+  submitLabel?: string
+}
+
+/** A list as prose, with the conjunction a sentence needs before its last item. */
+function asProse(items: readonly string[]): string {
+  if (items.length < 2) return items[0] ?? ''
+  return `${items.slice(0, -1).join(', ')} or ${items[items.length - 1] ?? ''}`
 }
 
 /** The fields every step posts back, so the next address can be built from them. */
@@ -56,7 +68,7 @@ export interface BasicsStepProps extends StepChrome {
   defaults: { title: string; tagline: string; summary: string; grit: GritValue | null }
 }
 
-export function BasicsStep({ type, draftId, then, action, defaults }: BasicsStepProps) {
+export function BasicsStep({ type, draftId, then, action, submitLabel, defaults }: BasicsStepProps) {
   const [grit, setGrit] = useState<GritValue | null>(defaults.grit)
 
   return (
@@ -131,19 +143,27 @@ export function BasicsStep({ type, draftId, then, action, defaults }: BasicsStep
                 notes about the idea.
               </span>
             </legend>
+            {/* `id` and `describedBy` are what make the summary's third link
+                work like the two above it: the link lands on the cell Tab
+                enters at, and the refusal is read out with the group rather
+                than sitting under it unannounced. */}
             <GritScale
               name="grit"
+              id="grit"
               value={grit}
               onChange={setGrit}
               label="The stage this build is actually at, from 120 concept to 8000 shipped"
+              {...(state.fieldErrors?.['grit'] ? { describedBy: 'grit-error' } : {})}
             />
             {state.fieldErrors?.['grit'] ? (
-              <p className="measure-ui text-xs text-critical">{state.fieldErrors['grit']}</p>
+              <p id="grit-error" className="measure-ui text-xs text-critical">
+                {state.fieldErrors['grit']}
+              </p>
             ) : null}
           </fieldset>
 
           <SubmitButton variant="primary" pendingLabel="Saving…">
-            Save and write the ask
+            {submitLabel ?? 'Save and write the ask'}
           </SubmitButton>
         </div>
       )}
@@ -160,13 +180,35 @@ export interface AskStepProps extends StepChrome {
   defaults: { ask: string; ignore: string; category: string }
   /** Passed to the intake assistant when the creator asks for a suggestion. */
   summary: string
+  /**
+   * The rest of what the draft already knows, passed with the summary. The
+   * assistant used to be handed the summary alone and guessed the stage from
+   * it, so it described a shipped project back to its creator as a prototype.
+   */
+  stageKey: string
+  buildLinks: string
 }
 
-export function AskStep({ type, draftId, then, action, categories, prompts, defaults, summary }: AskStepProps) {
+export function AskStep({
+  type,
+  draftId,
+  then,
+  action,
+  submitLabel,
+  categories,
+  prompts,
+  defaults,
+  summary,
+  stageKey,
+  buildLinks,
+}: AskStepProps) {
   const [suggestion, setSuggestion] = useState<IntakeSuggestionResult | null>(null)
   const [suggestionFailed, setSuggestionFailed] = useState(false)
   const [pending, startTransition] = useTransition()
   const [ask, setAsk] = useState(defaults.ask)
+  // Controlled, like the ask beside it, so one button can apply the whole
+  // suggestion rather than half of it.
+  const [ignore, setIgnore] = useState(defaults.ignore)
 
   return (
     <Form action={action} summaryTitle="This step was not saved.">
@@ -207,7 +249,7 @@ export function AskStep({ type, draftId, then, action, categories, prompts, defa
                   // Optional help: a failed request leaves the step as it was
                   // rather than reaching the error boundary with the ask typed.
                   try {
-                    setSuggestion(await suggestAsk(summary, ''))
+                    setSuggestion(await suggestAsk(summary, buildLinks, stageKey))
                     setSuggestionFailed(false)
                   } catch {
                     setSuggestion(null)
@@ -225,7 +267,7 @@ export function AskStep({ type, draftId, then, action, categories, prompts, defa
                 <p className="voice text-ink">{suggestion.askBody}</p>
                 {suggestion.ignoreList.length > 0 ? (
                   <p className="measure-ui text-xs text-ink-3">
-                    {`It also suggests telling reviewers not to spend time on ${suggestion.ignoreList.join(', ')}.`}
+                    {`It also suggests telling reviewers not to spend time on ${asProse(suggestion.ignoreList)}.`}
                   </p>
                 ) : null}
                 <button
@@ -233,6 +275,13 @@ export function AskStep({ type, draftId, then, action, categories, prompts, defa
                   className="ws-scaffold w-fit text-xs"
                   onClick={() => {
                     setAsk(suggestion.askBody)
+                    // The one button that accepts the suggestion applies all of
+                    // it. The ignore list was printed and then dropped, leaving
+                    // the creator to retype it into the field a few lines down.
+                    // Never over an answer they have already written.
+                    if (suggestion.ignoreList.length > 0 && ignore.trim() === '') {
+                      setIgnore(asProse(suggestion.ignoreList))
+                    }
                   }}
                 >
                   Use this wording
@@ -283,7 +332,10 @@ export function AskStep({ type, draftId, then, action, categories, prompts, defa
                 prose
                 rows={3}
                 maxChars={400}
-                defaultValue={defaults.ignore}
+                value={ignore}
+                onChange={(event) => {
+                  setIgnore(event.target.value)
+                }}
                 aria-describedby={describedBy}
                 invalid={invalid}
               />
@@ -306,7 +358,7 @@ export function AskStep({ type, draftId, then, action, categories, prompts, defa
           ) : null}
 
           <SubmitButton variant="primary" pendingLabel="Saving…">
-            Save and pick what would help
+            {submitLabel ?? 'Save and pick what would help'}
           </SubmitButton>
         </div>
       )}
@@ -322,7 +374,7 @@ export interface NeedsStepProps extends StepChrome {
   defaults: { selected: readonly string[]; tags: string }
 }
 
-export function NeedsStep({ type, draftId, then, action, needs, defaults }: NeedsStepProps) {
+export function NeedsStep({ type, draftId, then, action, submitLabel, needs, defaults }: NeedsStepProps) {
   return (
     <Form action={action} summaryTitle="This step was not saved.">
       {({ state }) => (
@@ -377,7 +429,7 @@ export function NeedsStep({ type, draftId, then, action, needs, defaults }: Need
           </Field>
 
           <SubmitButton variant="primary" pendingLabel="Saving…">
-            Save and add the build
+            {submitLabel ?? 'Save and add the build'}
           </SubmitButton>
         </div>
       )}
@@ -392,7 +444,7 @@ export interface BuildStepProps extends StepChrome {
   defaults: { versionLabel: string; buildUrl: string; changelog: string }
 }
 
-export function BuildStep({ type, draftId, then, action, defaults }: BuildStepProps) {
+export function BuildStep({ type, draftId, then, action, submitLabel, defaults }: BuildStepProps) {
   return (
     <Form action={action} summaryTitle="This step was not saved.">
       {({ state }) => (
@@ -460,7 +512,7 @@ export function BuildStep({ type, draftId, then, action, defaults }: BuildStepPr
           </Field>
 
           <SubmitButton variant="primary" pendingLabel="Saving…">
-            Save and check it over
+            {submitLabel ?? 'Save and check it over'}
           </SubmitButton>
         </div>
       )}

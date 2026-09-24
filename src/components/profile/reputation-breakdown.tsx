@@ -111,7 +111,10 @@ export function ReputationBreakdown({ reputation, reviews, displayName }: Reputa
         <h2 id="rep-totals" className="text-md">
           What the score is made of
         </h2>
-        <dl className="grid gap-md sm:grid-cols-2 lg:grid-cols-4">
+        {/* Three tracks per figure — term, value, detail — shared by every
+            figure in the row through subgrid, so a label that wraps to two
+            lines cannot drop its own numeral off the row's baseline. */}
+        <dl className="grid gap-md sm:grid-cols-2 sm:grid-rows-[repeat(4,auto_auto_auto)] lg:grid-cols-4 lg:grid-rows-[repeat(2,auto_auto_auto)]">
           <Figure term="Reviews written" value={totals.reviews} />
           <Figure
             term="Marked helpful by a creator"
@@ -152,17 +155,22 @@ export function ReputationBreakdown({ reputation, reviews, displayName }: Reputa
           caption={`Reviews written by ${displayName}, with the terms behind each value`}
           captionVisible={false}
         >
+          {/* Value sits beside the review it belongs to rather than at the end
+              of eight derivation terms. Nine columns are wider than a phone and
+              wider than a 768 window, and with Value last the one figure this
+              section is named for was the one figure off the right edge. The
+              terms behind it follow, and the region scrolls to them. */}
           <THead>
             <TR>
               <TH>Project</TH>
               <TH>Domain</TH>
+              <TH numeric>Value</TH>
               <TH numeric>Specificity</TH>
               <TH numeric>Helpful</TH>
               <TH numeric>Adoption</TH>
               <TH numeric>Peer votes</TH>
               <TH numeric>κ</TH>
               <TH numeric>Time weight</TH>
-              <TH numeric>Value</TH>
             </TR>
           </THead>
           {reviews.length === 0 ? (
@@ -177,13 +185,13 @@ export function ReputationBreakdown({ reputation, reviews, displayName }: Reputa
                 <TR key={review.feedbackId}>
                   <TD>{review.projectTitle}</TD>
                   <TD>{PROJECT_TYPES[review.domain].label}</TD>
+                  <TD numeric>{review.value.toFixed(2)}</TD>
                   <TD numeric>{review.specificity.toFixed(2)}</TD>
                   <TD numeric>{review.helpful === 1 ? 'yes' : 'no'}</TD>
                   <TD numeric>{review.adoption.toFixed(2)}</TD>
                   <TD numeric>{review.peerVotes.toFixed(2)}</TD>
                   <TD numeric>{review.kappa.toFixed(2)}</TD>
                   <TD numeric>{review.timeWeight.toFixed(2)}</TD>
-                  <TD numeric>{review.value.toFixed(2)}</TD>
                 </TR>
               ))}
             </TBody>
@@ -194,14 +202,17 @@ export function ReputationBreakdown({ reputation, reviews, displayName }: Reputa
   )
 }
 
+/**
+ * A <dt> may be followed by more than one <dd>, so the value and the detail get
+ * a track each and the three rows line up across the whole row of figures. One
+ * column has no subgrid to join, so it stays a flex column below `sm`.
+ */
 function Figure({ term, value, detail }: { term: string; value: number; detail?: string }) {
   return (
-    <div className="flex flex-col gap-3xs border-t border-border-hair pt-xs">
+    <div className="flex flex-col gap-3xs border-t border-border-hair pt-xs sm:row-span-3 sm:grid sm:grid-rows-subgrid">
       <dt className="text-xs text-text-3">{term}</dt>
-      <dd className="flex flex-col gap-3xs">
-        <span className="tnum text-md text-text-1">{value.toLocaleString('en')}</span>
-        {detail ? <span className="text-xs text-text-3">{detail}</span> : null}
-      </dd>
+      <dd className="tnum text-md text-text-1">{value.toLocaleString('en')}</dd>
+      {detail ? <dd className="text-xs text-text-3">{detail}</dd> : null}
     </div>
   )
 }

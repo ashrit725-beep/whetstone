@@ -20,7 +20,12 @@ export interface FeedRow {
   readonly typeLabel: string
   readonly stageLabel: string
   readonly grit: number
-  /** The first declared need, or null when the creator declared none. */
+  /**
+   * What the row advertises under "Wants": the need that put the project in
+   * this list. Under a need filter that is a need the reader asked for;
+   * otherwise it is the creator's first declared need. Null when they declared
+   * none.
+   */
   readonly wants: string | null
   readonly feedbackCount: number
   readonly href: string
@@ -34,6 +39,12 @@ export function toFeedRow(
   ask: string | undefined,
   state: DiscoverState,
 ): FeedRow {
+  /* Under a need filter the row has to name the need that matched, or the
+     reader reads a value they did not ask for and the filter looks broken. A
+     project can declare several; the first one the filter asked for wins. */
+  const matched =
+    state.needs.length > 0 ? card.needs.find((need) => state.needs.includes(need.key)) : undefined
+
   return {
     id: card.id,
     slug: card.slug,
@@ -42,7 +53,7 @@ export function toFeedRow(
     typeLabel: card.typeLabel,
     stageLabel: card.stageLabel,
     grit: card.grit,
-    wants: card.needs[0]?.label ?? null,
+    wants: (matched ?? card.needs[0])?.label ?? null,
     feedbackCount: card.counts.feedback,
     href: `/p/${card.slug}`,
     gritHref: hrefFor(withGrit({ ...state, grit: null }, card.grit)),

@@ -177,7 +177,16 @@ export function GritHatch({ value, orientation = 'horizontal', className }: Grit
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '')
   const patternId = `ws-grit-${String(step.value)}-${orientation}-${uid}`
   const angle = orientation === 'vertical' ? 135 : 45
-  const x = step.spacing / 2 + step.strokeWidth / 2
+  // A tile whose whole period is one CSS pixel cannot rasterise as a stripe: on
+  // a 1x display the snapped stroke filled it, so 8000 — spacing 1 — drew a flat
+  // block, and the Shipped cell, every shipped project's chip and one avatar in
+  // five had no hatch at all. Doubling the tile keeps the step's declared 0.5:1
+  // duty cycle, which is what the scale means, and gives the rasteriser 1px on
+  // and 1px off. Nothing changes at 2x, where the period was already resolvable.
+  const tile = step.spacing < 2 ? 2 : 1
+  const spacing = step.spacing * tile
+  const strokeWidth = step.strokeWidth * tile
+  const x = spacing / 2 + strokeWidth / 2
 
   return (
     <svg
@@ -188,8 +197,8 @@ export function GritHatch({ value, orientation = 'horizontal', className }: Grit
       <defs>
         <pattern
           id={patternId}
-          width={step.spacing}
-          height={step.spacing}
+          width={spacing}
+          height={spacing}
           patternUnits="userSpaceOnUse"
           patternTransform={`rotate(${String(angle)})`}
         >
@@ -197,9 +206,9 @@ export function GritHatch({ value, orientation = 'horizontal', className }: Grit
             x1={x}
             y1={0}
             x2={x}
-            y2={step.spacing}
+            y2={spacing}
             stroke="currentColor"
-            strokeWidth={step.strokeWidth}
+            strokeWidth={strokeWidth}
             shapeRendering="crispEdges"
           />
         </pattern>

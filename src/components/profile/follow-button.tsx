@@ -78,6 +78,10 @@ export function FollowButton({
         <Button
           type="submit"
           variant={optimistic ? 'secondary' : 'primary'}
+          /* Buttons are one line by default, and a display name may be sixty
+             characters, which is wider than a phone. This one grows downwards
+             instead of past the edge of the column. */
+          className="h-auto min-h-11 max-w-full py-2xs whitespace-normal"
           iconLeading={
             optimistic ? (
               <Check size={20} strokeWidth={1.5} />
@@ -86,7 +90,10 @@ export function FollowButton({
             )
           }
         >
-          {optimistic ? 'Following' : `Follow ${displayName.split(' ')[0] ?? displayName}`}
+          {/* The whole display name. Taking the first word assumed a first
+              name, so a studio called The Last Loom got "Follow The", and
+              "Community Verifier" got "Follow Community". */}
+          {optimistic ? 'Following' : `Follow ${displayName}`}
         </Button>
       </form>
       {error ? (

@@ -17,12 +17,32 @@
  * nothing collapses behind a control.
  */
 
-import { Link } from '@/components/ui'
+import { Link, ThemeToggle } from '@/components/ui'
 import { Wordmark } from './wordmark'
 
 interface FooterLink {
   readonly href: string
   readonly label: string
+}
+
+export interface FooterProps {
+  /**
+   * Home for this reader, from `homeHref()` in `./links`. The shell that renders
+   * this line knows who is reading; the line itself cannot ask, because the
+   * root error boundary is a client component and imports it. Both wordmarks on
+   * a page are links called "Whetstone, home", so they must resolve home to the
+   * same place (SC 3.2.4); the front page is the right answer wherever no
+   * reader is known, which is what the 404 and the error page pass.
+   */
+  readonly home?: string
+  /**
+   * Adds the theme control to this line. The product shell already carries one
+   * in its nav, so it stays off there; the 404 and the root error boundary
+   * render their own minimal header instead and inherit neither, which left
+   * those two surfaces with no way to change the theme and, on the 404, no
+   * focusable control of any kind.
+   */
+  readonly showTheme?: boolean
 }
 
 /** The help affordance is second, always, on every surface. */
@@ -34,13 +54,13 @@ const LINKS: readonly FooterLink[] = [
   { href: '/legal/privacy', label: 'Privacy' },
 ]
 
-export function Footer() {
+export function Footer({ home = '/', showTheme = false }: FooterProps) {
   const year = new Date().getUTCFullYear()
 
   return (
     <footer className="pad-inline border-t border-border-hair bg-surface-2 text-text-3">
       <div className="mx-auto flex w-full max-w-detail flex-wrap items-center gap-x-md gap-y-xs py-md">
-        <Wordmark size="sm" href="/" />
+        <Wordmark size="sm" href={home} />
 
         <nav aria-label="Footer">
           <ul className="m-0 flex list-none flex-wrap items-center gap-x-md gap-y-3xs p-0">
@@ -54,7 +74,10 @@ export function Footer() {
           </ul>
         </nav>
 
-        <p className="tnum text-xs sm:ms-auto">© {year} Whetstone</p>
+        <div className="flex flex-wrap items-center gap-md sm:ms-auto">
+          {showTheme ? <ThemeToggle /> : null}
+          <p className="tnum text-xs">© {year} Whetstone</p>
+        </div>
       </div>
     </footer>
   )

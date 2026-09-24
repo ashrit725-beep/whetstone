@@ -12,6 +12,7 @@ import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { EmptyState } from '@/components/ui'
 import { mailDelivery, type MailDelivery } from '@/server/mail'
+import { firstParam, safeNextPath, type RawSearchParams } from '../schema'
 import { ForgotForm } from '../_components/forgot-form'
 
 export const metadata: Metadata = {
@@ -28,11 +29,21 @@ const INTRO: Record<MailDelivery, string> = {
   log: 'Give us the address on the account and we will issue a link that sets a new password.',
 }
 
-export default async function ForgotPasswordPage() {
+export default async function ForgotPasswordPage({
+  searchParams,
+}: {
+  searchParams: Promise<RawSearchParams>
+}) {
   // Mail configuration is read when the page is requested, never baked in at
   // build time, so setting a provider key takes effect on the next restart.
   await connection()
   const delivery = mailDelivery()
+  // Where the reader was headed before they were sent to sign in. Validated
+  // here, and again where the emailed link is built and where it is followed,
+  // so it can never carry anyone off this origin. Empty when there is nowhere
+  // in particular to go.
+  const sp = await searchParams
+  const next = safeNextPath(firstParam(sp['next']), '')
 
   return (
     <div className="flex flex-col gap-lg">
@@ -46,7 +57,7 @@ export default async function ForgotPasswordPage() {
       </div>
 
       {delivery ? (
-        <ForgotForm />
+        <ForgotForm next={next} />
       ) : (
         <EmptyState
           headingLevel={2}

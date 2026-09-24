@@ -29,7 +29,7 @@ import type { ProjectAskView, ProjectDetail } from '@/lib/types'
 import { safeHref } from '@/lib/utils'
 import { overlapCount } from '@/server/ai/text'
 import { getBlindDraft } from '@/server/queries/project-surface'
-import { DRAFT_SCHEMA_VERSION, getComposerDraft } from '@/server/queries/drafts'
+import { DRAFT_SCHEMA_VERSION, getComposerDraft, saveComposerDraft } from '@/server/queries/drafts'
 import { SAVED_NOTE_MAX, type ComposerAxis, type ComposerData, type SavedNote } from '@/components/composer/types'
 
 /* ------------------------------------------------------------- the gate --- */
@@ -244,6 +244,55 @@ export const SavedNotesPayload = z.object({
 
 export type SavedNotesPayload = z.infer<typeof SavedNotesPayload>
 
+/** The clock alone, before there are any notes to read it beside. */
+const SavedClock = SavedNotesPayload.pick({ seconds: true })
+
+/**
+ * How long this reviewer has had this review open, in the seconds they left it
+ * at, or null before anything has been saved.
+ *
+ * The draft store holds it because this is the only place it survives exactly.
+ * The `feedback` draft row the first impression is written to keeps
+ * `time_spent_minutes` — the right unit for the context line on a posted
+ * review, and the wrong one for a clock, since twenty seconds rounds to zero
+ * and a hundred rounds up to two minutes.
+ */
+export function savedClockFor(viewerId: string, projectId: string): number | null {
+  const draft = getComposerDraft(viewerId, projectId)
+  if (!draft || draft.schemaVersion !== DRAFT_SCHEMA_VERSION) return null
+  const parsed = SavedClock.safeParse(draft.payload)
+  return parsed.success ? parsed.data.seconds : null
+}
+
+/**
+ * Keeps the clock without touching the words beside it. Called when the first
+ * impression is saved, which is before the composer itself has written
+ * anything, and again on every autosave of the notes through the payload.
+ *
+ * `notes` replaces what the draft holds, for the one caller that has just
+ * watched the reviewer empty every box: the words go, the clock stays, because
+ * the review has still been open that long. Left out, whatever is already
+ * saved is kept exactly.
+ */
+export function keepClock(
+  viewerId: string,
+  projectId: string,
+  seconds: number,
+  notes?: SavedNotesPayload['notes'],
+): void {
+  const draft = getComposerDraft(viewerId, projectId)
+  const held = draft && draft.schemaVersion === DRAFT_SCHEMA_VERSION ? SavedNotesPayload.safeParse(draft.payload) : null
+  saveComposerDraft({
+    reviewerId: viewerId,
+    projectId,
+    payload: {
+      seconds: Math.min(Math.max(Math.round(seconds), 0), 60 * 60 * 8),
+      notes: notes ?? (held?.success ? held.data.notes : {}),
+    },
+    schemaVersion: DRAFT_SCHEMA_VERSION,
+  })
+}
+
 /** Nothing typed and nothing rated: not worth keeping, or bringing back. */
 export function isEmptyNotes(notes: SavedNotesPayload['notes']): boolean {
   return Object.values(notes).every((note) => note.body.trim().length === 0 && note.rating === null)
@@ -258,7 +307,7 @@ function savedNotesFor(
   project: ProjectDetail,
   viewerId: string,
   axes: readonly ComposerAxis[],
-): { notes: Record<string, SavedNote>; seconds: number; savedAt: number } | null {
+): { notes: Record<string, SavedNote>; savedAt: number } | null {
   const draft = getComposerDraft(viewerId, project.id)
   if (!draft || draft.schemaVersion !== DRAFT_SCHEMA_VERSION) return null
   const parsed = SavedNotesPayload.safeParse(draft.payload)
@@ -279,7 +328,7 @@ function savedNotesFor(
         : 'suggestion',
     }
   }
-  return Object.keys(notes).length > 0 ? { notes, seconds: parsed.data.seconds, savedAt: draft.savedAt } : null
+  return Object.keys(notes).length > 0 ? { notes, savedAt: draft.savedAt } : null
 }
 
 /* ------------------------------------------------------- the form's data --- */
@@ -300,6 +349,7 @@ export function buildComposerData(project: ProjectDetail, viewerId: string | nul
 
   const draft = viewerId ? getBlindDraft(project.id, viewerId) : undefined
   const saved = viewerId ? savedNotesFor(project, viewerId, axes) : null
+  const clock = viewerId ? savedClockFor(viewerId, project.id) : null
 
   return {
     project: {
@@ -322,8 +372,11 @@ export function buildComposerData(project: ProjectDetail, viewerId: string | nul
       definition: a.definition,
     })),
     impression: draft?.headline ?? null,
-    // The clock carries on from wherever it stopped last, on either step.
-    secondsSoFar: Math.max(draft?.dwellSeconds ?? 0, saved?.seconds ?? 0),
+    // The clock carries on from wherever it stopped last, on either step. The
+    // draft row's whole minutes are the fallback for a review begun before the
+    // composer kept the seconds; they are never preferred to them, because
+    // rounding up is as wrong as rounding down when a floor reads the number.
+    secondsSoFar: clock ?? draft?.dwellSeconds ?? 0,
     ratingScale: RATING_SCALE_MAX,
     savedNotes: saved?.notes ?? null,
     savedAt: saved?.savedAt ?? null,

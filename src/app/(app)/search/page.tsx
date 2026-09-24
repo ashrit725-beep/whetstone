@@ -35,7 +35,7 @@ import { SearchForm } from '@/components/discover/search-form'
 import { ScopeTabs } from '@/components/discover/scope-tabs'
 import { ShortcutScope } from '@/components/discover/shortcut-scope'
 import { SearchScopeFoundNothing } from '@/components/discover/empty-states'
-import { EMPTY_STATE } from '@/components/discover/filters'
+import { EMPTY_STATE, printableQuery } from '@/components/discover/filters'
 import { toFeedRow } from '@/components/discover/row-data'
 
 export const dynamic = 'force-dynamic'
@@ -132,7 +132,9 @@ function counted(n: number, one: string, many: string): string {
 
 export default async function SearchPage({ searchParams }: { searchParams: SearchParams }) {
   const raw = await searchParams
-  const query = first(raw['q']).trim().slice(0, 120)
+  // Same reading as Discover's, so one address searched from either surface
+  // prints and matches the same string.
+  const query = printableQuery(first(raw['q']))
   const scopeRaw = first(raw['in'])
   const scopeDef = SCOPES.find((s) => s.value === scopeRaw) ?? SCOPES[0]
   const scope: SearchScope = scopeDef.value

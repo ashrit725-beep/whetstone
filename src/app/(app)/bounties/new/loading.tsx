@@ -2,11 +2,7 @@ import { Skeleton } from '@/components/ui'
 
 export default function Loading() {
   return (
-    <div
-      className="pad-inline mx-auto flex w-full flex-col gap-xl py-xl"
-      style={{ maxInlineSize: 'var(--container-prose)' }}
-      aria-busy="true"
-    >
+    <div className="column-prose flex w-full flex-col gap-xl py-xl" aria-busy="true">
       <p role="status" aria-live="polite" className="sr-only">
         Loading the bounty form.
       </p>

@@ -67,5 +67,5 @@ export type {
 
 export { FEATURE_POLICY, budgetConfig, setBudgetConfig, enabledFeatures, setEnabledFeatures } from './config'
 export { budgetSnapshot } from './budget'
-export { claimJobs, enqueueJob, finishJob, pendingJobCount } from './store'
+export { claimJobs, enqueueJob, finishJob, lastRunAnswered, pendingJobCount } from './store'
 export type { Job } from './store'

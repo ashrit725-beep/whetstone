@@ -45,10 +45,7 @@ export default async function NewBountyPage({
   const areas = expertiseOptions()
 
   return (
-    <div
-      className="pad-inline mx-auto flex w-full flex-col gap-xl py-xl"
-      style={{ maxInlineSize: 'var(--container-prose)' }}
-    >
+    <div className="column-prose flex w-full flex-col gap-xl py-xl">
       <header className="flex flex-col gap-sm">
         <h1 className="text-2xl">Post a bounty</h1>
         <p className="measure-ui text-sm text-text-2">

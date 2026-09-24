@@ -7,7 +7,7 @@ import styles from '@/components/marketing/paper.module.css'
 
 export default function Loading() {
   return (
-    <section className="pad-inline py-24" aria-busy="true">
+    <section className="pad-inline py-16 md:py-24" aria-busy="true">
       <p className="sr-only" role="status">
         Loading…
       </p>

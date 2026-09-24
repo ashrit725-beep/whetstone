@@ -12,7 +12,7 @@ import { redirect } from 'next/navigation'
 // rather than rendering a signed-in page whose every write would be refused.
 import { currentClaimsLive } from '@/server/queries/auth'
 import { Link as UiLink } from '@/components/ui'
-import { getProfileRow } from '@/server/repos/profiles'
+import { getProfileRow, listProfileLinks } from '@/server/repos/profiles'
 import { PageHeader } from '@/components/dashboard/section'
 import { ProfileForm } from '@/components/dashboard/settings-forms'
 
@@ -23,6 +23,7 @@ export default async function ProfileSettingsPage() {
   if (!claims) redirect('/sign-in?next=%2Fsettings%2Fprofile')
 
   const profile = getProfileRow(claims.uid)
+  const links = listProfileLinks(claims.uid).map((link) => ({ label: link.label, url: link.url }))
 
   return (
     <>
@@ -43,6 +44,7 @@ export default async function ProfileSettingsPage() {
           location={profile?.location ?? ''}
           availability={profile?.availability ?? 'open'}
           searchable={profile ? profile.is_searchable === 1 : true}
+          links={links}
         />
       </div>
     </>

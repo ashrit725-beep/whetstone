@@ -422,7 +422,31 @@ CREATE TABLE IF NOT EXISTS projects (
   UNIQUE (id, project_type_id)
 ) STRICT;
 
-CREATE UNIQUE INDEX IF NOT EXISTS ux_projects_owner_slug ON projects (owner_id, slug);
+-- One project per slug, across the whole table, because `/p/<slug>` is one
+-- global namespace. Under the old owner-scoped rule a second member naming
+-- their work the same thing took over the first member's address, and every
+-- link, bookmark and notification pointing at the older project landed on a
+-- stranger's page.
+--
+-- A database written under the old rule is renamed into the new one first, so
+-- the index below can be created against it. The earliest publication keeps the
+-- bare slug and the later ones are suffixed, which is the shape the application
+-- hands out for a name already taken; the id tail is the tie-break, so a
+-- suffixed slug can never collide with a project that already owns one. Both
+-- statements are no-ops once the data is clean, which is every boot but the one
+-- that migrates.
+UPDATE projects AS p
+   SET slug = d.fresh
+  FROM (SELECT id,
+               slug || '-' || SUBSTR(REPLACE(id, '-', ''), 1, 8) AS fresh,
+               ROW_NUMBER() OVER (
+                 PARTITION BY slug ORDER BY COALESCE(published_at, created_at), id
+               ) AS seat
+          FROM projects) AS d
+ WHERE p.id = d.id AND d.seat > 1;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_projects_slug ON projects (slug);
+DROP INDEX IF EXISTS ux_projects_owner_slug;
 
 -- Feed: "hot" ranking. The predicate is constant, so the index holds only
 -- feed-eligible rows and the scan is a straight descending walk.
@@ -1332,6 +1356,12 @@ CREATE TABLE IF NOT EXISTS bounty_awards (
   CHECK (payout_state <> 'paid' OR (accepted_at IS NOT NULL AND paid_at IS NOT NULL)),
   UNIQUE (bounty_id, expert_id)
 ) STRICT;
+
+-- One review, one bounty. A review that has already been delivered cannot be
+-- handed to a second award and paid for twice; the delivery path refuses it
+-- first, and this is the line under that refusal.
+CREATE UNIQUE INDEX IF NOT EXISTS ux_bounty_awards_feedback ON bounty_awards (feedback_id)
+  WHERE feedback_id IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS ix_bounty_awards_expert  ON bounty_awards (expert_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS ix_bounty_awards_bounty  ON bounty_awards (bounty_id, status);

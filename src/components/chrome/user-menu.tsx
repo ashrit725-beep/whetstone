@@ -12,13 +12,14 @@
  * menu's own heading is decorative to assistive technology: a reader who
  * cannot see the avatar still hears whose account this is before opening it.
  *
- * Icons: `User` for the person's own page, `LayoutDashboard` for the creator
- * workspace, `Settings` for preferences, `LogOut` for ending the session. Each
- * is the conventional glyph for its destination; none is decorative.
+ * Icons: `User` for the person's own page, `Bookmark` for the saved shelf,
+ * `LayoutDashboard` for the creator workspace, `Settings` for preferences,
+ * `LogOut` for ending the session. Each is the conventional glyph for its
+ * destination; none is decorative.
  */
 
 import { useRouter } from 'next/navigation'
-import { LayoutDashboard, LogOut, Settings, User } from 'lucide-react'
+import { Bookmark, LayoutDashboard, LogOut, Settings, User } from 'lucide-react'
 import {
   Avatar,
   DropdownMenu,
@@ -69,6 +70,11 @@ export function UserMenu({ userId, handle, displayName, avatarUrl, reputation }:
 
       <DropdownMenuItem icon={User} onSelect={() => router.push(`/u/${handle}`)}>
         View your profile
+      </DropdownMenuItem>
+      {/* The Save button on a project page says "Saved to your list"; this is
+          the way to that list. */}
+      <DropdownMenuItem icon={Bookmark} onSelect={() => router.push('/saved')}>
+        Saved projects
       </DropdownMenuItem>
       <DropdownMenuItem icon={LayoutDashboard} onSelect={() => router.push('/dashboard')}>
         Open your dashboard

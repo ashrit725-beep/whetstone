@@ -142,8 +142,13 @@ export function VersionTimeline({ versions, stamp, slug }: VersionTimelineProps)
                     {version.feedbackCount === 0 ? (
                       <p className="text-xs text-ink-3">No notes against this build yet</p>
                     ) : (
+                      // `.link` and `tap-44`, not `ws-area-link`: that class is
+                      // the sort strip's, where its 44px box *is* the row and
+                      // the inset shadow is a tab rule. In a `w-fit` metadata
+                      // stack the two come apart and the rule orphans 12px
+                      // below the text, as wide as the label.
                       <Link
-                        className="ws-area-link w-fit"
+                        className="link tap-44 w-fit text-sm"
                         href={`/p/${slug}?sort=newest&build=${encodeURIComponent(version.id)}#thread`}
                       >
                         {`Read the ${String(version.feedbackCount)} ${version.feedbackCount === 1 ? 'note' : 'notes'} against it`}

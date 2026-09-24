@@ -16,18 +16,11 @@
  */
 
 import { ANCHOR_WORDS } from '@/server/queries/project-surface'
-import { Badge, Link as UiLink, Prose, Timestamp, type BadgeTone } from '@/components/ui'
-import type { FeedbackView, SeverityKey } from '@/lib/types'
+import { Link as UiLink, Prose, Timestamp } from '@/components/ui'
+import type { FeedbackView } from '@/lib/types'
 import { NoteActions } from './note-actions'
+import { SeverityChip } from './severity-chip'
 import { RevealNote } from './reveal-note'
-
-const SEVERITY_TONE: Record<SeverityKey, BadgeTone> = {
-  blocker: 'critical',
-  major: 'critical',
-  minor: 'warn',
-  nit: 'neutral',
-  praise: 'positive',
-}
 
 export interface NoteDetailProps {
   note: FeedbackView
@@ -109,7 +102,7 @@ export function NoteDetail({ note, closeHref }: NoteDetailProps) {
             className="flex flex-col gap-xs border-t border-border-hair py-md first:border-t-0"
           >
             <div className="flex flex-wrap items-center gap-xs">
-              <Badge tone={SEVERITY_TONE[point.severity]}>{point.severityLabel}</Badge>
+              <SeverityChip severity={point.severity} label={point.severityLabel} />
               <span className="text-xs text-text-3">{point.categoryLabel}</span>
               <span className="text-xs text-text-3">{point.actionabilityLabel}</span>
               {point.anchor ? (

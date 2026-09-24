@@ -86,9 +86,36 @@ function memoSet(userId: string, nowMs: number, value: ReputationComputation): v
   memo.set(userId, { at: nowMs, value })
 }
 
-/** Call after anything that changes a user's evidence. */
+/** Guards the one re-entrant path: `persistReputation` drops the memo itself. */
+const rewriting = new Set<string>()
+
+/**
+ * Call after anything that changes a user's evidence.
+ *
+ * Two things cache a score: the memo above, and the `reputation_scores` rollup
+ * that every card, leaderboard, expert row and profile header reads. Dropping
+ * the memo alone left the rollup frozen at whatever last wrote it — for every
+ * account created since the seed, that is the all-zero row `createUser` inserts
+ * — so a reviewer whose own reputation page computed a real score from evidence
+ * was shown as 0 everywhere else on the site. The rollup is derived data, so it
+ * is rewritten here, where the evidence changed, rather than by a cadence
+ * nothing runs.
+ *
+ * A failed rewrite must never be the reason a review, a vote or a shipped
+ * suggestion fails to save: the previous rollup stands, and the next evidence
+ * change writes it again.
+ */
 export function invalidateReputation(userId: string): void {
   memo.delete(userId)
+  if (!userId || rewriting.has(userId)) return
+  rewriting.add(userId)
+  try {
+    persistReputation(userId)
+  } catch {
+    // Left as it was, on purpose. See above.
+  } finally {
+    rewriting.delete(userId)
+  }
 }
 
 /* ------------------------------------------------------------------------- *
@@ -728,7 +755,9 @@ export function persistReputation(userId: string, at?: Millis): ReputationScoreR
     ],
   )
 
-  invalidateReputation(userId)
+  // The memo directly, not `invalidateReputation`: that function's job is to
+  // call this one, and the rollup it would ask for has just been written.
+  memo.delete(userId)
   const stored = getReputation(userId)
   if (!stored) throw new Error('Reputation rollup vanished immediately after its own write')
   return stored

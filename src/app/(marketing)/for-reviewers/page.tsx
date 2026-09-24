@@ -1,32 +1,32 @@
 /**
  * For reviewers.
  *
- * The proof on this page is the board: real asks, ordered by how few answers
- * they have and then by how long they have waited, so a reader sees the work
- * that has been waiting longest rather than a curated selection. Money appears
- * in one section and nowhere else.
+ * The proof on this page is the board: real asks from the last fortnight,
+ * ordered by how few answers they have and then by how new they are, so a
+ * reader sees work they can still be first on. Money appears in one section and
+ * nowhere else.
  *
  *   1 what it is     py-24    two columns
- *   2 the board      py-12    paper-sub, a register of real asks
- *   3 what counts    py-32   a dl with visible terms
+ *   2 the board      py-16    paper-sub, a register of real asks
+ *   3 what counts    py-24    a dl with visible terms
  *   4 paid work      py-16    paper-sub, real rates
- *   5 closing        py-24
+ *   5 closing        py-16
  */
 
 import type { Metadata } from 'next'
 import NextLink from 'next/link'
+import { CtaPair } from '@/components/marketing/cta-pair'
 import { GritReading } from '@/components/marketing/grit-reading'
+import { InlineAsk } from '@/components/marketing/inline-ask'
 import { SectionLabel } from '@/components/marketing/section-label'
 import styles from '@/components/marketing/paper.module.css'
 import { relativeTime } from '@/lib/utils'
-import { getBountyFeeSchedule } from '@/server/repos/bounties'
-import { getFeaturedExperts } from '@/server/repos/profiles'
-import { bountyFactsNow, openAskRows, siteCounts } from '../_data'
+import { reviewerData } from '../_data'
 
 export const metadata: Metadata = {
   title: 'For reviewers',
   description:
-    'What reviewing on Whetstone involves, what the composer asks for, how reputation is earned, and how paid review work is priced and settled.',
+    'What reviewing on Whetstone involves, what a review includes, how reputation is earned, and how paid review work is priced and settled.',
   alternates: { canonical: '/for-reviewers' },
 }
 
@@ -41,38 +41,55 @@ function money(cents: number, currency: string): string {
   }).format(cents / 100)
 }
 
-export default function ForReviewersPage() {
-  const counts = siteCounts()
-  const asks = openAskRows(5)
-  const allUnanswered = asks.every((ask) => ask.answers === 0)
-  const bounties = bountyFactsNow()
-  const fees = getBountyFeeSchedule()
-  const experts = getFeaturedExperts(3)
-  const worked = fees.examples[0]
+/** Turnaround, in the units a person would use for it. */
+function turnaround(hours: number): string {
+  if (hours < 24) return `${String(hours)} hours`
+  const days = Math.round(hours / 24)
+  return `${String(days)} ${days === 1 ? 'day' : 'days'}`
+}
+
+/** "in the last two weeks", for whatever window the board actually needed. */
+function windowPhrase(days: number): string {
+  if (days <= 14) return 'the last two weeks'
+  if (days <= 30) return 'the last month'
+  if (days <= 90) return 'the last three months'
+  return 'the whole run of the site'
+}
+
+export default async function ForReviewersPage() {
+  const { counts, board, bounties, fees, experts } = await reviewerData()
+
+  /* The worked example has to sit inside the range the next paragraph prints.
+     It used to be the schedule's first entry, a $50 bounty, while every open
+     bounty on the site started at $150, so two consecutive sentences used
+     incompatible scales. The smallest scheduled amount at or above the real
+     floor is the one that reads as the same conversation. */
+  const worked =
+    fees.examples.find(
+      (example) =>
+        bounties.lowestOpenCents === null || example.amountCents >= bounties.lowestOpenCents,
+    ) ?? fees.examples.at(-1)
 
   return (
     <>
       {/* ------------------------------------------------------ 1. what it is */}
-      <section className="pad-inline py-24">
+      <section className="pad-inline py-16 md:py-24">
         <div className="mx-auto max-w-page">
           <SectionLabel>For reviewers</SectionLabel>
           <div className="mt-8 grid gap-8 md:grid-cols-12 md:gap-12">
-            <h1 className="track-safe text-3xl text-ink md:col-span-7" style={WGHT_800}>
+            <h1 className="track-safe text-2xl sm:text-3xl text-ink md:col-span-7" style={WGHT_800}>
               Review work you would have looked at anyway.
             </h1>
             <div className="track-safe md:col-span-5">
               <p className="voice text-voice">
-                A Whetstone review is not a comment. You answer the creator’s own question, rate five
-                axes chosen for that kind of project, and write each problem as a separate point
-                with a severity and, where it applies, the exact moment it happened.
+                A Whetstone review answers the creator’s own question, rates five axes chosen for
+                that kind of project, and writes each problem as a separate point with a severity
+                and, where it applies, the exact moment it happened.
               </p>
-              <div className="mt-8 flex flex-wrap items-center gap-4">
-                <NextLink href="/discover?open=1" className="btn">
-                  Read the open asks
-                </NextLink>
-                <NextLink href="/how-it-works" className="btn btn-secondary">
-                  What the composer asks for
-                </NextLink>
+              <div className="mt-8">
+                <CtaPair
+                  secondary={{ href: '/how-it-works', label: 'What a review includes' }}
+                />
               </div>
             </div>
           </div>
@@ -80,34 +97,26 @@ export default function ForReviewersPage() {
           <ul className={`${styles.stats} mt-16`}>
             <li>
               <span className="tnum block text-xl text-ink" style={WGHT_800}>
+                {board.unansweredTotal.toLocaleString('en')}
+              </span>
+              <span className="mt-2 block text-2xs uppercase text-ink-3" style={WGHT_650}>
+                asks waiting for a first answer
+              </span>
+            </li>
+            <li>
+              <span className="tnum block text-xl text-ink" style={WGHT_800}>
+                {bounties.openCount.toLocaleString('en')}
+              </span>
+              <span className="mt-2 block text-2xs uppercase text-ink-3" style={WGHT_650}>
+                {bounties.openCount === 1 ? 'paid bounty open' : 'paid bounties open'}
+              </span>
+            </li>
+            <li>
+              <span className="tnum block text-xl text-ink" style={WGHT_800}>
                 {counts.reviewers.toLocaleString('en')}
               </span>
               <span className="mt-2 block text-2xs uppercase text-ink-3" style={WGHT_650}>
                 people have written a review here
-              </span>
-            </li>
-            <li>
-              <span className="tnum block text-xl text-ink" style={WGHT_800}>
-                {counts.reviews.toLocaleString('en')}
-              </span>
-              <span className="mt-2 block text-2xs uppercase text-ink-3" style={WGHT_650}>
-                reviews written in total
-              </span>
-            </li>
-            <li>
-              <span className="tnum block text-xl text-ink" style={WGHT_800}>
-                {counts.points.toLocaleString('en')}
-              </span>
-              <span className="mt-2 block text-2xs uppercase text-ink-3" style={WGHT_650}>
-                separate points raised inside them
-              </span>
-            </li>
-            <li>
-              <span className="tnum block text-xl text-ink" style={WGHT_800}>
-                {counts.shipped.toLocaleString('en')}
-              </span>
-              <span className="mt-2 block text-2xs uppercase text-ink-3" style={WGHT_650}>
-                changes shipped from those points
               </span>
             </li>
           </ul>
@@ -117,26 +126,32 @@ export default function ForReviewersPage() {
       {/* -------------------------------------------------------- 2. the board */}
       <section
         aria-labelledby="board"
-        className="border-y border-rule bg-paper-sub pad-inline py-12"
+        className="border-y border-rule bg-paper-sub pad-inline py-16 md:py-24"
       >
         <div className="mx-auto max-w-page">
           <SectionLabel>Waiting for an answer</SectionLabel>
           <div className="mt-8 grid gap-8 md:grid-cols-12 md:gap-12">
-            <h2 id="board" className="track-safe text-2xl text-ink md:col-span-6" style={WGHT_800}>
-              {allUnanswered ? 'Asks nobody has answered yet.' : 'The asks with the fewest answers.'}
+            <h2
+              id="board"
+              className="track-safe text-xl sm:text-2xl text-ink md:col-span-6"
+              style={WGHT_800}
+            >
+              Asks you can still be first on.
             </h2>
             <p className="voice track-safe text-voice md:col-span-5 md:col-start-8">
-              The board, ordered by how few answers an ask has and then by how long it has been
-              waiting, rather than by how new it is. One ask per project, so every row is a
-              different piece of work.
+              Asks posted in {windowPhrase(board.windowDays)}, fewest answers first. One per project,
+              so every row is a different piece of work.
             </p>
           </div>
 
-          {asks.length > 0 ? (
-            <ul className={`${styles.register} mt-16`} aria-label="Open asks with the fewest answers">
-              {asks.map((ask) => (
+          {board.rows.length > 0 ? (
+            <ul
+              className={`${styles.register} mt-16`}
+              aria-label="Recently posted projects with the fewest answers"
+            >
+              {board.rows.map((ask) => (
                 <li key={ask.slug} className={styles.registerItem}>
-                  <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+                  <div className={styles.registerHead}>
                     <p className="track-safe">
                       <NextLink href={`/p/${ask.slug}`} className="link text-md text-ink">
                         {ask.projectTitle}
@@ -148,7 +163,9 @@ export default function ForReviewersPage() {
                     <GritReading value={ask.grit} />
                   </div>
 
-                  <p className="voice mt-3 text-voice italic">“{ask.prompt}”</p>
+                  <p className="voice mt-3 text-voice italic">
+                    “<InlineAsk text={ask.prompt} />”
+                  </p>
 
                   <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-2xs uppercase text-ink-3">
                     <span className="tnum" style={WGHT_650}>
@@ -180,10 +197,10 @@ export default function ForReviewersPage() {
       </section>
 
       {/* ------------------------------------------------------ 3. what counts */}
-      <section aria-labelledby="counts" className="pad-inline py-32">
+      <section aria-labelledby="counts" className="pad-inline py-24 md:py-32">
         <div className="mx-auto max-w-page">
           <SectionLabel>What a good review looks like</SectionLabel>
-          <h2 id="counts" className="mt-8 text-2xl text-ink" style={WGHT_800}>
+          <h2 id="counts" className="mt-8 text-xl sm:text-2xl text-ink" style={WGHT_800}>
             Specific beats long.
           </h2>
 
@@ -248,13 +265,13 @@ export default function ForReviewersPage() {
       {/* --------------------------------------------------------- 4. paid work */}
       <section
         aria-labelledby="paid"
-        className="border-y border-rule bg-paper-sub pad-inline py-16"
+        className="border-y border-rule bg-paper-sub pad-inline py-16 md:py-24"
       >
         <div className="mx-auto max-w-page">
           <SectionLabel>When the work is paid</SectionLabel>
           <div className="mt-8 grid gap-8 md:grid-cols-12 md:gap-12">
             <div className="track-safe md:col-span-5">
-              <h2 id="paid" className="text-2xl text-ink" style={WGHT_800}>
+              <h2 id="paid" className="text-xl sm:text-2xl text-ink" style={WGHT_800}>
                 Bounties, when a creator opens one.
               </h2>
               <p className="voice mt-6 text-voice">
@@ -272,7 +289,7 @@ export default function ForReviewersPage() {
                   </>
                 ) : null}
               </p>
-              <p className="mt-6 text-sm text-ink-3">
+              <p className="measure-ui mt-6 text-sm text-ink-3">
                 {bounties.openCount > 0 &&
                 bounties.lowestOpenCents !== null &&
                 bounties.highestOpenCents !== null ? (
@@ -299,16 +316,19 @@ export default function ForReviewersPage() {
               {experts.length > 0 ? (
                 <ul className={styles.register} aria-label="Listed reviewers and their minimum fee">
                   {experts.map((expert) => (
-                    <li key={expert.user.handle} className={styles.registerItem}>
-                      <div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-2">
+                    <li key={expert.handle} className={styles.registerItem}>
+                      <div className={styles.registerHead}>
                         <p className="track-safe text-sm">
-                          <NextLink href={`/experts/${expert.user.handle}`} className="link text-ink">
-                            {expert.user.displayName}
+                          <NextLink
+                            href={`/experts/${expert.handle}`}
+                            className="link tap-44 text-ink"
+                          >
+                            {expert.displayName}
                           </NextLink>
                           <span className="block text-xs text-ink-3">{expert.headline}</span>
                         </p>
-                        <dl className="flex flex-wrap items-baseline gap-x-8 gap-y-1 text-2xs uppercase text-ink-3">
-                          <div className="flex items-baseline gap-2">
+                        <dl className={`${styles.registerFacts} text-2xs uppercase text-ink-3`}>
+                          <div>
                             <dt style={WGHT_650}>Minimum</dt>
                             <dd className="tnum m-0 text-md text-ink">
                               {expert.minBountyCents === null
@@ -316,12 +336,12 @@ export default function ForReviewersPage() {
                                 : money(expert.minBountyCents, expert.currency)}
                             </dd>
                           </div>
-                          <div className="flex items-baseline gap-2">
+                          <div>
                             <dt style={WGHT_650}>Turnaround</dt>
                             <dd className="tnum m-0 text-sm text-ink-2">
                               {expert.turnaroundHours === null
                                 ? 'Not stated'
-                                : `${String(expert.turnaroundHours)} hours`}
+                                : turnaround(expert.turnaroundHours)}
                             </dd>
                           </div>
                         </dl>
@@ -341,9 +361,13 @@ export default function ForReviewersPage() {
       </section>
 
       {/* ---------------------------------------------------------- 5. closing */}
-      <section aria-labelledby="begin" className="pad-inline py-24">
+      <section aria-labelledby="begin" className="pad-inline py-16 md:py-24">
         <div className="mx-auto grid max-w-page gap-8 md:grid-cols-12 md:gap-12">
-          <h2 id="begin" className="track-safe text-2xl text-ink md:col-span-6" style={WGHT_800}>
+          <h2
+            id="begin"
+            className="track-safe text-xl sm:text-2xl text-ink md:col-span-6"
+            style={WGHT_800}
+          >
             Pick the ask you are qualified to answer.
           </h2>
           <div className="track-safe md:col-span-5 md:col-start-8">
@@ -353,7 +377,7 @@ export default function ForReviewersPage() {
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-4">
               <NextLink href="/discover?open=1" className="btn">
-                Read the open asks
+                Browse open projects
               </NextLink>
               <NextLink href="/bounties" className="btn btn-secondary">
                 See the paid bounties

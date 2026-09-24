@@ -101,14 +101,16 @@ export default async function NewProjectPage({ searchParams }: { searchParams: S
   }
 
   // Reached with the back button after publishing, the last step offered to
-  // publish a live project again. The server refuses that too; this says why.
+  // publish a live project again. The server refuses that too; this says why —
+  // and sends the creator to the one place these questions are still asked,
+  // rather than only back to the page they are already answered on.
   if (draft && draft.status !== 'draft') {
     return (
       <Shell step={null} typeSlug="" draftId="" then={then}>
         <EmptyState
           title={`${draft.title} is already published`}
-          body="Everything these steps asked for is on its project page now, where reviewers can find it. A new project starts from the first step."
-          primaryAction={{ label: `Open ${draft.title}`, href: `/p/${draft.slug}`, primary: true }}
+          body="Everything these steps asked for is on its project page now, where reviewers can find it. Changing any of it happens there, on the project's own edit page, and a new project starts from the first step."
+          primaryAction={{ label: `Edit ${draft.title}`, href: `/p/${draft.slug}/edit`, primary: true }}
           secondaryAction={{ label: 'Start a new project', href: `/new?step=type${carry}` }}
           headingLevel={2}
         />
@@ -134,11 +136,20 @@ export default async function NewProjectPage({ searchParams }: { searchParams: S
   // they had fewer than they do.
   const resumable =
     step === 'type' ? listMyProjects(claims.uid, { limit: 100 }).filter((p) => p.status === 'draft') : []
-  const firstDraft = resumable[0]
-  const firstDraftRow = firstDraft ? getProjectById(firstDraft.id) : undefined
-  const resumeHref = firstDraft && firstDraftRow
-    ? `/new?step=basics&type=${String(firstDraftRow.project_type_id)}&draft=${firstDraft.id}${carry}`
-    : null
+  // One way back per draft, not one for the head of the list. The banner
+  // printed the true count and offered a single button, and no other surface in
+  // the product links into the wizard — so every draft after the first could
+  // only be reached by typing a URL carrying a uuid nobody can read.
+  const drafts = resumable.flatMap((project) => {
+    const row = getProjectById(project.id)
+    if (!row) return []
+    return [{
+      id: project.id,
+      title: project.title,
+      href: `/new?step=basics&type=${String(row.project_type_id)}&draft=${project.id}${carry}`,
+    }]
+  })
+  const onlyDraft = drafts.length === 1 ? drafts[0] : undefined
   const versions = draft ? listVersionTimeline(draft.id) : []
   const currentVersion = versions[0] ?? null
 
@@ -146,16 +157,34 @@ export default async function NewProjectPage({ searchParams }: { searchParams: S
     <Shell step={step} typeSlug={typeSlug} draftId={draftId} then={then}>
       {step === 'type' ? (
         <>
-          {firstDraft && resumeHref ? (
+          {drafts.length > 0 ? (
             <Banner
               title={
-                resumable.length === 1
+                onlyDraft
                   ? 'You have an unfinished draft'
-                  : `You have ${resumable.length} unfinished drafts`
+                  : `You have ${String(drafts.length)} unfinished drafts`
               }
-              action={{ label: `Resume ${firstDraft.title}`, href: resumeHref }}
+              {...(onlyDraft
+                ? { action: { label: `Resume ${onlyDraft.title}`, href: onlyDraft.href } }
+                : {})}
             >
               Nothing is lost while a project is a draft. Picking a kind below starts a new one.
+              {/* `tap-44` reaches 12px past the line box on each side, so the
+                  target is 44px only if the line is 20px — at the banner's own
+                  12px type it is 16px — and two of them tile without overlapping
+                  only if the lines are 24px apart. Both are set here, or a tap
+                  just under one draft's name would open the next one. */}
+              {onlyDraft ? null : (
+                <ul className="m-0 mt-xs flex list-none flex-col gap-lg p-0">
+                  {drafts.map((project) => (
+                    <li key={project.id}>
+                      <Link href={project.href} className="link tap-44 inline-flex h-5 items-center">
+                        {`Resume ${project.title}`}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </Banner>
           ) : null}
           <TypePicker then={then} />
@@ -186,6 +215,11 @@ export default async function NewProjectPage({ searchParams }: { searchParams: S
           categories={categoriesFor(type.slug).map((c) => ({ key: c.key, label: c.label }))}
           prompts={promptsFor(type.slug)}
           summary={draft.summaryMd ?? ''}
+          // The stage the creator answered on the step before this one, and the
+          // build link if they have already been through the build step. Both
+          // were on the draft row and neither reached the assistant.
+          stageKey={draft.stageKey}
+          buildLinks={currentVersion?.buildUrl ?? ''}
           defaults={{
             ask: draft.asks[0]?.prompt ?? '',
             ignore: draft.asks[0]?.detailMd ?? '',

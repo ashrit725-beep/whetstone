@@ -79,17 +79,10 @@ import {
 } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { moveInboxState } from '@/server/actions/dashboard'
+import { SeverityChip } from './severity-chip'
 import type { InboxFilterState, InboxRow, InboxRowGroup, InboxSort } from './inbox-types'
 
 const COLUMNS = 7
-
-const SEVERITY_TONE: Record<InboxRow['severity'], BadgeTone> = {
-  blocker: 'critical',
-  major: 'critical',
-  minor: 'warn',
-  nit: 'neutral',
-  praise: 'positive',
-}
 
 const STATE_TONE: Record<InboxRow['state'], BadgeTone> = {
   new: 'accent',
@@ -306,7 +299,11 @@ export function InboxTable({
 
                       {group.rows.map((row) => (
                         <TR key={row.id} interactive selected={row.id === openNoteId}>
-                          <TD className="py-2xs">
+                          {/* Every cell in a row is topped out rather than
+                              centred: the note block is two lines and the rest
+                              are one, so middle-alignment centred each cell in
+                              its own box and no two first lines met. */}
+                          <TD className="align-top py-sm">
                             <Checkbox
                               id={`select-${row.id}`}
                               name="ids"
@@ -321,27 +318,27 @@ export function InboxTable({
                             />
                           </TD>
 
-                          <TD>
+                          <TD className="align-top">
                             <Reviewer row={row} />
                           </TD>
 
-                          <TD className="min-w-[16rem]">
+                          <TD className="min-w-[16rem] align-top">
                             <NoteLink row={row} href={noteHref(row.id)} open={row.id === openNoteId} />
                           </TD>
 
-                          <TD>
-                            <Badge tone={SEVERITY_TONE[row.severity]}>{row.severityLabel}</Badge>
+                          <TD className="align-top">
+                            <SeverityChip severity={row.severity} label={row.severityLabel} />
                           </TD>
 
-                          <TD numeric className="hidden @min-[64rem]:table-cell">
+                          <TD numeric className="hidden align-top @min-[64rem]:table-cell">
                             {row.pointCount.toLocaleString('en')}
                           </TD>
 
-                          <TD>
+                          <TD className="align-top">
                             <Triage row={row} />
                           </TD>
 
-                          <TD numeric className="whitespace-nowrap">
+                          <TD numeric className="align-top whitespace-nowrap">
                             <Timestamp ts={row.submittedAt} />
                           </TD>
                         </TR>
@@ -407,7 +404,7 @@ export function InboxTable({
                             </div>
                             <NoteLink row={row} href={noteHref(row.id)} open={row.id === openNoteId} />
                             <div className="flex flex-wrap items-center gap-xs">
-                              <Badge tone={SEVERITY_TONE[row.severity]}>{row.severityLabel}</Badge>
+                              <SeverityChip severity={row.severity} label={row.severityLabel} />
                               <Triage row={row} />
                               <span className="tnum text-xs text-text-3">{points(row.pointCount)}</span>
                             </div>

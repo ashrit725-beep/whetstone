@@ -1,55 +1,59 @@
 'use client'
 
 /**
- * The `/` accelerator, scoped.
+ * The `/` accelerator.
  *
- * SC 2.1.4 (Character Key Shortcuts) allows a single-character shortcut when it
- * is active only while the component it belongs to has focus. So the listener
- * sits on the wrapper around the whole Discover surface rather than on
- * `document`: it fires while focus is on a row, a filter link or the search
- * field, and it is silent everywhere else in the product, including every
- * textarea in the composer.
+ * The hint above the feed says `/` searches, so it has to work from the moment
+ * the page loads, when focus is still on `<body>`. A listener on a wrapper
+ * element never sees that key: the event's path runs from `<body>` up, and the
+ * wrapper is not on it. So the listener sits on `document` and is silenced
+ * where a single character means something else — any input, textarea, select
+ * or editable region, and anything inside an open dialog — which is the
+ * mitigation SC 2.1.4 asks for when a shortcut is not scoped to a component.
+ * It is also mounted only by Discover and Search, so it is not live anywhere
+ * else in the product, and the hint that it exists is rendered visibly above
+ * the feed rather than hidden in a tooltip.
  *
  * Keyboard contract:
- *   /   focuses the project search field (unless focus is already in a field)
- * Everything else passes through, modifiers included. The hint that this exists
- * is rendered visibly above the feed, not hidden in a tooltip.
+ *   /   focuses the project search field and selects what is in it
+ * Everything else passes through, modifiers included, as does a `/` another
+ * handler has already acted on.
  *
- * The handler is attached with `addEventListener` rather than a JSX prop so the
- * wrapper stays a plain container with no interactive semantics of its own, and
- * the listener is removed on unmount.
+ * This renders its children and no markup of its own: the accelerator is not a
+ * region, and an empty `<div>` around the page only confused the layout it sat
+ * in.
  */
 
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 
 export const SEARCH_FIELD_ID = 'discover-q'
 
-function inAField(target: EventTarget | null): boolean {
+/** True where a bare character key is text, or belongs to something in front. */
+export function typingSomewhere(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false
-  return target.closest('input, textarea, select, [contenteditable]') !== null
+  return (
+    target.closest('input, textarea, select, [contenteditable]') !== null ||
+    target.closest('[role="dialog"], [aria-modal="true"]') !== null
+  )
 }
 
 export function ShortcutScope({ children }: { children: ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null)
-
   useEffect(() => {
-    const node = ref.current
-    if (!node) return
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== '/') return
+      if (event.key !== '/' || event.defaultPrevented) return
       if (event.metaKey || event.ctrlKey || event.altKey) return
-      if (inAField(event.target)) return
+      if (typingSomewhere(event.target)) return
       const field = document.getElementById(SEARCH_FIELD_ID)
       if (!(field instanceof HTMLInputElement)) return
       event.preventDefault()
       field.focus()
       field.select()
     }
-    node.addEventListener('keydown', onKeyDown)
-    return () => node.removeEventListener('keydown', onKeyDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
   }, [])
 
-  return <div ref={ref}>{children}</div>
+  return children
 }
 
 export default ShortcutScope

@@ -111,8 +111,8 @@ export function AboutBuild({ project }: { project: ProjectDetail }) {
  * open carries an empty box AND the word.
  *
  * `printedAskId` is the ask `TheAsk` already set at the top of the page. Its
- * row carries only its state and a pointer back up, because the same question
- * printed word for word twice on one page reads as a template.
+ * row prints the same question as the others and links up to the copy above
+ * rather than standing in for it, so the two rows read as one kind of object.
  */
 export function HelpChecklist({
   project,
@@ -186,9 +186,16 @@ function AskRow({ ask, printed }: { ask: ProjectAskView; printed: boolean }) {
         {answered ? <Check size={14} strokeWidth={2.5} /> : null}
       </span>
       <span className="min-w-0 flex-1">
+        {/* Both rows carry their own question, in the same face. The printed
+            one used to swap its text for "The ask at the top of the page",
+            which changed the row's type, face and link state at once: side by
+            side the pair read as one link working and one broken, and the row
+            that was a link was the only one that did not say what was asked.
+            `printed` now decides only whether the prompt is a link up to the
+            copy already quoted at the top. */}
         {printed ? (
-          <a href="#the-ask" className="link text-base text-ink">
-            The ask at the top of the page
+          <a href="#the-ask" className="voice link block text-base text-ink">
+            {ask.prompt}
           </a>
         ) : (
           <span className="voice block text-base text-ink">{ask.prompt}</span>
@@ -221,10 +228,19 @@ export function ProgressLadder({
   project,
   ledger,
   headingId = 'ladder-heading',
+  blind = false,
 }: {
   project: ProjectDetail
   ledger: LoopLedger
   headingId?: string
+  /**
+   * True while this reader is behind the blind gate. Only one rung changes: the
+   * issue count is an aggregate of the notes they have not read, and a project
+   * announced as having seventeen problems has already made their first
+   * impression for them. The other three are either the veil's own numbers or
+   * public history.
+   */
+  blind?: boolean
 }) {
   const here = gritIndex(project.grit)
   const toGo = GRIT_SCALE.length - 1 - here
@@ -239,9 +255,10 @@ export function ProgressLadder({
     {
       key: 'issues',
       label: 'Issues identified',
-      value: String(ledger.issuesRaised),
-      note:
-        ledger.issuesRaised === 0
+      value: blind ? 'Held' : String(ledger.issuesRaised),
+      note: blind
+        ? 'Counted from the notes above, which open once you have written your own first impression.'
+        : ledger.issuesRaised === 0
           ? 'Nothing filed as a problem yet. Everything written so far reads as praise.'
           : `${String(ledger.issuesAnswered)} of them already answered by a change.`,
     },
@@ -251,7 +268,7 @@ export function ProgressLadder({
       value: String(ledger.changesShipped),
       note:
         ledger.changesShipped === 0
-          ? 'Nothing has gone out off the back of a note on this project yet.'
+          ? 'Nothing has gone out on the back of a note on this project yet.'
           : `Across ${String(ledger.shippedBuilds)} ${plural(ledger.shippedBuilds, 'build', 'builds')}, each one traceable to the note that caused it.`,
     },
     {

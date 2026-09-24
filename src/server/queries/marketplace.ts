@@ -40,7 +40,9 @@ export function expertFacets(
        JOIN expert_expertise ee ON ee.expertise_id = ea.id AND ee.is_verified = 1
        JOIN expert_profiles ep ON ep.user_id = ee.user_id AND ep.is_listed = 1
        JOIN users u ON u.id = ee.user_id AND u.deleted_at IS NULL AND u.status = 'active'
-      WHERE (? IS NULL OR ep.min_bounty_cents IS NULL OR ep.min_bounty_cents <= ?)
+       LEFT JOIN profiles pr ON pr.user_id = ee.user_id
+      WHERE COALESCE(pr.is_searchable, 1) = 1
+        AND (? IS NULL OR ep.min_bounty_cents IS NULL OR ep.min_bounty_cents <= ?)
         AND (? IS NULL OR ep.turnaround_hours IS NULL OR ep.turnaround_hours <= ?)
       GROUP BY ea.id
       HAVING n > 0
@@ -259,7 +261,8 @@ export function rankReviewersForProject(
        JOIN users u ON u.id = ep.user_id
        LEFT JOIN profiles pr ON pr.user_id = ep.user_id
        LEFT JOIN reputation_scores rs ON rs.user_id = ep.user_id
-      WHERE ep.is_listed = 1 AND u.deleted_at IS NULL AND u.status = 'active'`,
+      WHERE ep.is_listed = 1 AND u.deleted_at IS NULL AND u.status = 'active'
+        AND COALESCE(pr.is_searchable, 1) = 1`,
   )
 
   // The cheap terms for everyone whose declared areas touch this project type.

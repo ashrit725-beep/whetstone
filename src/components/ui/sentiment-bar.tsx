@@ -130,18 +130,23 @@ export function SentimentBar({
         )}
       </div>
 
-      {/* The legend is what makes the bar readable without colour. */}
+      {/* The legend is what makes the bar readable without colour, so it lists
+          the segments the bar drew and no others: a swatch reading "Praise 0%"
+          beside a bar with no green in it is a key to nothing. The sr-only
+          table below keeps the complete breakdown, zeros included. */}
       <ul className="flex flex-wrap gap-sm">
-        {segments.map((segment) => (
-          <li key={segment.key} className="flex items-center gap-2xs text-xs text-text-2">
-            <span
-              aria-hidden="true"
-              className={cn('block h-xs w-xs shrink-0 rounded-xs', segment.swatch)}
-            />
-            <span>{segment.word}</span>
-            <span className="tnum text-text-3">{segment.percent}%</span>
-          </li>
-        ))}
+        {segments
+          .filter((segment) => segment.percent > 0)
+          .map((segment) => (
+            <li key={segment.key} className="flex items-center gap-2xs text-xs text-text-2">
+              <span
+                aria-hidden="true"
+                className={cn('block h-xs w-xs shrink-0 rounded-xs', segment.swatch)}
+              />
+              <span>{segment.word}</span>
+              <span className="tnum text-text-3">{segment.percent}%</span>
+            </li>
+          ))}
       </ul>
 
       <table className="sr-only">

@@ -48,10 +48,7 @@ export default async function ProfileLayout({
   // failed to load rather than the shape of an answer.
   if (!profile) {
     return (
-      <div
-        className="pad-inline mx-auto w-full py-xl"
-        style={{ maxInlineSize: 'var(--container-prose)' }}
-      >
+      <div className="column-prose w-full py-xl">
         {children}
       </div>
     )

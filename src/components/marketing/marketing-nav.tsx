@@ -13,10 +13,16 @@
  * a 1px stroke at this size closed the counter of the final "e" into a blob
  * that read as a copyright sign.
  *
- * The marketing pages are static, so the server cannot say who is reading.
- * The right-hand slot asks once, after paint, and a signed-in member gets a way
- * into the product instead of a sign-in link. The signed-out pair is also the
- * server markup, so a visitor without an account sees no change at all.
+ * Two rows on a phone, not three. The wordmark and the two actions share the
+ * first row, and the three links run along the second on one line, scrolling
+ * sideways if a narrower phone needs them to. The old shape took 156px — about
+ * an eighth of the first screen — to say three words.
+ *
+ * The marketing pages are cached, so the server cannot say who is reading. The
+ * reader is resolved once per document in the browser and shared with the page's
+ * own actions; a signed-in member gets a way into the product instead of a
+ * sign-in link, and the signed-out pair is the server markup, so a visitor
+ * without an account sees no change at all.
  *
  * Keyboard contract: a plain list of links in visual order. The link for the
  * current page carries `aria-current="page"` and takes an underline, so the
@@ -26,8 +32,8 @@
 import { HomeLink } from '@/components/chrome/home-link'
 import NextLink from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
 import styles from './paper.module.css'
+import { useViewer } from './use-viewer'
 
 interface NavItem {
   readonly href: string
@@ -35,49 +41,18 @@ interface NavItem {
 }
 
 const ITEMS: readonly NavItem[] = [
-  { href: '/discover?open=1', label: 'Open asks' },
+  { href: '/discover?open=1', label: 'Open projects' },
   { href: '/how-it-works', label: 'How it works' },
   { href: '/for-reviewers', label: 'For reviewers' },
 ]
 
-interface Viewer {
-  readonly handle: string
-}
-
-function isViewer(value: unknown): value is Viewer {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof (value as { handle?: unknown }).handle === 'string'
-  )
-}
-
 export function MarketingNav() {
   const pathname = usePathname()
-  const [viewer, setViewer] = useState<Viewer | null>(null)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    fetch('/api/auth/session', { cache: 'no-store', signal: controller.signal })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((body: unknown) => {
-        if (isViewer(body)) setViewer(body)
-      })
-      .catch(() => {
-        // Aborted on unmount, or offline: the signed-out links are still right
-        // for anybody who is not signed in, and still work for anybody who is.
-      })
-    return () => {
-      controller.abort()
-    }
-  }, [])
+  const viewer = useViewer()
 
   return (
     <header className="pad-inline">
-      <nav
-        aria-label="Whetstone"
-        className="mx-auto flex max-w-page flex-wrap items-center gap-x-8 gap-y-3 border-b border-rule py-4"
-      >
+      <nav aria-label="Whetstone" className={styles.nav}>
         <HomeLink
           href="/"
           className="tap-44 inline-flex items-center text-md text-ink"
@@ -89,7 +64,29 @@ export function MarketingNav() {
           </span>
         </HomeLink>
 
-        <ul className="flex basis-full flex-wrap items-center gap-x-6 gap-y-2 text-sm sm:basis-auto sm:gap-x-8">
+        <div className={styles.navActions}>
+          {viewer ? (
+            <>
+              <NextLink href="/discover" className="link tap-44 inline-flex text-sm text-ink-2">
+                Open Whetstone
+              </NextLink>
+              <NextLink href="/new" className={`btn ${styles.btnSm}`}>
+                Post a project
+              </NextLink>
+            </>
+          ) : (
+            <>
+              <NextLink href="/sign-in" className="link tap-44 inline-flex text-sm text-ink-2">
+                Sign in
+              </NextLink>
+              <NextLink href="/sign-up?next=%2Fnew" className={`btn ${styles.btnSm}`}>
+                Post a project
+              </NextLink>
+            </>
+          )}
+        </div>
+
+        <ul className={styles.navLinks}>
           {ITEMS.map((item) => {
             const current = pathname === item.href
             return (
@@ -105,28 +102,6 @@ export function MarketingNav() {
             )
           })}
         </ul>
-
-        <div className="flex items-center gap-4 sm:ms-auto">
-          {viewer ? (
-            <>
-              <NextLink href="/discover" className="link tap-44 inline-flex text-sm text-ink-2">
-                Open Whetstone
-              </NextLink>
-              <NextLink href="/new" className="btn text-xs">
-                Post a project
-              </NextLink>
-            </>
-          ) : (
-            <>
-              <NextLink href="/sign-in" className="link tap-44 inline-flex text-sm text-ink-2">
-                Sign in
-              </NextLink>
-              <NextLink href="/sign-up?next=%2Fnew" className="btn text-xs">
-                Post a project
-              </NextLink>
-            </>
-          )}
-        </div>
       </nav>
     </header>
   )

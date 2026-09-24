@@ -1,15 +1,17 @@
 /**
- * Insights: what changed, what to fix first, and the theme rollup.
+ * Insights: the theme rollup, and nothing the overview already showed.
  *
  * The rollup is this surface’s one bold element. Everything else on the page is
  * type and hairlines, so the bars are the only thing competing for the eye.
  *
- * Both AI-backed panels stream, and neither waits on a model: each answers from
- * the last model run or the local clusterer, says which, and the model runs
- * after the response. A slow model must never hold a creator’s own numbers
- * hostage, which is why the week strip is rendered outside both boundaries and
- * paints first. It reads the same board the panels draw, so the open-theme
- * figure and the bars below it are one count.
+ * This page used to open on the week strip and the ranked list, byte for byte
+ * the overview’s own first screen, and the work only it does began 1,400px
+ * down. The counts and the ranking live on the overview now; Insights opens on
+ * the bars and links back for the rest.
+ *
+ * The rollup streams and never waits on a model: it answers from the last model
+ * run or the local clusterer, says which, and the model runs after the
+ * response. A slow model must never hold a creator’s own numbers hostage.
  */
 
 import { Suspense } from 'react'
@@ -19,24 +21,17 @@ import type { Metadata } from 'next'
 // so a cookie that has been signed out elsewhere stops looking signed in here,
 // rather than rendering a signed-in page whose every write would be refused.
 import { currentClaimsLive } from '@/server/queries/auth'
-import { Banner, EmptyState, Meter } from '@/components/ui'
+import { Banner, EmptyState, Link as UiLink, Meter } from '@/components/ui'
 import { getInboxCounts } from '@/server/repos/feedback'
-import {
-  THEME_FLOOR,
-  creatorScope,
-  themeBoard,
-  weekMetrics,
-} from '@/server/queries/dashboard'
+import { THEME_FLOOR, creatorScope } from '@/server/queries/dashboard'
 import { PageHeader, Section } from '@/components/dashboard/section'
-import { WeekMetrics } from '@/components/dashboard/week-metrics'
-import { FixFirst } from '@/components/dashboard/fix-first'
 import { RollupPane } from '@/components/dashboard/theme-rollup'
-import { FixFirstSkeleton, RollupSkeleton } from '@/components/dashboard/skeletons'
+import { RollupSkeleton } from '@/components/dashboard/skeletons'
 import { ProjectPicker } from '@/components/dashboard/project-picker'
 
 export const metadata: Metadata = {
   title: 'Insights',
-  description: 'What changed since last week, and which three notes are worth acting on.',
+  description: 'Every note on your project, grouped by what it is actually about.',
 }
 
 export default async function InsightsPage({
@@ -76,15 +71,22 @@ export default async function InsightsPage({
       href={(id) => `/dashboard/insights?project=${encodeURIComponent(id)}`}
     />
   )
+  // The week’s counts and the ranked list are the overview’s work. Both pages
+  // are about the project in view, so the link carries it.
+  const overviewHref = `/dashboard?project=${encodeURIComponent(project.id)}`
+  const backToOverview = (
+    <UiLink href={overviewHref} variant="standalone">
+      This week, and what to fix first
+    </UiLink>
+  )
 
   if (counts.total < THEME_FLOOR) {
-    // No board is drawn below the floor, so the strip leaves open themes out.
-    const metrics = weekMetrics(claims.uid, project.id, null)
     return (
       <>
         <PageHeader
           title="Insights"
           lede={`${project.title}, ${project.stageLabel.toLowerCase()} at ${String(project.grit)} grit.`}
+          aside={backToOverview}
         />
         {picker}
         <Section
@@ -104,49 +106,26 @@ export default async function InsightsPage({
             many separate people hit it. Until then the inbox has everything, unsorted.
           </Banner>
         </Section>
-        <Section id="week" title="This week against last">
-          <WeekMetrics metrics={metrics} label="This week against last week" />
-        </Section>
       </>
     )
   }
-
-  // Open themes in the strip are counted on the board drawn below it. Reading
-  // the board answers from what is already known, in milliseconds, and both
-  // streamed panels reuse this same run.
-  const board = await themeBoard(project.id, claims.uid)
-  const metrics = weekMetrics(claims.uid, project.id, board)
 
   return (
     <>
       <PageHeader
         title="Insights"
         lede={`${project.title}, ${project.stageLabel.toLowerCase()} at ${String(project.grit)} grit.`}
+        aside={backToOverview}
       />
       {picker}
 
       <Section
-        id="week"
-        title="This week against last"
-        lede="Two seven-day windows, counted from your rows. Nothing here is estimated."
-      >
-        <WeekMetrics metrics={metrics} label="This week against last week" />
-      </Section>
-
-      <Section
-        id="fix-first"
-        title="What to fix first"
-        lede={`${project.title} has ${String(counts.total)} notes. These are the things more than one person is waiting on.`}
-      >
-        <Suspense fallback={<FixFirstSkeleton />}>
-          <FixFirst userId={claims.uid} projectId={project.id} />
-        </Suspense>
-      </Section>
-
-      <Section
         id="rollup"
         title="Themes"
-        lede="One bar per group. Each splits its points by how serious they are, with the share written on the segment and repeated in the legend."
+        // Not "every one of the N notes, grouped": a group needs a point that
+        // came up more than once, and the line under the bars says how many
+        // points sat in no group at all. The two have to agree.
+        lede={`All ${String(counts.total)} notes on this project, read point by point. A group is a point that came up more than once; one bar per group, split by how serious its points are, with the share written on the segment and repeated in the legend.`}
       >
         <Suspense fallback={<RollupSkeleton />}>
           <RollupPane projectId={project.id} userId={claims.uid} />

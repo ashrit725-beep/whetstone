@@ -3,6 +3,7 @@ import { coach } from '@/server/ai'
 import { isProjectType } from '@/server/ai'
 import { canSeeProject, projectAccess } from '@/server/queries/access'
 import { projectVocabularyFor } from '@/server/queries/cluster-input'
+import { reviewerQualityScore } from '@/server/repos/stats'
 import { get } from '@/server/db/client'
 import { handler } from '@/server/api/handler'
 import { LIMITS } from '@/server/api/limits'
@@ -84,6 +85,7 @@ export const POST = handler({
       [body.projectId],
     )
 
+    const quality = reviewerQualityScore(viewer.id)
     const result = await coach.generate({
       draftId,
       draft: body.draft,
@@ -93,6 +95,9 @@ export const POST = handler({
       ...(body.axisKey ? { axisKey: body.axisKey } : {}),
       vocabulary: projectVocabularyFor(body.projectId),
       reviewerId: viewer.id,
+      // Kept in step with the composer's own action, which builds the same
+      // input: the two drifted once and the per-type scaffolds went with them.
+      ...(quality === null ? {} : { reviewerQuality: quality }),
     })
 
     return {

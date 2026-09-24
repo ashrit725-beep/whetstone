@@ -33,20 +33,30 @@
  */
 
 import Link from 'next/link'
-import { Check } from 'lucide-react'
 import { GritHatch, GRIT_NUMERAL_STYLE } from '@/components/ui'
 import { GRIT_STAGES } from '@/lib/taxonomy'
 import { hrefFor, withGrit, type DiscoverState } from './filters'
+import { OptionMark } from './option-mark'
 
 export interface GritFilterRailProps {
   state: DiscoverState
   /** Live counts keyed by the schema's stage key. Missing keys read as zero. */
   counts: Readonly<Record<string, number>>
   headingId: string
+  /** The href the reader picked anywhere in the rail, while it is in flight. */
+  picked?: string | null
+  onPick?: (href: string) => void
   onNavigate?: () => void
 }
 
-export function GritFilterRail({ state, counts, headingId, onNavigate }: GritFilterRailProps) {
+export function GritFilterRail({
+  state,
+  counts,
+  headingId,
+  picked = null,
+  onPick,
+  onNavigate,
+}: GritFilterRailProps) {
   return (
     <div className="ws-rail-group">
       <h3 id={headingId} className="ws-rail-heading">
@@ -60,14 +70,16 @@ export function GritFilterRail({ state, counts, headingId, onNavigate }: GritFil
         {GRIT_STAGES.map((stage) => {
           const count = counts[stage.key] ?? 0
           const selected = state.grit === stage.grit
+          const href = hrefFor(withGrit(state, stage.grit))
           const body = (
             <>
               <span className="ws-grit-swatch" aria-hidden="true">
                 <GritHatch value={stage.grit} />
               </span>
 
+              {/* The tick, or the wait: see option-mark. */}
               <span aria-hidden="true">
-                {selected ? <Check size={16} strokeWidth={1.5} /> : null}
+                <OptionMark selected={selected} pending={picked === href} />
               </span>
 
               <span className="flex min-w-0 flex-col">
@@ -96,10 +108,13 @@ export function GritFilterRail({ state, counts, headingId, onNavigate }: GritFil
           return (
             <Link
               key={stage.key}
-              href={hrefFor(withGrit(state, stage.grit))}
+              href={href}
               prefetch={false}
               aria-current={selected ? 'true' : undefined}
-              onClick={onNavigate}
+              onClick={() => {
+                onPick?.(href)
+                onNavigate?.()
+              }}
               className="ws-grit-cell"
             >
               {body}

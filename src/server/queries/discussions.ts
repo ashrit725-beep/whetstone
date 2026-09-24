@@ -263,6 +263,26 @@ export function getPostThreadId(postId: string): string | undefined {
   return row ? str(row, 'thread_id') : undefined
 }
 
+/**
+ * Which of these things the viewer has already reported, in one query. A thread
+ * page asks about every reply at once, so this is the plural of `hasOpenReport`
+ * rather than that function in a loop.
+ */
+export function openReportTargetIds(
+  reporterId: string,
+  targetType: ReportTargetType,
+  targetIds: readonly string[],
+): ReadonlySet<string> {
+  if (targetIds.length === 0) return new Set()
+  const rows = all<Row>(
+    `SELECT target_id FROM content_reports
+      WHERE reporter_id = ? AND target_type = ? AND status = 'open'
+        AND target_id IN (${placeholders(targetIds.length)})`,
+    [reporterId, targetType, ...targetIds],
+  )
+  return new Set(rows.map((row) => str(row, 'target_id')))
+}
+
 /** True when the viewer has already filed an open report against this thing. */
 export function hasOpenReport(
   reporterId: string,

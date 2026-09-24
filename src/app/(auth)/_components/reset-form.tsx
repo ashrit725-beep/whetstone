@@ -17,23 +17,30 @@
 import { useState } from 'react'
 import { Form, Link, SubmitButton } from '@/components/ui'
 import { resetPasswordAction } from '@/server/actions/auth'
-import { idleAuthState } from '../schema'
+import { idleAuthState, withNext } from '../schema'
 import { useKeepFieldValues } from './keep-field-values'
 import { PasswordField } from './password-field'
 import { useAuthFields } from './use-auth-fields'
 
 export interface ResetFormProps {
   token: string
+  /**
+   * Where to go once the password is set: the page the reader was headed for
+   * when they were sent to sign in, carried this far by the emailed link, or
+   * '' for nowhere in particular. The action validates it again before it
+   * redirects anywhere.
+   */
+  next: string
 }
 
-export function ResetForm({ token }: ResetFormProps) {
+export function ResetForm({ token, next }: ResetFormProps) {
   return (
     <Form
       action={resetPasswordAction}
       initialState={idleAuthState}
       summaryTitle="Your password was not changed."
     >
-      {({ state }) => <ResetFields serverErrors={state.fieldErrors} token={token} />}
+      {({ state }) => <ResetFields serverErrors={state.fieldErrors} token={token} next={next} />}
     </Form>
   )
 }
@@ -41,9 +48,10 @@ export function ResetForm({ token }: ResetFormProps) {
 interface ResetFieldsProps {
   serverErrors: Readonly<Record<string, string>> | undefined
   token: string
+  next: string
 }
 
-function ResetFields({ serverErrors, token }: ResetFieldsProps) {
+function ResetFields({ serverErrors, token, next }: ResetFieldsProps) {
   const [password, setPassword] = useState('')
   const fields = useAuthFields(serverErrors)
   useKeepFieldValues({ 'new-password': password })
@@ -51,6 +59,7 @@ function ResetFields({ serverErrors, token }: ResetFieldsProps) {
   return (
     <>
       <input type="hidden" name="token" value={token} />
+      {next ? <input type="hidden" name="next" value={next} /> : null}
 
       <PasswordField
         id="new-password"
@@ -73,7 +82,7 @@ function ResetFields({ serverErrors, token }: ResetFieldsProps) {
         </SubmitButton>
         {/* The link can die between the page render and the submit, so the way
             to ask for another one stays on screen throughout. */}
-        <Link href="/forgot-password" variant="standalone">
+        <Link href={withNext('/forgot-password', next)} variant="standalone">
           Request a new link
         </Link>
       </div>

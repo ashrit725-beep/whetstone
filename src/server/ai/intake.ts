@@ -10,6 +10,7 @@ import {
   DEFAULT_AXES,
   HOST_RULES,
   OPTIONAL_AXES,
+  PROJECT_STAGES,
   PROJECT_TYPES,
   STAGE_KEYWORDS,
   TAG_VOCABULARY,
@@ -19,6 +20,9 @@ import {
   type ProjectType,
 } from './taxonomy'
 import type { AiResult } from './types'
+// One word-boundary cut for the whole product: the ship form's title used its
+// own hard slice and printed a sentence that stopped mid-word.
+import { truncate } from '@/lib/utils'
 
 /**
  * Feature 3: the project intake assistant.
@@ -56,6 +60,12 @@ export type IntakeInput = {
   linkMetadata?: readonly LinkMetadata[]
   /** Answers to the guided ask template, when the creator used it. */
   askAnswers?: { stage?: string; decision?: string; ignore?: string }
+  /**
+   * The stage the creator has already answered for, when they have. It is not
+   * a hint: a form that asks how finished the work is and then tells the
+   * creator something else about it is arguing with its own field.
+   */
+  stage?: ProjectStage
   userId?: string
 }
 
@@ -138,6 +148,10 @@ function classifyType(input: IntakeInput): TypeVerdict {
 }
 
 function classifyStage(input: IntakeInput): ProjectStage {
+  // An answer beats a guess. Keyword matching is for the callers who have no
+  // stage to give, and its fall-through is 'prototype', which is why a project
+  // its creator had just marked shipped was described back to them as one.
+  if (input.stage) return input.stage
   const haystack = [input.description, input.askAnswers?.stage ?? ''].join(' ')
   for (const [stage, pattern] of STAGE_KEYWORDS) {
     if (pattern.test(haystack)) return stage
@@ -191,6 +205,7 @@ function buildAsk(input: IntakeInput, type: ProjectType, stage: ProjectStage): I
     alpha: 'in alpha',
     beta: 'in beta',
     launch_ready: 'close to launch',
+    shipped: 'out in the world',
   }
   const headline = decision
     ? truncate(titleCase(firstClause(decision)), 90)
@@ -207,8 +222,14 @@ function buildAsk(input: IntakeInput, type: ProjectType, stage: ProjectStage): I
   }
 }
 
+/**
+ * What an early build usually does not want notes on. Phrased the way the alpha
+ * entry already was — the thing that is not finished yet, named plainly —
+ * rather than in the vocabulary of stand-in content, which is rendered to the
+ * creator verbatim and reads as a word the product does not use.
+ */
 function defaultIgnoreList(stage: ProjectStage): string[] {
-  if (stage === 'concept' || stage === 'prototype') return ['placeholder art', 'unfinished copy']
+  if (stage === 'concept' || stage === 'prototype') return ['art that is not final', 'copy that is not final']
   if (stage === 'alpha') return ['known rough edges in menus']
   return []
 }
@@ -220,14 +241,6 @@ function readableType(type: ProjectType): string {
 function firstClause(text: string): string {
   const clause = text.split(/[.!?;]/)[0] ?? text
   return clause.trim()
-}
-
-function truncate(text: string, max: number): string {
-  const clean = text.replace(/\s+/g, ' ').trim()
-  if (clean.length <= max) return clean
-  const cut = clean.slice(0, max - 1)
-  const lastSpace = cut.lastIndexOf(' ')
-  return `${(lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).trim()}…`
 }
 
 function clarifyingFor(verdict: TypeVerdict, input: IntakeInput): string[] {
@@ -391,7 +404,7 @@ const SYSTEM = [
   'You classify a work-in-progress into a fixed taxonomy and sharpen the creator’s request for feedback.',
   '',
   `Project types, and nothing outside this list: ${PROJECT_TYPES.join(', ')}.`,
-  'Stages: concept, prototype, alpha, beta, launch_ready.',
+  `Stages: ${PROJECT_STAGES.join(', ')}.`,
   '',
   'Default rating axes per type. Start from these and swap at most two for project-specific ones,',
   'giving a one-clause justification for each swap:',
@@ -446,6 +459,9 @@ function hashOf(input: IntakeInput): string {
     description: input.description.trim(),
     links: [...(input.links ?? [])].sort(),
     askAnswers: input.askAnswers ?? {},
+    // Part of the key, or the second press after changing the stage would be
+    // answered from the cache with the suggestion built for the first one.
+    stage: input.stage ?? '',
   })
 }
 

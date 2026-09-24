@@ -11,7 +11,7 @@ import type { Metadata } from 'next'
 import { EmptyState } from '@/components/ui'
 import { getAuthTokenState } from '@/server/repos/users'
 import { hashToken } from '@/server/queries/auth'
-import { RESET_TOKEN_MIN, firstParam, type RawSearchParams } from '../schema'
+import { RESET_TOKEN_MIN, firstParam, safeNextPath, withNext, type RawSearchParams } from '../schema'
 import { ResetForm } from '../_components/reset-form'
 
 export const metadata: Metadata = {
@@ -67,6 +67,10 @@ export default async function ResetPasswordPage({
 }) {
   const sp = await searchParams
   const token = firstParam(sp['token'])?.trim() ?? ''
+  // The destination the emailed link carried, if it carried one. Validated
+  // again here: a link that has been round a mailbox is a request like any
+  // other, and only a same-origin path may survive it.
+  const next = safeNextPath(firstParam(sp['next']), '')
   const dead = whyDead(token)
 
   return (
@@ -82,14 +86,18 @@ export default async function ResetPasswordPage({
       </div>
 
       {dead === null ? (
-        <ResetForm token={token} />
+        <ResetForm token={token} next={next} />
       ) : (
         <EmptyState
           headingLevel={2}
           title={DEAD[dead].title}
           body={DEAD[dead].body}
-          primaryAction={{ label: 'Request a new link', href: '/forgot-password', primary: true }}
-          secondaryAction={{ label: 'Back to sign in', href: '/sign-in' }}
+          primaryAction={{
+            label: 'Request a new link',
+            href: withNext('/forgot-password', next),
+            primary: true,
+          }}
+          secondaryAction={{ label: 'Back to sign in', href: withNext('/sign-in', next) }}
         />
       )}
     </div>

@@ -93,7 +93,11 @@ export default async function NotificationsPage({
       <ChromeStyles />
 
       <header className="flex flex-col gap-sm">
-        <h1 className="text-2xl">Notifications</h1>
+        {/* The landing target for "Mark all read" when the list is about to be
+            replaced by an empty state and there is no row left to focus. */}
+        <h1 id="notifications-heading" tabIndex={-1} className="text-2xl">
+          Notifications
+        </h1>
         <p className="measure-ui text-sm text-text-2">
           Reviews of your projects, replies to your notes, shipped suggestions and bounty news,
           newest first. Opening one marks it read.{' '}
@@ -119,7 +123,7 @@ export default async function NotificationsPage({
               </li>
             </ul>
           </nav>
-          {unread > 0 ? <MarkAllReadButton /> : null}
+          <MarkAllReadButton unread={unread} landingId="notifications-heading" />
         </div>
 
         {items.length > 0 ? (

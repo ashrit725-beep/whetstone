@@ -39,7 +39,7 @@ export default async function NewThreadPage({ params }: { params: Params }) {
   // The shell already owns <main id="main">; this is the content column inside
   // it, so the skip link still lands in exactly one place.
   return (
-    <div className="pad-inline mx-auto w-full max-w-prose py-xl">
+    <div className="column-prose w-full py-xl">
       <Breadcrumbs
         items={[
           { label: 'Discussions', href: '/c' },

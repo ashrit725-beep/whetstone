@@ -181,7 +181,9 @@ export default async function ComposerPage({ params, searchParams }: { params: P
             skipAction={skipBlindStep}
             noteCount={project.stats.feedback}
             notesRead={notesRead}
-            saved={draft ? { impression: draft.headline, seconds: draft.dwellSeconds ?? 0 } : undefined}
+            // One clock for both steps: the seconds the composer last kept,
+            // not the whole minutes the draft row holds the dwell in.
+            saved={draft ? { impression: draft.headline, seconds: data.secondsSoFar } : undefined}
           />
           <p className="text-xs text-ink-3">
             Changed your mind?{' '}

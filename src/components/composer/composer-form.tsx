@@ -11,8 +11,8 @@
  *   roving tabindex, Left/Right wrap, Home/End) and the panels hide. Panels
  *   stay mounted, so a note written under one area still posts after you move
  *   to another.
- * - Every focusable carries `scroll-margin-block: 5rem`, so the sticky footer
- *   never covers the thing that just took focus (SC 2.4.11).
+ * - Every focusable keeps the footer's own measured height clear of itself, so
+ *   the sticky footer never covers the thing that just took focus (SC 2.4.11).
  *
  * Geometry: one column. On the page it sits flush with the page heading and
  * the footer is ruled across the column; in the dialog both are inset by the
@@ -34,7 +34,7 @@
  * the review away. The saved copy is cleared when the review posts.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { flushSync } from 'react-dom'
 import { CircleAlert, Clock, ExternalLink } from 'lucide-react'
 import {
@@ -58,6 +58,8 @@ import { NOTE_CHARS, SAVED_NOTE_MAX, type ComposerData, type OptimisticNote } fr
 const SAVE_IDLE_MS = 2500
 /** One more try for a save that was not kept, such as one that came too soon after the last. */
 const SAVE_RETRY_MS = 4000
+/** Air between a focused control's ring and the top rule of the sticky footer. */
+const FOOTER_CLEARANCE_PX = 16
 
 export interface ComposerFormProps {
   data: ComposerData
@@ -141,9 +143,31 @@ export function ComposerForm({
   })
   const textareas = useRef<Record<string, HTMLTextAreaElement | null>>({})
   const scope = useRef<HTMLDivElement | null>(null)
+  // SC 2.4.11 again, with the real number. The stylesheet keeps 5rem of scroll
+  // margin under every focusable so the sticky footer cannot cover the control
+  // that just took focus, and at 390 the footer wraps to two lines and is
+  // taller than that: tabbing to "How much it hurts" put the select and most
+  // of its focus ring behind it. The height depends on the words in the
+  // footer, so it is measured rather than assumed.
+  const footer = useRef<HTMLElement | null>(null)
+  const [footerHeight, setFooterHeight] = useState(0)
 
   useEffect(() => {
     setEnhanced(true)
+  }, [])
+
+  useEffect(() => {
+    const node = footer.current
+    if (!node) return
+    const measure = () => {
+      setFooterHeight(node.offsetHeight)
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(node)
+    return () => {
+      observer.disconnect()
+    }
   }, [])
 
   // Keeping the notes between visits. Only a change to what was written or
@@ -283,7 +307,15 @@ export function ComposerForm({
   const tabs = axes.map((axis) => ({ value: axis.key, label: axis.label }))
 
   return (
-    <div ref={scope} className={cn('ws-composer-scope flex flex-col', className)}>
+    <div
+      ref={scope}
+      className={cn('ws-composer-scope flex flex-col', className)}
+      style={
+        footerHeight > 0
+          ? ({ '--ws-focus-gap': `${String(footerHeight + FOOTER_CLEARANCE_PX)}px` } as CSSProperties)
+          : undefined
+      }
+    >
       <ProjectStyles />
       <Form
         action={submit}
@@ -533,6 +565,7 @@ export function ComposerForm({
             </div>
 
             <footer
+              ref={footer}
               className={cn(
                 'sticky bottom-0 flex flex-wrap items-center justify-between gap-sm border-t border-rule',
                 // On the page the footer is the column's last ruled line, on the

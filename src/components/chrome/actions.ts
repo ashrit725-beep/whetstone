@@ -13,7 +13,6 @@
  */
 
 import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
 import { clearSessionCookie } from '@/lib/auth'
 import { currentSessionId } from '@/server/queries/auth'
 import { revokeSession } from '@/server/repos/users'
@@ -103,11 +102,17 @@ export async function markAllNotificationsRead(): Promise<void> {
  * Clearing the cookie alone was not signing out. The session row stayed live
  * for up to thirty days, so a copy of the cookie (a shared computer, a synced
  * browser profile) went on working after the person had signed out.
+ *
+ * Nothing is revalidated. Every page that renders the reader reads the session
+ * cookie and is therefore dynamic, so there is no cached copy of this person to
+ * expire. The `revalidatePath('/', 'layout')` that used to sit here expired the
+ * implicit `/layout` tag instead, which every cached page and every
+ * `unstable_cache` entry carries, so one sign-out rebuilt the entire public site
+ * for whoever arrived next.
  */
 export async function signOut(): Promise<void> {
   const sessionId = await currentSessionId()
   if (sessionId) revokeSession(sessionId)
   await clearSessionCookie()
-  revalidatePath('/', 'layout')
   redirect('/discover')
 }

@@ -50,7 +50,7 @@ import {
   type Row,
 } from './_shared'
 import { notify } from './notifications'
-import { invalidateReputation, recordReputationEvent } from './reputation'
+import { invalidateReputation, persistReputation, recordReputationEvent } from './reputation'
 
 const STATUS_LABEL: Record<SuggestionStatus, string> = {
   open: 'Open',
@@ -431,7 +431,11 @@ export function setSuggestionStatus(input: StatusChangeInput): SuggestionRow {
     throw new SuggestionStatusError('A duplicate points at the suggestion it duplicates.', 'duplicate')
   }
 
-  return tx(() => {
+  // Reviewers whose note shipped in this move. Their rollup is rewritten after
+  // the transaction commits, so a recompute can never be the reason the status
+  // change itself fails.
+  const credited: string[] = []
+  const updated = tx(() => {
     run(
       `UPDATE suggestions
           SET status = ?, status_note = ?, effort = COALESCE(?, effort),
@@ -505,15 +509,19 @@ export function setSuggestionStatus(input: StatusChangeInput): SuggestionRow {
           actorId: input.actorId,
         })
         invalidateReputation(reviewerId)
+        credited.push(reviewerId)
       }
     }
 
     refreshProjectSuggestionCounts(current.project_id, ts)
 
-    const updated = get<SuggestionRow>(`SELECT * FROM suggestions WHERE id = ?`, [input.suggestionId])
-    if (!updated) throw new Error('Suggestion vanished inside its own transaction')
-    return updated
+    const row = get<SuggestionRow>(`SELECT * FROM suggestions WHERE id = ?`, [input.suggestionId])
+    if (!row) throw new Error('Suggestion vanished inside its own transaction')
+    return row
   })
+
+  for (const reviewerId of new Set(credited)) persistReputation(reviewerId)
+  return updated
 }
 
 /** Community demand signal. One vote per person, enforced by the primary key. */

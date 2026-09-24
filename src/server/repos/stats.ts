@@ -416,6 +416,29 @@ export function severityBreakdown(projectId: string): Readonly<Record<SeverityKe
   return out
 }
 
+/**
+ * Mean quality of a reviewer's last ten submitted notes, 0 to 1, or null when
+ * they have not written ten yet.
+ *
+ * The coach leaves a consistently good reviewer alone (`GOOD_REVIEWER_SCORE` in
+ * `src/server/ai/coach.ts`), and that rule needs a figure to read. Ten is the
+ * window because a shorter one swings on a single note; `quality_score` is the
+ * same column the inbox orders by, so the coach and the creator are reading one
+ * number.
+ */
+export function reviewerQualityScore(userId: string): number | null {
+  const rows = all<Row>(
+    `SELECT quality_score AS q FROM feedback
+      WHERE reviewer_id = ? AND status = 'submitted' AND deleted_at IS NULL
+        AND quality_score IS NOT NULL
+      ORDER BY submitted_at DESC LIMIT 10`,
+    [userId],
+  )
+  if (rows.length < 10) return null
+  const total = rows.reduce((sum, row) => sum + num(row, 'q'), 0)
+  return round2(total / rows.length)
+}
+
 function median(sorted: readonly number[]): number | null {
   if (sorted.length === 0) return null
   const mid = Math.floor(sorted.length / 2)

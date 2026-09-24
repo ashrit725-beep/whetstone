@@ -36,6 +36,8 @@ export interface AwardRow {
   readonly status: string
   readonly payoutState: string
   readonly creatorRating: number | null
+  /** The note the creator wrote back when they accepted. The reviewer reads it. */
+  readonly creatorReview: string | null
   readonly dueAt: Millis | null
   readonly deliveredAt: Millis | null
   readonly acceptedAt: Millis | null
@@ -81,6 +83,7 @@ function mapAward(r: Row): AwardRow {
     status: str(r, 'status'),
     payoutState: str(r, 'payout_state'),
     creatorRating: r['creator_rating'] === null ? null : num(r, 'creator_rating'),
+    creatorReview: strOrNull(r, 'creator_review'),
     dueAt: r['due_at'] === null ? null : num(r, 'due_at'),
     deliveredAt: r['delivered_at'] === null ? null : num(r, 'delivered_at'),
     acceptedAt: r['accepted_at'] === null ? null : num(r, 'accepted_at'),
@@ -132,19 +135,31 @@ export function bountyOwnerId(bountyId: string): string | null {
   return row ? str(row, 'created_by') : null
 }
 
-/** Whether the reviewer has a submitted review on this bounty's project. */
+/**
+ * The review this award can be delivered against: one the reviewer submitted on
+ * the bounty's project *after* the award was made, and one no other award is
+ * already carrying.
+ *
+ * A bounty buys new work. Asking only "does this reviewer have a review on this
+ * project?" let an old organic review — or one an earlier bounty had already
+ * paid for — be handed over the moment the award landed, and collect a second
+ * amount out of escrow for work nobody wrote twice.
+ */
 export function deliverableFeedbackFor(
   bountyId: string,
   reviewerId: string,
+  awardedAt: Millis,
 ): { readonly id: string; readonly headline: string | null } | null {
   const row = get<Row>(
     `SELECT f.id, f.headline
        FROM feedback f
        JOIN bounties b ON b.project_id = f.project_id
       WHERE b.id = ? AND f.reviewer_id = ? AND f.status = 'submitted' AND f.deleted_at IS NULL
+        AND f.submitted_at >= ?
+        AND NOT EXISTS (SELECT 1 FROM bounty_awards oa WHERE oa.feedback_id = f.id)
       ORDER BY f.submitted_at DESC
       LIMIT 1`,
-    [bountyId, reviewerId],
+    [bountyId, reviewerId, awardedAt],
   )
   if (!row) return null
   return { id: str(row, 'id'), headline: str(row, 'headline') || null }

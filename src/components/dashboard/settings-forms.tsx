@@ -43,7 +43,19 @@ export interface ProfileFormProps {
   location: string
   availability: 'open' | 'limited' | 'closed'
   searchable: boolean
+  /** The links printed under the bio on the public profile. */
+  links: readonly { label: string; url: string }[]
 }
+
+/**
+ * How many link rows the form offers.
+ *
+ * The public profile printed these rows and no member could add, correct or
+ * remove one: the writer existed, the form did not. Five is the cap the save
+ * enforces, and the rows are plain fields rather than an add/remove widget, so
+ * the form still works with no JavaScript, like the rest of this file.
+ */
+const LINK_ROWS = 5
 
 export function ProfileForm(props: ProfileFormProps) {
   return (
@@ -92,24 +104,40 @@ export function ProfileForm(props: ProfileFormProps) {
           </Field>
 
           <div className="grid gap-lg sm:grid-cols-2">
-            <Field id="pronouns" label="Pronouns" optional error={state.fieldErrors?.['pronouns']}>
+            {/* Both carry their limit as a hint and as `maxLength`, so it is
+                known before the save rather than discovered by a refusal. */}
+            <Field
+              id="pronouns"
+              label="Pronouns"
+              optional
+              hint="Up to 40 characters."
+              error={state.fieldErrors?.['pronouns']}
+            >
               {({ id, describedBy, invalid }) => (
                 <Input
                   id={id}
                   name="pronouns"
                   defaultValue={props.pronouns}
+                  maxLength={40}
                   aria-describedby={describedBy}
                   invalid={invalid}
                 />
               )}
             </Field>
 
-            <Field id="location" label="Where you are" optional error={state.fieldErrors?.['location']}>
+            <Field
+              id="location"
+              label="Where you are"
+              optional
+              hint="Up to 80 characters."
+              error={state.fieldErrors?.['location']}
+            >
               {({ id, describedBy, invalid }) => (
                 <Input
                   id={id}
                   name="location"
                   defaultValue={props.location}
+                  maxLength={80}
                   autoComplete="address-level2"
                   aria-describedby={describedBy}
                   invalid={invalid}
@@ -142,12 +170,62 @@ export function ProfileForm(props: ProfileFormProps) {
             ]}
           />
 
+          <fieldset className="m-0 flex flex-col gap-lg border-0 p-0">
+            <legend className="mb-2xs p-0 text-base text-text-1">Links</legend>
+            <p className="measure-ui -mt-sm text-sm text-text-2">
+              Up to five, printed under your bio on your public profile. Leave a row empty to drop
+              it. Links must start with https.
+            </p>
+            {Array.from({ length: LINK_ROWS }, (_, i) => {
+              const existing = props.links[i]
+              return (
+                <div key={i} className="grid gap-lg sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+                  <Field
+                    id={`link-label-${String(i)}`}
+                    label={`Link ${String(i + 1)} label`}
+                    optional
+                    error={state.fieldErrors?.[`link-label-${String(i)}`]}
+                  >
+                    {({ id, describedBy, invalid }) => (
+                      <Input
+                        id={id}
+                        name={id}
+                        defaultValue={existing?.label ?? ''}
+                        maxLength={40}
+                        aria-describedby={describedBy}
+                        invalid={invalid}
+                      />
+                    )}
+                  </Field>
+                  <Field
+                    id={`link-url-${String(i)}`}
+                    label={`Link ${String(i + 1)} address`}
+                    optional
+                    error={state.fieldErrors?.[`link-url-${String(i)}`]}
+                  >
+                    {({ id, describedBy, invalid }) => (
+                      <Input
+                        id={id}
+                        name={id}
+                        type="url"
+                        inputMode="url"
+                        defaultValue={existing?.url ?? ''}
+                        aria-describedby={describedBy}
+                        invalid={invalid}
+                      />
+                    )}
+                  </Field>
+                </div>
+              )
+            })}
+          </fieldset>
+
           <Checkbox
             id="searchable"
             name="searchable"
             defaultChecked={props.searchable}
             label="Let people find me in reviewer search"
-            description="Off means your profile still works from a direct link, it just does not appear in the reviewer list."
+            description="Off keeps you out of the reviewer market, its search and the shortlists creators are shown. Your profile still opens from a direct link. It has nothing to hide until you list yourself as a reviewer."
           />
 
           <div className="flex flex-wrap items-center gap-md">

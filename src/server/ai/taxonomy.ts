@@ -23,7 +23,11 @@ export const PROJECT_TYPES = [
 
 export type ProjectType = (typeof PROJECT_TYPES)[number]
 
-export const PROJECT_STAGES = ['concept', 'prototype', 'alpha', 'beta', 'launch_ready'] as const
+// `shipped` is the last step of the grit scale a creator answers in the wizard
+// ("Out in the world. Feedback now aims at the next version"), and the ladder
+// ended one rung below it, so a shipped project could only be described as
+// close to launch.
+export const PROJECT_STAGES = ['concept', 'prototype', 'alpha', 'beta', 'launch_ready', 'shipped'] as const
 export type ProjectStage = (typeof PROJECT_STAGES)[number]
 
 export type AxisSpec = {
@@ -173,6 +177,7 @@ export const HOST_RULES: ReadonlyArray<[RegExp, ProjectType, number]> = [
 
 /** Stage vocabulary, most advanced first so the strongest signal wins. */
 export const STAGE_KEYWORDS: ReadonlyArray<[ProjectStage, RegExp]> = [
+  ['shipped', /\b(shipped|released|out in the world|in production|live on the|on the store)\b/i],
   [
     'launch_ready',
     /\b(launch(?:ing)?|shipping|release candidate|rc\d|go[- ]live|store page|1\.0|v1\b|submitting to)\b/i,
@@ -195,7 +200,14 @@ export const TAG_VOCABULARY: readonly string[] = [
   'robotics', '3d-printing', 'accessibility', 'localisation', 'performance', 'security',
 ]
 
-/** Scaffolds the coach offers, keyed by the check that failed. */
+/**
+ * Scaffolds the coach offers, keyed by the check that failed.
+ *
+ * Every scaffold is an opener that ends where the reviewer starts typing, and
+ * never a frame around an empty slot. The composer appends the string and puts
+ * the caret at the end of it, so a frame like `I expected , but got ` was
+ * published verbatim — stranded punctuation and all — in the reviewer's note.
+ */
 export type CoachCheck = 'specific' | 'reproducible' | 'contrastive' | 'scoped' | 'onAsk'
 
 type Scaffold = { prompt: string; scaffold: string }
@@ -203,38 +215,38 @@ type Scaffold = { prompt: string; scaffold: string }
 const GENERIC_SCAFFOLDS: Record<CoachCheck, Scaffold> = {
   specific: { prompt: 'Which part of it?', scaffold: 'Specifically, in ' },
   reproducible: { prompt: 'When did this happen?', scaffold: 'This happened when I ' },
-  contrastive: { prompt: 'What did you expect instead?', scaffold: 'I expected , but got ' },
+  contrastive: { prompt: 'What did you expect instead?', scaffold: 'I expected ' },
   scoped: { prompt: 'Split these into separate points?', scaffold: 'Second point: ' },
   onAsk: { prompt: 'Does this answer the ask?', scaffold: 'On the question you asked: ' },
 }
 
 const TYPE_SCAFFOLDS: Partial<Record<ProjectType, Partial<Record<CoachCheck, Scaffold>>>> = {
   game: {
-    specific: { prompt: 'Which level or moment?', scaffold: 'In level , during ' },
+    specific: { prompt: 'Which level or moment?', scaffold: 'In level ' },
     reproducible: { prompt: 'When did this happen?', scaffold: 'In level 2, after the first checkpoint, I ' },
-    contrastive: { prompt: 'What did you expect the input to do?', scaffold: 'I pressed , expected , got ' },
+    contrastive: { prompt: 'What did you expect the input to do?', scaffold: 'I pressed ' },
   },
   web_app: {
-    specific: { prompt: 'Which screen were you on?', scaffold: 'On the  screen, ' },
-    reproducible: { prompt: 'What were the steps?', scaffold: 'Steps: 1) , 2) , 3) ' },
+    specific: { prompt: 'Which screen were you on?', scaffold: 'On the ' },
+    reproducible: { prompt: 'What were the steps?', scaffold: 'Steps: 1) ' },
   },
   mobile_app: {
-    specific: { prompt: 'Which device and screen?', scaffold: 'On my , on the  screen, ' },
-    reproducible: { prompt: 'What were you doing?', scaffold: 'After I backgrounded it during , ' },
+    specific: { prompt: 'Which device and screen?', scaffold: 'On my ' },
+    reproducible: { prompt: 'What were you doing?', scaffold: 'After I backgrounded it during ' },
   },
   video: {
-    specific: { prompt: 'Which timecode?', scaffold: 'At 0: , ' },
-    reproducible: { prompt: 'Where exactly?', scaffold: 'Between 0:  and 0: , ' },
+    specific: { prompt: 'Which timecode?', scaffold: 'At 0:' },
+    reproducible: { prompt: 'Where exactly?', scaffold: 'Between 0:' },
   },
   devtool: {
-    specific: { prompt: 'Which call or command?', scaffold: 'Running , I got ' },
-    contrastive: { prompt: 'What did the error make you think?', scaffold: 'The error said , I thought it meant ' },
+    specific: { prompt: 'Which call or command?', scaffold: 'Running ' },
+    contrastive: { prompt: 'What did the error make you think?', scaffold: 'The error said ' },
   },
   writing: {
-    specific: { prompt: 'Which paragraph?', scaffold: 'In the paragraph beginning “”, ' },
+    specific: { prompt: 'Which paragraph?', scaffold: 'In the paragraph beginning “' },
   },
   design: {
-    specific: { prompt: 'Which element?', scaffold: 'The  element ' },
+    specific: { prompt: 'Which element?', scaffold: 'The ' },
   },
 }
 

@@ -17,7 +17,7 @@ export default function ThreadError({
   // The shell already owns <main id="main">; this is the content column inside
   // it, so the skip link still lands in exactly one place.
   return (
-    <div className="pad-inline mx-auto w-full max-w-prose py-xl">
+    <div className="column-prose w-full py-xl">
       <ErrorState
         title="This thread did not load"
         body="Nothing was posted and nothing was lost. Read it again, and if it keeps failing the channel register still lists the thread."

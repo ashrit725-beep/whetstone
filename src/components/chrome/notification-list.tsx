@@ -17,7 +17,7 @@
  * (contract §2.4.8). Unread is a word too, never a dot.
  */
 
-import { startTransition, useOptimistic, useTransition } from 'react'
+import { startTransition, useOptimistic, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import NextLink from 'next/link'
 import { Check } from 'lucide-react'
@@ -105,6 +105,7 @@ export function NotificationList({ items, label }: NotificationListProps) {
             ) : (
               <NextLink
                 href={row.url}
+                data-notif-row=""
                 onClick={() => {
                   if (!row.isRead) readOne(row.id)
                 }}
@@ -124,24 +125,57 @@ export function NotificationList({ items, label }: NotificationListProps) {
   )
 }
 
-/** Marks every notification read, then refreshes so every count follows. */
-export function MarkAllReadButton() {
+/**
+ * Marks every notification read, then refreshes so every count follows.
+ *
+ * The button is its own gate rather than the page's: pressing it takes the
+ * unread count to zero, which removes the button, and focus fell to `<body>`
+ * with nothing announced. It hands focus to the first row before the
+ * transition starts — the way the bell's own version does — and keeps a live
+ * region that outlives the control, which is the only reason the outcome can
+ * still be read out after the button has gone.
+ */
+export function MarkAllReadButton({ unread, landingId }: MarkAllReadButtonProps) {
   const router = useRouter()
   const [pending, start] = useTransition()
+  const [said, setSaid] = useState('')
+
+  function readAll() {
+    // Scoped to the page's own list: the bell renders the same rows, and its
+    // panel is a portal outside `<main>`.
+    const landing =
+      document.querySelector<HTMLElement>('#main a[data-notif-row]') ??
+      document.getElementById(landingId)
+    landing?.focus({ preventScroll: true })
+    start(async () => {
+      await markAllNotificationsRead()
+      router.refresh()
+      setSaid('Every notification is marked read.')
+    })
+  }
 
   return (
-    <Button
-      variant="secondary"
-      loading={pending}
-      loadingLabel="Marking every notification read"
-      onClick={() =>
-        start(async () => {
-          await markAllNotificationsRead()
-          router.refresh()
-        })
-      }
-    >
-      Mark all read
-    </Button>
+    <>
+      {unread > 0 ? (
+        <Button
+          variant="secondary"
+          loading={pending}
+          loadingLabel="Marking every notification read"
+          onClick={readAll}
+        >
+          Mark all read
+        </Button>
+      ) : null}
+      <span role="status" aria-live="polite" className="sr-only">
+        {said}
+      </span>
+    </>
   )
+}
+
+export interface MarkAllReadButtonProps {
+  /** How many are unread. At zero the control is not offered. */
+  unread: number
+  /** Where focus lands when there is no row to land on, e.g. the page heading. */
+  landingId: string
 }

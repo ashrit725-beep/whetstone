@@ -13,15 +13,20 @@
  *      before they press the button. A list of people is a different decision
  *      from a status field.
  *   2. It asks what changed, and says plainly that the sentence will be sent to
- *      them. The repository refuses a ship with neither a version nor a note, so
- *      the requirement is real rather than decorative.
+ *      them. `moveSuggestion` refuses a ship or a decline with no line, so the
+ *      requirement is real rather than decorative — the form is `noValidate`,
+ *      and a `required` marker the server does not keep is a lie.
+ *
+ * Nothing here claims an audience it does not have: with no reviewer notes
+ * behind the card, the heading, the hint, the button and the result all say
+ * the move was recorded rather than that somebody was told.
  *
  * Declining runs the same shape, because a decline owes a reason too.
  *
  * Keyboard contract: a native modal `<dialog>`. Escape closes and focus returns
  * to whatever opened it; Tab cycles inside. The dialog stays open on failure so
- * nothing typed is lost, and stays open on success so the creator can read who
- * was told.
+ * nothing typed is lost, and stays open on success to report what happened —
+ * with the form gone by then, because there is nothing left to answer.
  */
 
 import { Package, X } from 'lucide-react'
@@ -69,7 +74,11 @@ export function StatusDialog({
   const names = nameList(people.map((person) => person.name))
   const count = people.length
 
-  const title = shipping ? 'Ship it, and tell the people who asked' : 'Decline it, and say why'
+  const title = shipping
+    ? count > 0
+      ? 'Ship it, and tell the people who asked'
+      : 'Ship it, and record what changed'
+    : 'Decline it, and say why'
   const description = shipping
     ? count > 0
       ? `${String(count)} ${count === 1 ? 'reviewer' : 'reviewers'} wrote the notes behind this. Shipping tells each of them and credits their reputation.`
@@ -86,92 +95,113 @@ export function StatusDialog({
             {state.status === 'success' ? (
               <Banner
                 variant="success"
-                title={shipping ? 'Shipped, and they were told' : 'Declined, and they were told why'}
+                title={
+                  count > 0
+                    ? shipping
+                      ? 'Shipped, and they were told'
+                      : 'Declined, and they were told why'
+                    : shipping
+                      ? 'Moved to Shipped'
+                      : 'Moved to Declined'
+                }
               >
                 {state.message}
               </Banner>
             ) : null}
 
-            <input type="hidden" name="suggestionId" value={card.id} />
-            <input type="hidden" name="status" value={shipping ? 'shipped' : 'declined'} />
+            {/* Once the move is made the form has nothing left to ask. Leaving
+                an emptied “What changed? required” under a success banner
+                reads as though something is still owed. */}
+            {state.status === 'success' ? null : (
+              <>
+                <input type="hidden" name="suggestionId" value={card.id} />
+                <input type="hidden" name="status" value={shipping ? 'shipped' : 'declined'} />
 
-            <div className="flex flex-col gap-2xs">
-              <p className="text-sm text-text-1">{card.title}</p>
-              <p className="text-xs text-text-3">{card.projectTitle}</p>
-            </div>
+                <div className="flex flex-col gap-2xs">
+                  <p className="text-sm text-text-1">{card.title}</p>
+                  <p className="text-xs text-text-3">{card.projectTitle}</p>
+                </div>
 
-            {count > 0 ? (
-              <div className="flex flex-col gap-xs border-t border-border-hair pt-md">
-                <h3 className="text-md text-text-1">
-                  {shipping ? 'Who this thanks' : 'Who reads this reason'}
-                </h3>
-                <ul className="m-0 flex list-none flex-wrap gap-md p-0">
-                  {people.map((person) => (
-                    <li key={person.id} className="flex items-center gap-xs">
-                      <Avatar
-                        userId={person.id}
-                        name={person.name}
-                        src={person.avatarUrl}
-                        size="sm"
-                      />
-                      <span className="text-sm text-text-1">{person.name}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="measure-ui text-xs text-text-3">
-                  {shipping
-                    ? `${names} will see “your note shipped” against this project, and each gets reputation credit for it.`
-                    : `${names} will see this reason on the card.`}
-                </p>
-              </div>
-            ) : null}
+                {count > 0 ? (
+                  <div className="flex flex-col gap-xs border-t border-border-hair pt-md">
+                    <h3 className="text-md text-text-1">
+                      {shipping ? 'Who this thanks' : 'Who reads this reason'}
+                    </h3>
+                    <ul className="m-0 flex list-none flex-wrap gap-md p-0">
+                      {people.map((person) => (
+                        <li key={person.id} className="flex items-center gap-xs">
+                          <Avatar
+                            userId={person.id}
+                            name={person.name}
+                            src={person.avatarUrl}
+                            size="sm"
+                          />
+                          <span className="text-sm text-text-1">{person.name}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="measure-ui text-xs text-text-3">
+                      {shipping
+                        ? `${names} will see “your note shipped” against this project, and each gets reputation credit for it.`
+                        : `${names} will see this reason on the card.`}
+                    </p>
+                  </div>
+                ) : null}
 
-            <Field
-              id="note"
-              label={shipping ? 'What changed?' : 'Why not?'}
-              hint={
-                shipping
-                  ? 'One or two sentences. This is the line the reviewers read, so write it to them.'
-                  : 'One line is enough. Declining without a reason is what makes people stop reviewing.'
-              }
-              required
-              error={state.fieldErrors?.['note'] ?? state.fieldErrors?.['version']}
-            >
-              {({ id, describedBy, invalid }) => (
-                <Textarea
-                  id={id}
-                  name="note"
-                  prose
-                  rows={4}
+                <Field
+                  id="note"
+                  label={shipping ? 'What changed?' : 'Why not?'}
+                  hint={
+                    shipping
+                      ? count > 0
+                        ? 'One or two sentences. This is the line the reviewers read, so write it to them.'
+                        : 'One or two sentences. It stays on the card as the record of what changed.'
+                      : count > 0
+                        ? 'One line is enough. Declining without a reason is what makes people stop reviewing.'
+                        : 'One line is enough. It stays on the card as the reason.'
+                  }
                   required
-                  maxChars={600}
-                  aria-describedby={describedBy}
-                  invalid={invalid}
-                />
-              )}
-            </Field>
+                  error={state.fieldErrors?.['note']}
+                >
+                  {({ id, describedBy, invalid }) => (
+                    <Textarea
+                      id={id}
+                      name="note"
+                      prose
+                      rows={4}
+                      required
+                      maxChars={600}
+                      aria-describedby={describedBy}
+                      invalid={invalid}
+                    />
+                  )}
+                </Field>
 
-            {shipping && versions.length > 0 ? (
-              <Field
-                id="version"
-                label="Which build it shipped in"
-                optional
-                hint="Linking a build is what makes follow-through auditable rather than claimable."
-              >
-                {({ id, describedBy }) => (
-                  <Select
-                    id={id}
-                    name="version"
-                    aria-describedby={describedBy}
-                    placeholderOption="No build linked"
-                    options={versions.map((version) => ({
-                      value: version.id,
-                      label: version.label,
-                    }))}
-                  />
-                )}
-              </Field>
-            ) : null}
+                {shipping && versions.length > 0 ? (
+                  <Field
+                    id="version"
+                    label="Which build it shipped in"
+                    optional
+                    hint="Linking a build is what makes follow-through auditable rather than claimable."
+                  >
+                    {/* Written out rather than passed as `placeholderOption`,
+                        which renders a `disabled` option: on a field that really
+                        is optional the empty choice has to be selectable, and has
+                        to be the one the select opens on. */}
+                    {({ id, describedBy }) => (
+                      <Select id={id} name="version" defaultValue="" aria-describedby={describedBy}>
+                        <option value="">No build linked</option>
+                        {versions.map((version) => (
+                          <option key={version.id} value={version.id}>
+                            {version.label}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
+                  </Field>
+                ) : null}
+              </>
+            )}
 
             <div className="flex flex-wrap items-center gap-md">
               {state.status === 'success' ? (
@@ -187,7 +217,13 @@ export function StatusDialog({
                 <>
                   <SubmitButton
                     variant={shipping ? 'primary' : 'danger'}
-                    pendingLabel={shipping ? 'Shipping it and telling them…' : 'Declining it…'}
+                    pendingLabel={
+                      shipping
+                        ? count > 0
+                          ? 'Shipping it and telling them…'
+                          : 'Shipping it…'
+                        : 'Declining it…'
+                    }
                     iconLeading={
                       shipping ? (
                         <Package size={20} strokeWidth={1.5} />
@@ -196,7 +232,13 @@ export function StatusDialog({
                       )
                     }
                   >
-                    {shipping ? 'Ship it and tell them' : 'Decline and tell them'}
+                    {shipping
+                      ? count > 0
+                        ? 'Ship it and tell them'
+                        : 'Ship it'
+                      : count > 0
+                        ? 'Decline and tell them'
+                        : 'Decline it'}
                   </SubmitButton>
                   <Button
                     onClick={() => {

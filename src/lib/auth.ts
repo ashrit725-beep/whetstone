@@ -139,7 +139,7 @@ export async function readSession(token: string | undefined): Promise<SessionCla
  */
 export async function setSessionCookie(token: string, persist = true): Promise<void> {
   const jar = await cookies()
-  const secure = secureCookies((await headers()).get('x-forwarded-proto'))
+  const secure = secureCookies(await headers())
   jar.set(COOKIE, token, {
     httpOnly: true,
     secure,
@@ -151,7 +151,7 @@ export async function setSessionCookie(token: string, persist = true): Promise<v
 
 export async function clearSessionCookie(): Promise<void> {
   const jar = await cookies()
-  const secure = secureCookies((await headers()).get('x-forwarded-proto'))
+  const secure = secureCookies(await headers())
   jar.set(COOKIE, '', { httpOnly: true, secure, sameSite: 'lax', path: '/', maxAge: 0 })
 }
 

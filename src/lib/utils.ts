@@ -78,6 +78,20 @@ export function inSentence(label: string): string {
   return /^\p{Lu}\p{Ll}/u.test(label) ? label.charAt(0).toLowerCase() + label.slice(1) : label
 }
 
+/**
+ * One line of a longer piece of writing: whitespace collapsed, cut on a word
+ * boundary when one is close enough to the limit, and ended with an ellipsis so
+ * a reader can tell the sentence goes on. A hard slice is the alternative, and
+ * it produces titles that stop mid-word with no sign that anything is missing.
+ */
+export function truncate(text: string, max: number): string {
+  const clean = text.replace(/\s+/g, ' ').trim()
+  if (clean.length <= max) return clean
+  const cut = clean.slice(0, max - 1)
+  const lastSpace = cut.lastIndexOf(' ')
+  return `${(lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).trim()}…`
+}
+
 /** Deterministic 32-bit hash. Used to pick a stable avatar hue per user id. */
 export function hashCode(s: string): number {
   let h = 2166136261

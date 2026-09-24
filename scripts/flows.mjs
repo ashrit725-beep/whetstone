@@ -274,6 +274,57 @@ await step('reply in a thread', async () => {
   return `discussion_posts ${before} to ${after}`
 })
 
+await step('a submit the schema refuses does not spend the posting allowance', async () => {
+  // The thread limit is ten an hour with twenty seconds between two posts. Both
+  // used to be charged on the way into the action, before anything was parsed,
+  // so a title one character short cost a post and armed the cooldown: the
+  // corrected submit came back "that is more than one account can post in a
+  // short stretch". The charge now happens where the thread is written.
+  //
+  // The twenty seconds are real for an accepted post, so the clock is read from
+  // the last thread this run wrote rather than assumed to have run out.
+  const lastAt = db.prepare('SELECT MAX(created_at) AS t FROM discussion_threads WHERE author_id = ?').get(me.id).t ?? 0
+  const wait = 21_000 - (Date.now() - lastAt)
+  if (wait > 0) await pause(wait)
+
+  const threads = () => count('SELECT COUNT(*) n FROM discussion_threads WHERE author_id = ?', me.id)
+  const before = threads()
+
+  const compose = async (title) => {
+    await page.goto(`${BASE}/c/craft/new`, { waitUntil: 'networkidle2' })
+    const field = await inForm(page, 'input[name="title"], input[type="text"]')
+    expect(field, 'no title field on the new-thread form')
+    await field.type(title)
+    const body = await inForm(page, 'textarea')
+    expect(body, 'no body field on the new-thread form')
+    await body.type(
+      'Reporting this the way it happened: the first submit came back with a field error, and the second one, ' +
+      'with the title corrected and nothing else changed, has to be accepted rather than rate limited.',
+    )
+    await Promise.all([
+      page.waitForNavigation({ waitUntil: 'networkidle2' }).catch(() => {}),
+      submitFor(page, body),
+    ])
+    await pause(1500)
+    return page.evaluate(() => document.body.innerText)
+  }
+
+  // Ten characters: under the twelve the schema asks for, and long enough that
+  // nothing else about the form is at fault.
+  const refused = await compose('Two lines')
+  expect(/at least 12 characters/i.test(refused), `no field error for a short title: ${refused.replace(/\s+/g, ' ').slice(0, 160)}`)
+  expect(threads() === before, 'the refused submit wrote a thread anyway')
+
+  const accepted = await compose('Does the grit scale read the same way at 390 pixels?')
+  expect(
+    !/more than one account can post|faster than the site accepts/i.test(accepted),
+    `the corrected submit was rate limited: ${accepted.replace(/\s+/g, ' ').slice(0, 200)}`,
+  )
+  const after = threads()
+  expect(after === before + 1, `the corrected thread did not post: ${before} to ${after}`)
+  return 'a field error costs no allowance and arms no cooldown; the corrected submit posts'
+})
+
 // --- authorisation, not just authentication --------------------------------
 await step('I cannot overwrite somebody else\'s project', async () => {
   // The wizard's first step takes a draft id in a hidden field. It used to
@@ -354,6 +405,28 @@ await step('a stranger cannot open the dashboard', async () => {
   await anon.close()
   expect(landed.startsWith('/sign-in'), `signed-out visitor landed on ${landed} with ${String(res?.status())}`)
   return 'redirected to /sign-in'
+})
+
+await step('every protected page redirects before it renders a byte', async () => {
+  // A page that answers 200 and then redirects from inside its own payload has
+  // already flushed the shell and a skeleton, and with JavaScript off the
+  // redirect arrives as a one-second meta refresh, which is a timed redirect
+  // (WCAG 2.2.1). /bounties/new was the only one left: it has a loading.tsx, so
+  // the response began before the page's own redirect() ran, and only the
+  // middleware can answer earlier than that.
+  const paths = ['/bounties/new', '/new', '/projects/new', '/dashboard', '/dashboard/inbox', '/notifications', '/settings/profile']
+  const seen = []
+  for (const path of paths) {
+    const res = await fetch(`${BASE}${path}`, { redirect: 'manual' })
+    const location = res.headers.get('location') ?? ''
+    expect(res.status === 307, `${path} answered ${String(res.status)} rather than a 307`)
+    expect(
+      location.includes(`next=${encodeURIComponent(path)}`),
+      `${path} redirected to ${location || '(nowhere)'} without a way back`,
+    )
+    seen.push(`${path} 307`)
+  }
+  return seen.join(', ')
 })
 
 await step('I cannot review my own project', async () => {
@@ -702,6 +775,105 @@ await step('a write that cannot show where it came from is refused', async () =>
   return 'no origin 403, same origin 401 for want of a session, sign-out 403'
 })
 
+await step('the caller cannot decide whether the cookies are marked Secure', async () => {
+  // Both cookies used to take that decision from `x-forwarded-proto`, a header
+  // whoever sends the request writes. An HTTPS deployment with no SITE_URL,
+  // behind a terminator that forwards the scheme under another name, issued the
+  // session and CSRF cookies without Secure and the browser then sent the
+  // session in cleartext. The answer now comes from the deployment's own
+  // configuration: this server's SITE_URL is http, so the attribute is off, and
+  // nothing a caller writes may turn it on.
+  const secureOf = async (headers) => {
+    const res = await fetch(`${BASE}/discover`, { headers, redirect: 'manual' })
+    const csrf = res.headers.getSetCookie().filter((c) => c.startsWith('ws_csrf='))
+    expect(csrf.length === 1, `expected one ws_csrf cookie, saw ${csrf.length}`)
+    return /;\s*secure/i.test(csrf[0])
+  }
+  const plain = await secureOf({})
+  const spoofed = await secureOf({ 'x-forwarded-proto': 'https' })
+  const listed = await secureOf({ 'x-forwarded-proto': 'https, http' })
+  const rewritten = await secureOf({ 'x-forwarded-host': 'whetstone.example' })
+  expect(
+    plain === spoofed && plain === listed && plain === rewritten,
+    `a header moved the Secure flag: plain ${plain}, forwarded ${spoofed}, list ${listed}, host ${rewritten}`,
+  )
+  expect(plain === false, 'this server is reached over http, so Secure should be off')
+  return 'Secure stays off over http, whatever the caller forwards'
+})
+
+await step('a stranger cannot follow or bookmark a private project', async () => {
+  // Both controls carry the project's slug in a hidden field, and the actions
+  // behind them resolved that slug with no visibility check: a signed-in
+  // stranger could follow somebody's unpublished draft, and the follow then
+  // delivered notifications naming a page they get a 404 on.
+  //
+  // Nothing in the seeded population is private, so the draft is written
+  // straight into this throwaway copy. What is under test is who may act on it.
+  const host = db.prepare(
+    "SELECT owner_id, project_type_id, stage_key FROM projects WHERE owner_id <> ? LIMIT 1",
+  ).get(me.id)
+  const mark = Date.now().toString(36)
+  const draft = { id: `flow-draft-${mark}`, slug: `flow-private-${mark}` }
+  db.prepare(
+    `INSERT INTO projects (id, owner_id, project_type_id, slug, title, tagline, summary_md,
+                           stage_key, visibility, status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'private', 'draft', ?, ?)`,
+  ).run(
+    draft.id, host.owner_id, host.project_type_id, draft.slug,
+    'A draft nobody else may touch', 'Private until its owner publishes it.',
+    'Written by scripts/flows.mjs so there is a private project to aim at. Its owner has not published it.',
+    host.stage_key, Date.now(), Date.now(),
+  )
+  const rows = () =>
+    count('SELECT COUNT(*) n FROM project_follows WHERE project_id = ?', draft.id) +
+    count('SELECT COUNT(*) n FROM project_bookmarks WHERE project_id = ?', draft.id)
+  expect(rows() === 0, 'the fixture draft already carries follows or bookmarks')
+
+  // Reading it is refused, which is the part that was already right.
+  const res = await page.goto(`${BASE}/p/${draft.slug}`, { waitUntil: 'networkidle2' })
+  expect(res?.status() === 404, `a stranger opened the draft with ${String(res?.status())}`)
+
+  // Writing it, from the controls on a project I can see, retargeted at the one
+  // I cannot. The request is rewritten in flight rather than in the page, so a
+  // control React re-rendered cannot quietly send the honest slug instead.
+  await page.goto(`${BASE}/p/${target.slug}`, { waitUntil: 'networkidle2' })
+  await whenHydrated(page, 'main form button[type="submit"]').catch(() => {})
+  const press = (pattern) =>
+    page.evaluate((source) => {
+      const re = new RegExp(source, 'i')
+      const button = [...document.querySelectorAll('main form button[type="submit"]')]
+        .find((b) => re.test(b.innerText.trim()))
+      button?.click()
+      return Boolean(button)
+    }, pattern.source)
+
+  const traffic = await withActionRewrite(
+    page,
+    (body) => {
+      if (!body.includes(target.slug)) return null
+      // The state each form asks for rides in the body too, so both are set to
+      // the state that would write a row rather than remove one.
+      return body
+        .split(target.slug).join(draft.slug)
+        .replace(/name="saved"\r\n\r\nfalse/, 'name="saved"\r\n\r\ntrue')
+        .replace(/name="following"\r\n\r\nfalse/, 'name="following"\r\n\r\ntrue')
+    },
+    async () => {
+      expect(await press(/^(save|saved)$/), 'no Save control on a project I can see')
+      await pause(2000)
+      expect(await press(/^(follow|following)$/), 'no Follow control on a project I can see')
+      await pause(2000)
+    },
+  )
+  expect(
+    traffic.sent === 2 && traffic.blocked === 0,
+    `expected two retargeted writes, saw ${traffic.sent} sent and ${traffic.blocked} refused`,
+  )
+  const after = rows()
+  expect(after === 0, `${after} follow or bookmark rows were written against a private draft`)
+  return 'the draft 404s for a stranger, and both retargeted writes leave no row'
+})
+
 // --- accounts: the journeys a new person takes -----------------------------
 // All of these run in their own browser contexts, so the signed-in page above
 // is untouched. They write one account, which is why this runs on a copy.
@@ -924,6 +1096,92 @@ await step('the link in the reset message sets a new password once, and signs in
   return `followed the emailed link, landed on ${path}, link dead on reuse, new password works`
 })
 
+await step('a reset started from a page comes back to that page', async () => {
+  // Signing in from /sign-in?next=… has always honoured the destination.
+  // Resetting instead dropped it twice over: the "Reset your password" link was
+  // a bare /forgot-password, and the action ended on an unconditional
+  // /discover. Somebody sent to sign in from a project's composer, who reset
+  // their password rather than remembering it, lost the page they came for.
+  const wanted = `/p/${target.slug}`
+  const seen = new Set(outbox().map((m) => m.name))
+  const ctx = await browser.createBrowserContext()
+  const p = await ctx.newPage()
+
+  await p.goto(`${BASE}/sign-in?next=${encodeURIComponent(wanted)}`, { waitUntil: 'networkidle2' })
+  const href = await p.evaluate(() => {
+    const link = [...document.querySelectorAll('main a')].find((a) => /reset your password/i.test(a.textContent ?? ''))
+    return link?.getAttribute('href') ?? null
+  })
+  expect(
+    href !== null && href.includes(`next=${encodeURIComponent(wanted)}`),
+    `the reset link drops the destination: ${String(href)}`,
+  )
+
+  await p.goto(`${BASE}${href}`, { waitUntil: 'networkidle2' })
+  const field = await inForm(p, 'input[name="email"]')
+  expect(field, 'no email field on /forgot-password')
+  await field.type(fresh.email)
+  await submitFor(p, field)
+  await p.waitForFunction(() => /if an account exists|no link was sent/i.test(document.body.innerText), { timeout: 15_000 }).catch(() => {})
+
+  const mail = await mailFor(fresh.email, seen)
+  expect(mail.length === 1, `${mail.length} messages arrived for a second reset request`)
+  const link = /https?:\/\/[^\s"<>]+\/reset-password\?[^\s"<>]+/.exec(mail[0].raw)?.[0]
+  expect(link, `the second message carries no reset link: ${mail[0].raw.slice(0, 200)}`)
+  expect(
+    link.includes(`next=${encodeURIComponent(wanted)}`),
+    `the emailed link lost the destination: ${link}`,
+  )
+
+  await p.goto(link, { waitUntil: 'networkidle2' })
+  const password = 'tideline-archive-58'
+  await (await inForm(p, 'input[name="password"]')).type(password)
+  await Promise.all([
+    p.waitForNavigation({ waitUntil: 'networkidle2' }).catch(() => {}),
+    submitFor(p, await inForm(p, 'input[name="password"]')),
+  ])
+  await pause(800)
+  const landed = new URL(p.url()).pathname
+  await ctx.close()
+  expect(landed === wanted, `the reset landed on ${landed} rather than ${wanted}`)
+  fresh.password = password
+  return `the destination survived the link, and the reset landed on ${wanted}`
+})
+
+await step('an off-origin destination is dropped rather than followed', async () => {
+  // `?next=` now rides the sign-in URL, the sign-up link, the forgot form and
+  // the emailed reset link, so each of those is a way to hand somebody a
+  // Whetstone address that ends up somewhere else. `safeNextPath` is the single
+  // gate: only a relative, same-origin path survives it, wherever it is read.
+  const evil = 'https://evil.example/phish'
+  const ctx = await browser.createBrowserContext()
+  const p = await ctx.newPage()
+
+  await p.goto(`${BASE}/forgot-password?next=${encodeURIComponent(evil)}`, { waitUntil: 'networkidle2' })
+  const carried = await p.evaluate(() => [
+    ...[...document.querySelectorAll('main a[href]')].map((a) => a.getAttribute('href') ?? ''),
+    ...[...document.querySelectorAll('input[name="next"]')].map((i) => i.value),
+  ])
+  expect(
+    !carried.some((value) => value.includes('evil.example')),
+    `the reset form carries the off-origin value: ${JSON.stringify(carried.filter((v) => v.includes('evil')))}`,
+  )
+
+  await p.goto(`${BASE}/sign-in?next=${encodeURIComponent(evil)}`, { waitUntil: 'networkidle2' })
+  await (await inForm(p, 'input[name="email"]')).type(fresh.email)
+  await (await inForm(p, 'input[name="password"]')).type(fresh.password)
+  await Promise.all([
+    p.waitForNavigation({ waitUntil: 'networkidle2' }).catch(() => {}),
+    submitFor(p, await inForm(p, 'input[name="password"]')),
+  ])
+  await pause(800)
+  const landed = new URL(p.url())
+  await ctx.close()
+  expect(landed.origin === new URL(BASE).origin, `signing in left this site for ${landed.origin}`)
+  expect(landed.pathname === '/discover', `an off-origin next sent the reader to ${landed.pathname}`)
+  return 'the form drops it, and signing in with it lands on /discover'
+})
+
 await step('a generated member cannot be signed into with the old shared password', async () => {
   const other = db.prepare(
     "SELECT email FROM users WHERE password_hash IS NULL AND status = 'active' ORDER BY created_at LIMIT 1",
@@ -936,6 +1194,27 @@ await step('a generated member cannot be signed into with the old shared passwor
   expect(path.startsWith('/sign-in'), `signed in as ${other.email}`)
   const withPassword = count('SELECT COUNT(*) AS n FROM users WHERE password_hash IS NOT NULL')
   return `refused; ${withPassword} accounts in this copy have a password`
+})
+
+await step('a closed account is told it is closed, not that its password is wrong', async () => {
+  // Last, because it closes the account the steps above created. A closed
+  // account used to hear "email or password is incorrect", which sent the
+  // person to reset a password that was right — and the reset quietly issues no
+  // link, because only an active account gets one. Saying this after the
+  // password has verified tells somebody holding it nothing they did not know.
+  db.prepare("UPDATE users SET status = 'deactivated', updated_at = ? WHERE id = ?").run(Date.now(), fresh.id)
+  const ctx = await browser.createBrowserContext()
+  const p = await signInAs(ctx, fresh.email, fresh.password, false)
+  const path = new URL(p.url()).pathname
+  const text = await p.evaluate(() => (document.querySelector('main') ?? document.body).innerText)
+  await ctx.close()
+  expect(path.startsWith('/sign-in'), `a closed account signed in and landed on ${path}`)
+  expect(/account was closed/i.test(text), `the refusal does not say the account is closed: ${text.replace(/\s+/g, ' ').slice(0, 200)}`)
+  expect(!/password is incorrect/i.test(text), 'the refusal still blames the password')
+  // The summary is the sentence the action returned, not the form's standing
+  // "Reset your password" link, which is correct to leave on the page.
+  expect(/no undo/i.test(text), 'the refusal does not say what closing an account did')
+  return 'refused with the reason the account cannot sign in'
 })
 
 await browser.close()

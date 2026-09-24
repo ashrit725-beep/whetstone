@@ -64,7 +64,7 @@ import {
   type Row,
 } from './_shared'
 import { recomputeProjectRating } from './ratings'
-import { invalidateReputation, isRepBearing, recordReputationEvent } from './reputation'
+import { invalidateReputation, isRepBearing, persistReputation, recordReputationEvent } from './reputation'
 import { notify } from './notifications'
 import { recomputeHotScore } from './projects'
 
@@ -654,7 +654,10 @@ export function createFeedback(input: NewFeedbackInput): CreateFeedbackResult {
   // never be the reason a review fails to save.
   recomputeProjectRating(input.projectId, ts)
   recomputeHotScore(input.projectId)
-  invalidateReputation(input.reviewerId)
+  // The rollup is written, not just dropped from the memo. `reputation_scores`
+  // is what every byline on the thread reads, and a reviewer with no row there
+  // is printed "New · 0 credibility" however many reviews they have written.
+  persistReputation(input.reviewerId)
 
   return {
     feedbackId,
@@ -728,7 +731,16 @@ const WORST_SEVERITY_RANK = `(SELECT COALESCE(MAX(CASE sev.severity
  * here comes from a request.
  */
 const SORT_KEYS: Readonly<Record<FeedbackSort, readonly { sql: string; column: string }[]>> = {
-  most_helpful: [{ sql: 'f.helpful_count', column: 'helpful_count' }],
+  // "Most helpful" ties the moment nothing has been voted on, which is the
+  // normal state of a young thread, so the vote count alone would hand the
+  // order to `f.id` — a random UUID. Quality then recency are the fallbacks
+  // `ix_feedback_public (project_id, quality_score DESC, submitted_at DESC)`
+  // was built for.
+  most_helpful: [
+    { sql: 'f.helpful_count', column: 'helpful_count' },
+    { sql: 'f.quality_score', column: 'quality_score' },
+    { sql: 'f.submitted_at', column: 'submitted_at' },
+  ],
   newest: [{ sql: 'f.submitted_at', column: 'submitted_at' }],
   most_severe: [
     { sql: WORST_SEVERITY_RANK, column: 'worst_rank' },
@@ -1377,16 +1389,28 @@ export function setInboxState(feedbackId: string, state: InboxState): void {
  * The creator's helpful mark. It is worth less the more freely a creator gives
  * it — see `κ(c)` in reputation.ts — and on a bounty-paid review it is worth
  * nothing at all, because money must not buy the mark.
+ *
+ * `actorId` is the creator doing the marking. The reviewer is told, because the
+ * mark is the only thanks the product has and the creator's own UI says "they
+ * will see it"; the notification is written on the 0 → 1 transition only, so
+ * toggling the mark off and on again does not ring the bell twice.
  */
-export function markHelpful(feedbackId: string, helpful: boolean): void {
+export function markHelpful(feedbackId: string, helpful: boolean, actorId?: string): void {
   const ts = now()
-  tx(() => {
+  const reviewer = tx(() => {
+    const row = get<Row>(
+      `SELECT f.reviewer_id, f.creator_marked_helpful, p.slug AS project_slug, p.title AS project_title
+         FROM feedback f JOIN projects p ON p.id = f.project_id
+        WHERE f.id = ?`,
+      [feedbackId],
+    )
+    const reviewerId = str(row, 'reviewer_id')
+    const wasHelpful = num(row, 'creator_marked_helpful') === 1
+
     run(
       `UPDATE feedback SET creator_marked_helpful = ?, updated_at = ? WHERE id = ?`,
       [helpful ? 1 : 0, ts, feedbackId],
     )
-    const row = get<Row>(`SELECT reviewer_id FROM feedback WHERE id = ?`, [feedbackId])
-    const reviewerId = str(row, 'reviewer_id')
     if (helpful && reviewerId) {
       recordReputationEvent({
         userId: reviewerId,
@@ -1396,9 +1420,25 @@ export function markHelpful(feedbackId: string, helpful: boolean): void {
         subjectType: 'feedback',
         subjectId: feedbackId,
       })
+      if (!wasHelpful && reviewerId !== actorId) {
+        notify({
+          userId: reviewerId,
+          ...(actorId ? { actorId } : {}),
+          kind: 'feedback_helpful',
+          subjectType: 'feedback',
+          subjectId: feedbackId,
+          title: `${str(row, 'project_title')}: the creator marked your note helpful`,
+          url: noteOnProjectUrl(str(row, 'project_slug'), feedbackId),
+          groupKey: `helpful:${feedbackId}`,
+        })
+      }
     }
     if (reviewerId) invalidateReputation(reviewerId)
+    return reviewerId
   })
+  // Outside the transaction: recomputing the rollup is derived work, and it
+  // must never be the reason the mark itself fails to save.
+  if (reviewer) persistReputation(reviewer)
 }
 
 /** One vote per person per review, enforced by the primary key rather than hope. */
@@ -1426,7 +1466,7 @@ export function voteFeedback(feedbackId: string, voterId: string, value: -1 | 0 
     )
   })
   const row = get<Row>(`SELECT reviewer_id FROM feedback WHERE id = ?`, [feedbackId])
-  if (row) invalidateReputation(str(row, 'reviewer_id'))
+  if (row) persistReputation(str(row, 'reviewer_id'))
 }
 
 /** "I hit this too" on one observation. Distinct from rating a whole review. */

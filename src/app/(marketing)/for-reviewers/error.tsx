@@ -14,7 +14,7 @@ export default function PageError({
       <div className="mx-auto max-w-page">
         <ErrorPanel
           title="The reviewer board could not be loaded"
-          body="The open asks are read live, and that read did not answer. Try again, or open Discover, which lists the same projects."
+          body="The board is read live, and that read did not answer. Try again, or open Discover, which lists the same projects."
           digest={error.digest}
           onRetry={reset}
         />

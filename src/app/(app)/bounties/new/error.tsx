@@ -10,10 +10,7 @@ export default function NewBountyError({
   reset: () => void
 }) {
   return (
-    <div
-      className="pad-inline mx-auto w-full py-xl"
-      style={{ maxInlineSize: 'var(--container-prose)' }}
-    >
+    <div className="column-prose w-full py-xl">
       <ErrorState
         title="The bounty form did not load"
         body="Nothing was posted and no amount was committed. Reload the page, and if it fails again your projects are all still there."

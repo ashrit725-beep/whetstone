@@ -27,7 +27,7 @@ import {
   GritChip,
 } from '@/components/ui'
 import { postBounty } from '@/server/actions/bounties'
-import { money } from '@/components/marketplace/format'
+import { MAX_BOUNTY_CENTS, MIN_BOUNTY_CENTS, money } from '@/components/marketplace/format'
 import { settlementTerms } from '@/components/marketplace/bounty-state'
 import type { OwnedProjectOption } from '@/server/queries/marketplace'
 
@@ -68,11 +68,22 @@ export function BountyForm({
     defaultAmountDollars ? String(defaultAmountDollars) : '150',
   )
   const [projectId, setProjectId] = useState<string>(defaultProjectId ?? projects[0]?.id ?? '')
+  // The out-of-range message is said once the reader has left the field, and
+  // cleared again the moment they go back to it, so the keystroke that takes
+  // "5" past the floor on its way to "500" is never called a mistake.
+  const [amountTouched, setAmountTouched] = useState(false)
 
   const dollars = Number.parseInt(amount, 10)
-  const valid = Number.isFinite(dollars) && dollars > 0
-  const cents = valid ? dollars * 100 : 0
+  // The ledger prices the range the server accepts and nothing else. Gated on
+  // `dollars > 0` it costed $1 and $15,050,007 to the cent, with no mark on the
+  // field, and the submit was then refused by a floor the reader never saw —
+  // this form is rendered noValidate, so the input's own min and max do not
+  // stop it. Out of range the three rows fall back to their en dash.
+  const priced = Number.isFinite(dollars) ? dollars * 100 : Number.NaN
+  const valid = priced >= MIN_BOUNTY_CENTS && priced <= MAX_BOUNTY_CENTS
+  const cents = valid ? priced : 0
   const feeCents = valid ? Math.min(cents - 1, Math.round((cents * platformFeePercent) / 100)) : 0
+  const amountRange = `Bounties run from ${money(MIN_BOUNTY_CENTS)} to ${money(MAX_BOUNTY_CENTS)}.`
   const chosen = projects.find((p) => p.id === projectId) ?? null
 
   return (
@@ -165,8 +176,11 @@ export function BountyForm({
             <Field
               id="amountDollars"
               label="Amount, in US dollars"
-              hint="Whole dollars, from $50 to $5,000. $50 is roughly an hour of a reviewer’s time."
-              error={state.fieldErrors?.['amountDollars']}
+              hint={`Whole dollars, from ${money(MIN_BOUNTY_CENTS)} to ${money(MAX_BOUNTY_CENTS)}. ${money(MIN_BOUNTY_CENTS)} is roughly an hour of a reviewer’s time.`}
+              error={
+                state.fieldErrors?.['amountDollars'] ??
+                (amountTouched && !valid ? amountRange : null)
+              }
               required
               className="sm:flex-1"
             >
@@ -176,13 +190,17 @@ export function BountyForm({
                   name="amountDollars"
                   type="number"
                   inputMode="numeric"
-                  min={50}
-                  max={5000}
+                  min={MIN_BOUNTY_CENTS / 100}
+                  max={MAX_BOUNTY_CENTS / 100}
                   step={1}
                   required
                   value={amount}
                   onChange={(event) => {
                     setAmount(event.target.value)
+                    setAmountTouched(false)
+                  }}
+                  onBlur={() => {
+                    setAmountTouched(true)
                   }}
                   aria-describedby={describedBy}
                   invalid={invalid}

@@ -78,6 +78,28 @@ const ACTIONS: readonly CommandHit[] = [
   { id: 'action:settings', label: 'Open settings', meta: 'Profile, account, appearance', href: '/settings/profile' },
 ]
 
+/** The rows above that speak to an account: an inbox, a tracker, settings, and
+ *  the composer that needs somewhere to put the project. A reader without one
+ *  was offered all five, and every one of them bounced to /sign-in. */
+const ACCOUNT_ACTIONS: ReadonlySet<string> = new Set([
+  'action:new',
+  'action:inbox',
+  'action:notifications',
+  'action:suggestions',
+  'action:settings',
+])
+
+/** What a signed-out reader is offered in their place: the two ways in. */
+const VISITOR_ACTIONS: readonly CommandHit[] = [
+  { id: 'action:sign-in', label: 'Sign in', meta: 'Pick up where you left off', href: '/sign-in' },
+  { id: 'action:sign-up', label: 'Create an account', meta: 'Post work and send feedback', href: '/sign-up' },
+]
+
+function actionsFor(signedIn: boolean): readonly CommandHit[] {
+  if (signedIn) return ACTIONS
+  return [...ACTIONS.filter((hit) => !ACCOUNT_ACTIONS.has(hit.id)), ...VISITOR_ACTIONS]
+}
+
 function readRecents(): readonly RecentHit[] {
   if (typeof window === 'undefined') return []
   try {
@@ -120,9 +142,12 @@ export interface CommandPaletteProps {
   /** Whether the request came from an Apple device, whose modifier is ⌘. Read
    *  from the user agent on the server, so the key cap is right on first paint. */
   apple: boolean
+  /** Whether there is an account behind this reader, which decides which
+   *  destinations the palette offers. */
+  signedIn: boolean
 }
 
-export function CommandPalette({ apple }: CommandPaletteProps) {
+export function CommandPalette({ apple, signedIn }: CommandPaletteProps) {
   const router = useRouter()
   const host = useOverlayPortal()
   const labelId = useId()
@@ -216,19 +241,21 @@ export function CommandPalette({ apple }: CommandPaletteProps) {
   )
 
   /* ---- what the listbox shows right now ---- */
+  const actions = useMemo(() => actionsFor(signedIn), [signedIn])
+
   const displayed: readonly CommandGroup[] = useMemo(() => {
     const trimmed = query.trim()
     if (trimmed.length < 2) {
       const out: CommandGroup[] = []
       if (recents.length > 0) out.push({ key: 'actions', label: 'Recent', hits: recents })
-      out.push({ key: 'actions', label: 'Actions', hits: ACTIONS })
+      out.push({ key: 'actions', label: 'Actions', hits: actions })
       return out
     }
-    const actionHits = ACTIONS.filter((hit) => matches(hit, trimmed))
+    const actionHits = actions.filter((hit) => matches(hit, trimmed))
     return actionHits.length > 0
       ? [...groups, { key: 'actions' as const, label: 'Actions', hits: actionHits }]
       : groups
-  }, [groups, query, recents])
+  }, [actions, groups, query, recents])
 
   const flat: readonly { hit: CommandHit; group: CommandGroupKey }[] = useMemo(
     () => displayed.flatMap((group) => group.hits.map((hit) => ({ hit, group: group.key }))),

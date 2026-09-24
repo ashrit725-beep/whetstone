@@ -50,6 +50,10 @@ export interface ApplyFormProps {
   turnaroundHours: number | null
   /** True when this reviewer already applied; the form then updates the pitch. */
   alreadyApplied: boolean
+  /** The application on record, so "update" means editing it rather than rewriting it. */
+  pitchMd?: string | null
+  quotedCents?: number | null
+  etaHours?: number | null
 }
 
 export function ApplyForm({
@@ -60,11 +64,30 @@ export function ApplyForm({
   currency,
   turnaroundHours,
   alreadyApplied,
+  pitchMd = null,
+  quotedCents = null,
+  etaHours = null,
 }: ApplyFormProps) {
-  const defaultEta = turnaroundHours ? String(Math.min(turnaroundHours, 336)) : '72'
+  // An application already sent is what the form opens on. Before this, "Update
+  // your application" opened on a blank pitch with the quote reset to the posted
+  // amount, so a one-line correction silently replaced the pitch the creator was
+  // reading and put the reviewer's own number back to the creator's.
+  const defaultEta = etaHours
+    ? String(etaHours)
+    : turnaroundHours
+      ? String(Math.min(turnaroundHours, 336))
+      : '72'
+  const defaultQuote = quotedCents !== null ? Math.round(quotedCents / 100) : Math.round(amountCents / 100)
 
   return (
-    <Form action={applyForBounty} summaryTitle="This application was not sent.">
+    <Form
+      action={applyForBounty}
+      summaryTitle="This application was not sent."
+      // The <Form> resets itself after a success, which restores these defaults.
+      // Keying on the saved application makes that reset land on what was just
+      // saved rather than on what the form opened with.
+      key={`${String(quotedCents ?? '')}-${String(etaHours ?? '')}-${String(pitchMd?.length ?? 0)}`}
+    >
       {({ state }) => (
         <div className="flex w-full flex-col gap-lg" style={{ maxInlineSize: 'var(--container-prose)' }}>
           <input type="hidden" name="bountyId" value={bountyId} />
@@ -82,6 +105,7 @@ export function ApplyForm({
                 name="pitch"
                 prose
                 required
+                defaultValue={pitchMd ?? ''}
                 maxChars={2000}
                 aria-describedby={describedBy}
                 invalid={invalid}
@@ -108,7 +132,7 @@ export function ApplyForm({
                   max={5000}
                   step={1}
                   required
-                  defaultValue={Math.round(amountCents / 100)}
+                  defaultValue={defaultQuote}
                   aria-describedby={describedBy}
                   invalid={invalid}
                 />
@@ -171,6 +195,9 @@ export function ApplyFormWrapper({
   turnaroundHours,
   alreadyApplied,
   applicationStatus,
+  pitchMd = null,
+  quotedCents = null,
+  etaHours = null,
 }: ApplyFormProps & { applicationStatus: string | null }) {
   const settled =
     applicationStatus === 'accepted' ||
@@ -193,6 +220,9 @@ export function ApplyFormWrapper({
           currency={currency}
           turnaroundHours={turnaroundHours}
           alreadyApplied={alreadyApplied}
+          pitchMd={pitchMd}
+          quotedCents={quotedCents}
+          etaHours={etaHours}
         />
       )}
     </div>

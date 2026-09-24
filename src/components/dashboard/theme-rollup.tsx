@@ -43,7 +43,11 @@ export function ThemeRollup({
   const shown = typeof limit === 'number' ? themes.slice(0, limit) : themes
 
   return (
-    <ul className="m-0 flex list-none flex-col p-0">
+    // Capped at the same 72ch measure the ranked list on the dashboard uses,
+    // so "Track this" resolves to one right edge wherever a creator meets it,
+    // and the bars, the facts and the pulled quote all read at one measure
+    // rather than running the full column.
+    <ul className="measure-cap m-0 flex list-none flex-col p-0">
       {shown.map((theme) => (
         <li
           key={theme.id}

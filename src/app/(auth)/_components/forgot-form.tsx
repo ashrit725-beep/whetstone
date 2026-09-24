@@ -18,11 +18,21 @@
 import { useState } from 'react'
 import { Banner, Field, Form, Input, Link, SubmitButton } from '@/components/ui'
 import { forgotPasswordAction } from '@/server/actions/auth'
-import { asAuthState, idleAuthState } from '../schema'
+import { asAuthState, idleAuthState, withNext } from '../schema'
 import { useKeepFieldValues } from './keep-field-values'
 import { useAuthFields } from './use-auth-fields'
 
-export function ForgotForm() {
+export interface ForgotFormProps {
+  /**
+   * Where the reader was headed when they were sent to sign in, already
+   * validated as a same-origin relative path by the page, or '' for nowhere in
+   * particular. It rides the emailed link so that setting a new password ends
+   * on the page they asked for, the way signing in does.
+   */
+  next: string
+}
+
+export function ForgotForm({ next }: ForgotFormProps) {
   return (
     <Form
       action={forgotPasswordAction}
@@ -37,10 +47,11 @@ export function ForgotForm() {
               message={auth.message ?? ''}
               mailed={auth.resetDelivery === 'provider'}
               devResetPath={auth.devResetPath}
+              next={next}
             />
           )
         }
-        return <ForgotFields serverErrors={auth.fieldErrors} />
+        return <ForgotFields serverErrors={auth.fieldErrors} next={next} />
       }}
     </Form>
   )
@@ -48,15 +59,18 @@ export function ForgotForm() {
 
 interface ForgotFieldsProps {
   serverErrors: Readonly<Record<string, string>> | undefined
+  next: string
 }
 
-function ForgotFields({ serverErrors }: ForgotFieldsProps) {
+function ForgotFields({ serverErrors, next }: ForgotFieldsProps) {
   const [email, setEmail] = useState('')
   const fields = useAuthFields(serverErrors)
   useKeepFieldValues({ email })
 
   return (
     <>
+      {next ? <input type="hidden" name="next" value={next} /> : null}
+
       <Field
         id="email"
         label="Email"
@@ -90,7 +104,7 @@ function ForgotFields({ serverErrors }: ForgotFieldsProps) {
         <SubmitButton variant="primary" pendingLabel="Sending the link…">
           Send the reset link
         </SubmitButton>
-        <Link href="/sign-in" variant="standalone">
+        <Link href={withNext('/sign-in', next)} variant="standalone">
           Back to sign in
         </Link>
       </div>
@@ -103,9 +117,10 @@ interface SentPanelProps {
   /** True when a provider sent the link, so there is a mailbox to go and check. */
   mailed: boolean
   devResetPath?: string
+  next: string
 }
 
-function SentPanel({ message, mailed, devResetPath }: SentPanelProps) {
+function SentPanel({ message, mailed, devResetPath, next }: SentPanelProps) {
   return (
     <div aria-live="polite" className="flex flex-col items-start gap-lg">
       <p className="measure-ui text-base text-text-1">{message}</p>
@@ -128,7 +143,7 @@ function SentPanel({ message, mailed, devResetPath }: SentPanelProps) {
         </Banner>
       ) : null}
 
-      <Link href="/sign-in" variant="standalone">
+      <Link href={withNext('/sign-in', next)} variant="standalone">
         Back to sign in
       </Link>
     </div>

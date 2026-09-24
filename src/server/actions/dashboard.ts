@@ -122,7 +122,7 @@ export async function toggleHelpful(_prev: FormState, formData: FormData): Promi
     return fail('That note is not on a project you own.')
   }
 
-  markHelpful(id, helpful)
+  markHelpful(id, helpful, userId)
   revalidatePath(INBOX_PATH)
   return {
     status: 'success',

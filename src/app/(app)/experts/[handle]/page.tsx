@@ -219,7 +219,9 @@ export default async function ExpertPage({
 
           {expert.isVerified ? (
             <p className="flex items-start gap-2xs text-xs text-text-3">
-              <BadgeCheck size={16} strokeWidth={1.5} aria-hidden="true" className="mt-3xs text-positive" />
+              {/* shrink-0: as a flex item beside a sentence this long the glyph
+                  was squeezed to half its width. */}
+              <BadgeCheck size={16} strokeWidth={1.5} aria-hidden="true" className="mt-3xs shrink-0 text-positive" />
               <span>
                 Listed because at least one area was verified.{' '}
                 <Link href="#verified" variant="inline">

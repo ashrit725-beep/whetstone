@@ -47,6 +47,13 @@ export interface MeterProps {
   segments?: readonly MeterSegment[]
   /** Visible label above the bar. */
   label: string
+  /**
+   * Read after the visible label by assistive technology, for a bar whose own
+   * label does not say which one it is. It exists so a caller does not pad the
+   * visible label with context the page already prints — the playtest bars were
+   * captioned with the task heading three lines above them.
+   */
+  srLabel?: string
   /** Spoken instead of the raw number, e.g. “Balance: 3000 of 8000”. */
   valueText?: string
   tone?: MeterTone
@@ -69,6 +76,7 @@ export function Meter({
   optimum,
   segments,
   label,
+  srLabel,
   valueText,
   tone,
   className,
@@ -88,7 +96,10 @@ export function Meter({
 
     return (
       <div className={cn('flex flex-col gap-xs', className)}>
-        <span className="text-sm text-text-2">{label}</span>
+        <span className="text-sm text-text-2">
+          {label}
+          {srLabel ? <span className="sr-only">{` ${srLabel}`}</span> : null}
+        </span>
         <div
           aria-hidden="true"
           className="flex w-full overflow-hidden rounded-xs border border-border-hair bg-surface-0"

@@ -255,11 +255,20 @@ function StageBase({
       {anchors.length > 0 ? (
         <>
           <StageLabel className="text-ink-3">Where the notes are pinned</StageLabel>
+          {/* The rule hangs on each cell, not on the grid: a border on the
+              container can only draw one line, so below `sm`, where the four
+              anchors wrap to two rows, the second row's ticks hung from
+              nothing. The column gap moved into the cell as padding so the
+              segments abut into one line; at `sm` the four are one row and the
+              container draws it, exactly as before. */}
           <ul
-            className="m-0 grid list-none grid-cols-2 gap-x-6 gap-y-6 border-t-[1.5px] border-ink p-0 sm:grid-cols-4"
+            className="m-0 grid list-none grid-cols-2 gap-y-6 p-0 sm:grid-cols-4 sm:border-t-[1.5px] sm:border-ink"
           >
             {anchors.map((anchor) => (
-              <li key={`${anchor.kindLabel}-${anchor.label}`} className="flex min-w-0 flex-col items-start">
+              <li
+                key={`${anchor.kindLabel}-${anchor.label}`}
+                className="flex min-w-0 flex-col items-start border-t-[1.5px] border-ink pe-6 sm:border-t-0"
+              >
                 <span aria-hidden="true" className="block h-3 w-[1.5px] bg-ink" />
                 <span className="tnum mt-2 block hyphens-auto break-words text-base font-bold text-ink">
                   {anchor.label}

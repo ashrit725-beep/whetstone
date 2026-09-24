@@ -34,6 +34,7 @@ import { all, get, run, tx } from '@/server/db/client'
 import { notifyMany } from '@/server/repos/notifications'
 import { generate as generateIntake, heuristic as intakeHeuristic, intakeLabel } from '@/server/ai/intake'
 import type { IntakeSuggestion } from '@/server/ai/intake'
+import type { ProjectStage } from '@/server/ai'
 import type { AiResult } from '@/server/ai/types'
 import {
   createPlaytestRound,
@@ -352,8 +353,25 @@ export interface IntakeSuggestionResult {
   readonly label: string
 }
 
+/**
+ * The grit scale's stages in the assistant's vocabulary. The two ladders are
+ * nearly the same and not quite: the scale has no alpha, and the assistant's
+ * `launch_ready` is the release candidate rather than the shipped build.
+ */
+const INTAKE_STAGE: Readonly<Record<string, ProjectStage>> = {
+  concept: 'concept',
+  prototype: 'prototype',
+  beta: 'beta',
+  release_candidate: 'launch_ready',
+  shipped: 'shipped',
+}
+
 /** The deterministic answer, in the shape the caller expects. */
-function heuristicResult(input: { description: string; links: readonly string[] }): IntakeSuggestionResult {
+function heuristicResult(input: {
+  description: string
+  links: readonly string[]
+  stage?: ProjectStage
+}): IntakeSuggestionResult {
   const result = intakeHeuristic(input)
   const type = projectType(result.data.projectType.value)
   return {
@@ -371,11 +389,20 @@ function heuristicResult(input: { description: string; links: readonly string[] 
  * Explicit, never automatic: the creator presses a button, reads the suggestion
  * and types over it. Nothing here writes to the form on its own.
  */
-export async function suggestAsk(description: string, links: string): Promise<IntakeSuggestionResult> {
+export async function suggestAsk(
+  description: string,
+  links: string,
+  stageKey?: string,
+): Promise<IntakeSuggestionResult> {
   // The arguments arrive from the network whatever their types say, and a
   // number where a string belongs used to throw before anything was checked.
   const text = typeof description === 'string' ? description.slice(0, 8_000) : ''
   const linkText = typeof links === 'string' ? links.slice(0, 4_000) : ''
+  // The answer the creator gave one step earlier, in the assistant's words.
+  // Without it the assistant guessed from the description and fell through to
+  // "This is a prototype." for everyone, including a creator who had just
+  // marked the project shipped.
+  const stage = typeof stageKey === 'string' ? INTAKE_STAGE[stageKey] : undefined
 
   // This reaches a paid provider. It had no authentication and passed no user
   // id, so an anonymous caller could run it in a loop and the per-user daily
@@ -385,7 +412,7 @@ export async function suggestAsk(description: string, links: string): Promise<In
   // Signed out, or past the hourly allowance for model calls: the heuristic
   // still answers, it just does not spend a provider request.
   if (!claims || actionRefusal('aiIntake', claims.uid)) {
-    return heuristicResult({ description: text, links: [] })
+    return heuristicResult({ description: text, links: [], ...(stage ? { stage } : {}) })
   }
 
   const linkList = linkText
@@ -394,7 +421,7 @@ export async function suggestAsk(description: string, links: string): Promise<In
     .filter((l) => l.startsWith('https://'))
     .slice(0, 4)
 
-  const input = { description: text, links: linkList, userId: claims.uid }
+  const input = { description: text, links: linkList, userId: claims.uid, ...(stage ? { stage } : {}) }
   let result: AiResult<IntakeSuggestion>
   try {
     result = await generateIntake(input)
@@ -412,6 +439,39 @@ export async function suggestAsk(description: string, links: string): Promise<In
     source: result.source,
     label: intakeLabel(result),
   }
+}
+
+/* -------------------------------------------- taking notes, on one project -- */
+
+/**
+ * Stop, or start again, taking notes on one project.
+ *
+ * The publish step promises the creator they can close feedback whenever they
+ * like, and the danger zone's account-wide button tells them each project can
+ * be reopened from its own page. Neither sentence had a control behind it: the
+ * only writer of `closed` was that account-wide button, and the only writer of
+ * `open` was posting a build — so a creator who wanted to pause one project had
+ * to pause all of them, and reopening meant shipping a build they may not have.
+ *
+ * Reversible on purpose, and so with no confirmation step: the button that
+ * undoes it is the same button, in the same place, with the other label.
+ */
+export async function setFeedbackState(formData: FormData): Promise<void> {
+  const claims = await currentClaimsLive()
+  if (!claims) return
+  if (actionRefusal('mark', claims.uid)) return
+  const slug = String(formData.get('slug') ?? '')
+  const open = String(formData.get('open') ?? '') === 'true'
+  if (!slug) return
+  // Owner-scoped by the query itself, as every other write on a live project
+  // here is: the slug arrives from a form and authorises nothing on its own.
+  const project = getProjectForEdit(slug, claims.uid)
+  if (!project) return
+  updateProject(project.id, { feedbackState: open ? 'open' : 'closed' })
+  revalidatePath(`/p/${slug}`)
+  revalidatePath(`/p/${slug}/versions`)
+  revalidatePath(`/p/${slug}/playtest`)
+  revalidatePath('/discover')
 }
 
 /* --------------------------------------------------------- versions on a live project */
@@ -448,12 +508,13 @@ export async function postVersion(_prev: FormState, formData: FormData): Promise
     makeCurrent: true,
   })
 
-  const stamp = Date.now()
-  run(
-    `INSERT INTO project_updates (id, project_id, version_id, author_id, title, body_md, published_at, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [crypto.randomUUID(), project.id, versionId, claims.uid, parsed.data.versionLabel, parsed.data.changelog, stamp, stamp, stamp],
-  )
+  // No `project_updates` row is written here. One used to be, with the build's
+  // own name as its title and its changelog as its body, and the timeline
+  // renders a version's updates nested under the version — so a build posted
+  // from this form printed its name twice and its changelog twice, while a
+  // build posted through the wizard printed each once. A devlog entry is a
+  // second thing to say about a build, and it belongs to a field a creator
+  // fills in, not to a copy of the field beside it.
 
   // Closed means closed on a build. The project header tells readers that a
   // new build reopens it, and this is the line that makes that true.

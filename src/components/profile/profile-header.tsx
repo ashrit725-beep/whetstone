@@ -105,13 +105,19 @@ export function ProfileHeader({
           />
         </div>
 
-        {/* The bold element of this surface. */}
-        <section aria-labelledby="grit-history" className="flex flex-col gap-xs">
-          <h2 id="grit-history" className="text-md">
-            How far this work gets
-          </h2>
-          <GritHistoryStrip counts={gritCounts} />
-        </section>
+        {/* The bold element of this surface — when there is anything to chart.
+            A reviewer who has posted no project got five empty cells and "0
+            projects" printed five times, in the most prominent block on their
+            page, describing something they have never done. The sentence below
+            already drops a clause whose count is zero; this follows that rule. */}
+        {totals.projects > 0 ? (
+          <section aria-labelledby="grit-history" className="flex flex-col gap-xs">
+            <h2 id="grit-history" className="text-md">
+              How far this work gets
+            </h2>
+            <GritHistoryStrip counts={gritCounts} />
+          </section>
+        ) : null}
 
         <ReputationSentence
           projects={totals.projects}
@@ -127,8 +133,8 @@ export function ProfileHeader({
           <ul className="flex flex-wrap items-center gap-lg">
             {profile.links.map((link) => {
               // A stored URL is data, and data reaching an href goes through the
-              // allowlist first. Nothing writes these today; this is what keeps
-              // that true the day something does.
+              // allowlist first. The profile form writes these, so the guard is
+              // load-bearing rather than precautionary.
               const href = safeHref(link.url)
               if (href === null) return null
               return (

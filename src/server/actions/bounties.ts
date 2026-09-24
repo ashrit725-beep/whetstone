@@ -57,7 +57,7 @@ import {
 import { ownedProjectOptions } from '@/server/queries/marketplace'
 import { getExpertByHandle, getExpertProfileRow } from '@/server/repos/profiles'
 import { notify } from '@/server/repos/notifications'
-import { money } from '@/components/marketplace/format'
+import { MAX_BOUNTY_CENTS, MIN_BOUNTY_CENTS, money } from '@/components/marketplace/format'
 import type { FormState } from '@/components/ui/form'
 
 /* ------------------------------------------------------------------ shared -- */
@@ -95,9 +95,10 @@ function refresh(bountyId: string): void {
 
 /* -------------------------------------------------------------- post a bounty -- */
 
-const MIN_AMOUNT_CENTS = 5_000
-const MAX_AMOUNT_CENTS = 500_000
-
+// The amount's range lives in `@/components/marketplace/format`, which the
+// composer imports too, so the amount the form prices is the amount this schema
+// accepts. There were two copies of the rule, and the form's was the loose one:
+// it priced $1 to the cent and left the floor to be discovered on submit.
 const PostSchema = z.object({
   projectId: z.string().min(1, 'Pick which project the review is for.'),
   title: z
@@ -113,8 +114,8 @@ const PostSchema = z.object({
   amountDollars: z.coerce
     .number()
     .int('Enter a whole number of dollars.')
-    .min(MIN_AMOUNT_CENTS / 100, `The floor is ${money(MIN_AMOUNT_CENTS)}, which is roughly an hour of a reviewer’s time.`)
-    .max(MAX_AMOUNT_CENTS / 100, `Bounties go up to ${money(MAX_AMOUNT_CENTS)}. For larger work, split it into stages.`),
+    .min(MIN_BOUNTY_CENTS / 100, `The floor is ${money(MIN_BOUNTY_CENTS)}, which is roughly an hour of a reviewer’s time.`)
+    .max(MAX_BOUNTY_CENTS / 100, `Bounties go up to ${money(MAX_BOUNTY_CENTS)}. For larger work, split it into stages.`),
   turnaroundHours: z.coerce
     .number()
     .int('Enter a whole number of hours.')
@@ -128,8 +129,11 @@ const PostSchema = z.object({
 export async function postBounty(_prev: FormState, formData: FormData): Promise<FormState> {
   const viewer = await requireViewer()
   if (!viewer) return fail(NOT_SIGNED_IN)
-  const held = actionRefusal('bounty', viewer.id)
-  if (held) return fail(held)
+  // On the way in: every submit costs an attempt whatever becomes of it, so the
+  // posting allowance below can be charged against the write alone without
+  // leaving a form that fails validation free to hammer this server.
+  const attempt = actionRefusal('attempt', viewer.id)
+  if (attempt) return fail(attempt)
 
   const parsed = PostSchema.safeParse({
     projectId: formData.get('projectId'),
@@ -169,6 +173,13 @@ export async function postBounty(_prev: FormState, formData: FormData): Promise<
   if (invited && invited.user.id === viewer.id) {
     return fail('A direct request cannot go to your own rate card. Post the bounty openly to reach the other reviewers.')
   }
+
+  // Spent here, against the write itself, rather than on the way in. The floor
+  // exists to stop a held-down Enter key, and a submit that posted nothing is
+  // not one: charging it told a creator who had mistyped the amount that they
+  // had posted too much, and made them wait ten seconds to fix one digit.
+  const held = actionRefusal('bounty', viewer.id)
+  if (held) return fail(held)
 
   const bountyId = createBounty({
     projectId: parsed.data.projectId,
@@ -235,7 +246,7 @@ const ApplySchema = z.object({
     .number()
     .int('Enter a whole number of dollars.')
     .min(1, 'Quote at least one dollar.')
-    .max(MAX_AMOUNT_CENTS / 100, `Quotes go up to ${money(MAX_AMOUNT_CENTS)}, the most a bounty can carry.`),
+    .max(MAX_BOUNTY_CENTS / 100, `Quotes go up to ${money(MAX_BOUNTY_CENTS)}, the most a bounty can carry.`),
   etaHours: z.coerce
     .number()
     .int('Enter a whole number of hours.')
@@ -246,8 +257,8 @@ const ApplySchema = z.object({
 export async function applyForBounty(_prev: FormState, formData: FormData): Promise<FormState> {
   const viewer = await requireViewer()
   if (!viewer) return fail(NOT_SIGNED_IN)
-  const held = actionRefusal('bountyApply', viewer.id)
-  if (held) return fail(held)
+  const attempt = actionRefusal('attempt', viewer.id)
+  if (attempt) return fail(attempt)
 
   const parsed = ApplySchema.safeParse({
     bountyId: formData.get('bountyId'),
@@ -276,6 +287,11 @@ export async function applyForBounty(_prev: FormState, formData: FormData): Prom
   if (bounty.status !== 'open' || bounty.seatsOpen < 1) {
     return fail('This bounty is no longer open, so applications are closed. The bounty list shows what still needs a reviewer.')
   }
+
+  // As in `postBounty`: the floor is charged against the write, so a quote that
+  // came back short does not cost the reviewer their next five seconds.
+  const held = actionRefusal('bountyApply', viewer.id)
+  if (held) return fail(held)
 
   applyToBounty({
     bountyId: bounty.id,
@@ -353,14 +369,20 @@ export async function deliverAward(_prev: FormState, formData: FormData): Promis
     return fail('This award is already past delivery, so it cannot be delivered again. The bounty page shows where it stands.')
   }
 
-  const feedback = deliverableFeedbackFor(award.bountyId, viewer.id)
+  // The review has to be the work this award bought: posted on the project
+  // after the award was made, and not already delivered against another bounty.
+  const feedback = deliverableFeedbackFor(award.bountyId, viewer.id, award.createdAt)
   if (!feedback) {
     return fail(
-      'Delivery links the review, and no submitted review of yours was found on this project. Post the review first, then deliver.',
+      'Delivery links the review this bounty is paying for, and no review of yours has been submitted on this project since it was awarded to you. Post the review first, then deliver it.',
     )
   }
 
-  deliverBounty(award.id, feedback.id)
+  if (!deliverBounty(award.id, feedback.id)) {
+    return fail(
+      'That review is already delivered against another bounty, or this award has moved past delivery. Reload the page to see where it stands.',
+    )
+  }
   refresh(award.bountyId)
   return { status: 'success', message: 'Delivered. The creator can read the review and accept it.' }
 }

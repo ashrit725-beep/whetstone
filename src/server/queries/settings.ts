@@ -60,11 +60,58 @@ export function accountFootprint(userId: string): AccountFootprint {
   }
 }
 
-/** Closes every project to new feedback. Reversible from the project page. */
+export interface FeedbackStates {
+  /** Projects still taking notes, from everyone or from invited reviewers. */
+  readonly taking: number
+  /** Projects closed to new notes. */
+  readonly closed: number
+}
+
+/**
+ * How many of this account's projects are taking notes and how many are shut.
+ *
+ * Counted in SQL rather than by filtering a page of rows: the danger zone used
+ * the first fifty projects to decide whether to offer the control, and an
+ * account with more than fifty was told the wrong thing about its own rows.
+ */
+export function feedbackStates(userId: string): FeedbackStates {
+  const row = all<{ taking: number | null; closed: number | null }>(
+    `SELECT
+       SUM(CASE WHEN feedback_state <> 'closed' THEN 1 ELSE 0 END) AS taking,
+       SUM(CASE WHEN feedback_state = 'closed'  THEN 1 ELSE 0 END) AS closed
+       FROM projects WHERE owner_id = ? AND deleted_at IS NULL`,
+    [userId],
+  )[0]
+
+  return { taking: row?.taking ?? 0, closed: row?.closed ?? 0 }
+}
+
+/**
+ * Closes every project to new feedback.
+ *
+ * Reversible: `reopenAllFeedback` below is the control beside it, and posting
+ * a new build reopens that project on its own (`postVersion`).
+ */
 export function closeAllFeedback(userId: string): number {
   const result = run(
     `UPDATE projects SET feedback_state = 'closed', updated_at = ?
       WHERE owner_id = ? AND deleted_at IS NULL AND feedback_state <> 'closed'`,
+    [now(), userId],
+  )
+  return result.changes
+}
+
+/**
+ * Takes feedback again on every project that was closed.
+ *
+ * Closing flattens `invite_only` into `closed`, so there is nothing to restore
+ * a project to but `open`. The danger zone says that in so many words rather
+ * than quietly widening who can write on a build.
+ */
+export function reopenAllFeedback(userId: string): number {
+  const result = run(
+    `UPDATE projects SET feedback_state = 'open', updated_at = ?
+      WHERE owner_id = ? AND deleted_at IS NULL AND feedback_state = 'closed'`,
     [now(), userId],
   )
   return result.changes

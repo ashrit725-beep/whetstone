@@ -17,8 +17,11 @@ export default function Loading() {
       style={{ maxInlineSize: 'var(--container-feed)' }}
       aria-busy="true"
     >
+      {/* A skeleton is handed no search params, so it cannot know which state
+          was asked for. It announces the list, and the page that follows
+          announces which one it is. */}
       <p role="status" aria-live="polite" className="sr-only">
-        Loading open bounties.
+        Loading bounties.
       </p>
       <div className="flex flex-col gap-sm" aria-hidden="true">
         <Skeleton w="16rem" h="2.4414rem" />

@@ -253,14 +253,22 @@ export function excerpt(body: string, max = 180): string {
  * FTS5 MATCH input. Bare user text can be a syntax error (an unbalanced quote,
  * a stray `NEAR`), which throws rather than returning nothing. Every token is
  * quoted and the last one gets a prefix `*`, so typing builds a live query.
+ *
+ * Control and format characters are separators, not text. SQLite reads the
+ * MATCH argument as a C string, so a NUL arriving in `?q=` ended the expression
+ * inside its own quote and raised `unterminated string`, which took the page to
+ * its error state; and a token the tokeniser cannot index (`#`, `&&`) would
+ * quietly narrow the query to nothing while looking like a term. Both are
+ * dropped here, so a query made only of them returns `null` and the caller
+ * reports that nothing matched.
  */
 export function toFtsQuery(raw: string): string | null {
   const tokens = raw
     .toLowerCase()
-    .replace(/["*(){}:^~-]/g, ' ')
+    .replace(/["*(){}:^~-]|\p{Cc}|\p{Cf}/gu, ' ')
     .split(/\s+/)
     .map((t) => t.trim())
-    .filter((t) => t.length > 0)
+    .filter((t) => /[\p{L}\p{N}]/u.test(t))
     .slice(0, 12)
   if (tokens.length === 0) return null
   return tokens

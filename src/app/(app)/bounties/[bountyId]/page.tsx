@@ -98,7 +98,10 @@ export default async function BountyPage({
     ? applications.find((a) => a.applicant.id === viewerId) ?? null
     : null
 
-  const deliverable = isAwardee && viewerId ? deliverableFeedbackFor(bounty.id, viewerId) : null
+  // Only a review written since the award can be delivered against it, so the
+  // lookup is scoped to the award rather than to the project.
+  const deliverable =
+    isAwardee && viewerId && award ? deliverableFeedbackFor(bounty.id, viewerId, award.createdAt) : null
 
   const target =
     isOwner && !isDirect && bounty.status === 'open' ? matchTargetById(bounty.project.id) : undefined
@@ -323,7 +326,30 @@ export default async function BountyPage({
               Accepted.{' '}
               <span className="tnum">{money(award.amountCents - award.feeCents, award.currency)}</span>{' '}
               was released to {isAwardee ? 'you' : award.expertName}, and nothing further is owed.
+              {award.creatorRating !== null ? (
+                <>
+                  {' '}
+                  {isOwner ? 'You rated' : `${bounty.creator.displayName} rated`} the review{' '}
+                  <span className="tnum">{award.creatorRating}</span> of 5.
+                </>
+              ) : null}
             </p>
+          ) : null}
+
+          {/* The note the creator wrote back on acceptance. It is addressed to
+              the reviewer, so it is printed for them here as well as sent with
+              the notification, and the creator can re-read what they sent. */}
+          {award?.status === 'accepted' && award.creatorReview && (isOwner || isAwardee) ? (
+            <figure className="measure-prose m-0 flex flex-col gap-2xs border-s-2 border-border-hair ps-md">
+              <figcaption className="text-2xs text-text-3" style={TERM}>
+                {isOwner ? `What you wrote back to ${award.expertName}` : `What ${bounty.creator.displayName} wrote back`}
+              </figcaption>
+              <blockquote className="m-0">
+                <p className="prose-human whitespace-pre-line text-sm text-text-1">
+                  {award.creatorReview}
+                </p>
+              </blockquote>
+            </figure>
           ) : null}
 
           {isOwner && bounty.status === 'cancelled' ? (
@@ -343,7 +369,12 @@ export default async function BountyPage({
           ) : null}
 
           {isAwardee && award && (award.status === 'assigned' || award.status === 'in_progress') ? (
-            <DeliverForm awardId={award.id} feedbackHeadline={deliverable?.headline ?? null} />
+            <DeliverForm
+              awardId={award.id}
+              deliverable={deliverable ? { headline: deliverable.headline } : null}
+              composerHref={`/p/${bounty.project.slug}/feedback`}
+              projectTitle={bounty.project.title}
+            />
           ) : null}
 
           {isOwner && award && award.status === 'delivered' ? (
@@ -377,6 +408,9 @@ export default async function BountyPage({
               turnaroundHours={bounty.turnaroundHours}
               alreadyApplied={myApplication !== null}
               applicationStatus={myApplication?.status ?? null}
+              pitchMd={myApplication?.pitchMd ?? null}
+              quotedCents={myApplication?.quotedCents ?? null}
+              etaHours={myApplication?.etaHours ?? null}
             />
           ) : null}
         </section>

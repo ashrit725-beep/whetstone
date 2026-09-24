@@ -25,6 +25,13 @@ export interface GritScaleProps {
   onChange: (next: GritValue) => void
   /** Posted with the form, so the composer works with JavaScript disabled. */
   name: string
+  /**
+   * Put on the cell Tab enters at. A form's error summary looks its fields up
+   * by id and then by name, and the only node here carrying the name is the
+   * hidden input, which cannot take focus — so without this the link to this
+   * group had nowhere to land.
+   */
+  id?: string
   /** Visible question. Rendered by the caller; pass its id here. */
   labelledBy?: string
   /** Fallback name when there is no visible label to point at. */
@@ -45,6 +52,7 @@ export function GritScale({
   value,
   onChange,
   name,
+  id,
   labelledBy,
   label,
   describedBy,
@@ -114,6 +122,7 @@ export function GritScale({
               ref={(node) => {
                 cellRefs.current[index] = node
               }}
+              id={index === rovingIndex ? id : undefined}
               type="button"
               role="radio"
               aria-checked={checked}

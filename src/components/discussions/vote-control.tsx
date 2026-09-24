@@ -73,7 +73,9 @@ export function VoteControl({ postId, score, viewerVote, authorName }: VoteContr
 
         <span className="tnum text-sm text-text-2">
           {state.score.toLocaleString('en')}
-          <span className="sr-only"> net votes</span>
+          {/* The same rule the static score beside it uses, so the two
+              renderings of one number never disagree. */}
+          <span className="sr-only">{Math.abs(state.score) === 1 ? ' net vote' : ' net votes'}</span>
         </span>
 
         <Button

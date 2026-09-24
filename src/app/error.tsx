@@ -23,19 +23,21 @@ export default function RootError({
 
   return (
     <div className="flex min-h-dvh flex-col bg-surface-1 text-text-1">
-      <div className="pad-inline border-b border-border-hair bg-surface-2">
+      {/* A <header>, not a div: the nav above this boundary is gone, so this is
+          the page's only banner landmark and must be one. */}
+      <header className="pad-inline border-b border-border-hair bg-surface-2">
         <div
           className="mx-auto flex w-full max-w-detail items-center"
           style={{ blockSize: 'var(--nav-h)' }}
         >
           <Wordmark size="lg" href="/" />
         </div>
-      </div>
+      </header>
 
       <main id="main" tabIndex={-1} className="pad-inline mx-auto w-full max-w-detail grow py-2xl">
         <ErrorState
           title="Whetstone did not finish loading this page."
-          body="The failure happened before the page's own content ran, so retrying is worth one try. If it repeats, open Discover and take a different route to what you were after."
+          body="The failure happened before the page’s own content ran, so retrying is worth one try. If it repeats, open Discover and take a different route to what you were after."
           requestId={error.digest}
           onRetry={() => startRetry(() => reset())}
           retrying={retrying}
@@ -44,7 +46,9 @@ export default function RootError({
         />
       </main>
 
-      <Footer />
+      {/* The nav above this boundary is gone, so the footer carries the theme
+          control the product shell would otherwise have provided. */}
+      <Footer showTheme />
     </div>
   )
 }

@@ -33,6 +33,61 @@ function siteUrl(): string | undefined {
   }
 }
 
+/** The first entry of a comma-joined header, without its trailing colon. */
+function firstScheme(value: string | null | undefined): string | undefined {
+  const first = value?.split(',')[0]?.trim().replace(/:$/, '').toLowerCase()
+  return first && first.length > 0 ? first : undefined
+}
+
+/** One `Host` entry without its port: `[::1]:4311` and `whetstone.test:80`. */
+function hostName(entry: string): string {
+  const raw = entry.trim().toLowerCase()
+  const bracketed = /^\[([^\]]+)\]/.exec(raw)
+  if (bracketed?.[1]) return bracketed[1]
+  // An unbracketed address full of colons is an IPv6 literal carrying no port;
+  // only a single trailing `:digits` is one.
+  if ((raw.match(/:/g) ?? []).length > 1) return raw
+  return raw.replace(/:\d+$/, '')
+}
+
+/**
+ * Hosts a browser itself reaches over plain http without complaint: the
+ * loopback names and addresses, mDNS `.local`, and the private ranges a machine
+ * on an office or home network is reached on. A production build served on one
+ * of these is the plain-http case `secureCookies` has to keep working.
+ */
+function plainHttpHost(entry: string): boolean {
+  const name = hostName(entry)
+  if (!name) return false
+  if (name === 'localhost' || name.endsWith('.localhost') || name.endsWith('.local')) return true
+  if (name === '::1' || name === '0.0.0.0') return true
+  if (/^127\.\d+\.\d+\.\d+$/.test(name)) return true
+  if (/^10\.\d+\.\d+\.\d+$/.test(name)) return true
+  if (/^192\.168\.\d+\.\d+$/.test(name)) return true
+  if (/^172\.(1[6-9]|2\d|3[01])\.\d+\.\d+$/.test(name)) return true
+  return false
+}
+
+/**
+ * Every host this request names: its `Host`, plus anything a proxy put in
+ * `x-forwarded-host`. A terminator that rewrites `Host` to an internal name
+ * forwards the public one alongside it, so both have to be looked at.
+ */
+function requestHosts(headers: Headers): readonly string[] {
+  return [headers.get('host'), headers.get('x-forwarded-host')]
+    .flatMap((value) => value?.split(',') ?? [])
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0)
+}
+
+/** `COOKIE_SECURE`, when the operator has settled the question themselves. */
+function cookieSecureOverride(): boolean | undefined {
+  const v = opt('COOKIE_SECURE')?.toLowerCase()
+  if (v === '1' || v === 'true') return true
+  if (v === '0' || v === 'false') return false
+  return undefined
+}
+
 /**
  * Whether a cookie set on this request should be HTTPS-only.
  *
@@ -41,13 +96,46 @@ function siteUrl(): string | undefined {
  * machine's network address, or Safari on localhost). The browser then drops
  * them without a word: sign-in and sign-up appear to succeed and leave the
  * reader signed out, and every button that posts through the API fails its
- * CSRF check. So: a deployment whose SITE_URL is https always gets Secure
- * cookies (that is every real deployment, since mail links need SITE_URL),
- * and otherwise the request's own scheme decides.
+ * CSRF check.
+ *
+ * Deciding it from `x-forwarded-proto` instead traded that for the opposite
+ * failure: the header is written by whoever sends the request, so an HTTPS
+ * deployment that has no SITE_URL and sits behind a terminator sending
+ * `X-Forwarded-Scheme` or RFC 7239 `Forwarded:` issued both cookies without
+ * Secure, and the browser then sent the session over plain http.
+ *
+ * So the question is answered from what the deployment says about itself,
+ * hardest evidence first, and the forwarded header is believed only behind a
+ * proxy the operator vouched for — the discipline `clientIp` already applies to
+ * `x-forwarded-for`:
+ *
+ *   1. COOKIE_SECURE, when the operator has settled it.
+ *   2. SITE_URL, which every real deployment sets because mail links need it.
+ *   3. `x-forwarded-proto`, but only with TRUST_PROXY_HEADERS set.
+ *   4. The scheme this process itself spoke, when nothing forwarded one at all.
+ *   5. In production, Secure — unless every host the request names is one a
+ *      browser is happy to reach over plain http (localhost, a LAN address),
+ *      which is the development-build-on-the-network case above.
  */
-export function secureCookies(scheme: string | null | undefined): boolean {
-  if (siteUrl()?.startsWith('https:')) return true
-  return scheme?.split(',')[0]?.trim().replace(/:$/, '') === 'https'
+export function secureCookies(headers: Headers, ownScheme?: string | null): boolean {
+  const override = cookieSecureOverride()
+  if (override !== undefined) return override
+
+  const site = siteUrl()
+  if (site) return site.startsWith('https:')
+
+  const forwardedProto = headers.get('x-forwarded-proto')
+  const forwarded = env.trustProxyHeaders ? firstScheme(forwardedProto) : undefined
+  // `ownScheme` is the scheme this process spoke, and it is only that when
+  // nothing forwarded one: Next builds `nextUrl` out of `x-forwarded-proto`
+  // when the header is there, so trusting it then would be trusting the header
+  // through the back door — which is how the spoof survived the first fix.
+  const own = forwardedProto === null ? firstScheme(ownScheme) : undefined
+  if ((forwarded ?? own) === 'https') return true
+
+  if (!env.isProduction) return false
+  const hosts = requestHosts(headers)
+  return !(hosts.length > 0 && hosts.every(plainHttpHost))
 }
 
 export type MailProvider = 'resend' | 'postmark'

@@ -3,14 +3,19 @@
 /**
  * The Discover feed: a plain <ul> of links with a keyboard accelerator on top.
  *
- * Keyboard contract (the handler lives on the <ul>, so these keys are live only
- * while focus is inside the feed, which is how SC 2.1.4 is satisfied; binding
- * them to `document` would stomp on every textarea in the product):
- *   ArrowDown / j   move to the next row and focus its title link
- *   ArrowUp / k     move to the previous row
- *   Home / End      first row / last row
+ * Keyboard contract:
+ *   j / k           move to the next or previous row and focus its title link.
+ *                   Live from anywhere on the page, because the hint above the
+ *                   feed says so and focus starts on <body>; the first press
+ *                   enters the feed at the current row rather than moving it.
+ *   ArrowDown / Up  the same movement, but only once focus is inside the feed,
+ *   Home / End      so arrow keys still scroll the page everywhere else.
  *   Enter           the browser's own link activation
  *   Any modifier    passes straight through, so Cmd+J still reaches the browser
+ * The two single characters are silent wherever a character key is text — any
+ * input, textarea, select or editable region, and anything inside an open
+ * dialog — which is the mitigation SC 2.1.4 asks for; the feed is only on
+ * Discover and Search, so they are not live elsewhere in the product.
  * The list is a roving tabindex: Tab enters at the current row, reaches that
  * row's grit filter, then leaves the feed. It stays an ordinary list of links,
  * with no `role="grid"`, so screen-reader list and link navigation are
@@ -27,6 +32,7 @@ import { useRouter } from 'next/navigation'
 import { ArrowDown } from 'lucide-react'
 import { Button, Link } from '@/components/ui'
 import { FeedRowItem } from './feed-row'
+import { typingSomewhere } from './shortcut-scope'
 import type { FeedRow } from './row-data'
 import { loadMoreRows } from './actions'
 
@@ -142,8 +148,7 @@ export function FeedList({
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLUListElement>) => {
     if (event.metaKey || event.ctrlKey || event.altKey) return
-    const target = event.target
-    if (target instanceof Element && target.closest('input, textarea, select, [contenteditable]')) return
+    if (typingSomewhere(event.target)) return
 
     const last = rows.length - 1
     let next: number | null = null
@@ -156,6 +161,24 @@ export function FeedList({
     event.preventDefault()
     moveTo(next)
   }
+
+  /* j and k from outside the feed. The handler above already covers the case
+     where focus is inside it — React's own listener runs first and marks the
+     event handled — so this one only has to bring the reader in. */
+  useEffect(() => {
+    const onDocumentKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'j' && event.key !== 'k') return
+      if (event.defaultPrevented) return
+      if (event.metaKey || event.ctrlKey || event.altKey) return
+      if (typingSomewhere(event.target)) return
+      const ul = listRef.current
+      if (!ul || ul.contains(document.activeElement)) return
+      event.preventDefault()
+      moveTo(activeIndex)
+    }
+    document.addEventListener('keydown', onDocumentKeyDown)
+    return () => document.removeEventListener('keydown', onDocumentKeyDown)
+  }, [activeIndex, moveTo])
 
   const onFocus = (event: React.FocusEvent<HTMLUListElement>) => {
     const target: Element = event.target

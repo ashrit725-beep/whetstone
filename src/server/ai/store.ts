@@ -344,6 +344,40 @@ export function spendSince(sinceMs: number, scope: { userId?: string; projectId?
   return total
 }
 
+/**
+ * Whether the most recent attempt at `feature` got an answer out of a model.
+ * Null when the ledger holds no attempt for it at all.
+ *
+ * One `generate` walks the provider chain, so an attempt is a burst of rows
+ * inside a few seconds: the window below reads that burst and asks whether any
+ * row in it succeeded. Scoped to the feature rather than the project, because
+ * what this answers is “is a model answering at all”, and a refused key refuses
+ * every project equally.
+ *
+ * It exists because the in-process memory of the last background run dies with
+ * the process, and a panel that invites a creator to reload for a model’s
+ * version on the first render after a restart is promising exactly what the
+ * last attempt was refused. The ledger is the only memory that survives.
+ */
+const ATTEMPT_WINDOW_MS = 60_000
+
+export function lastRunAnswered(feature: FeatureKey): boolean | null {
+  if (!storeReady()) return null
+  try {
+    const row = get<{ n: number; ok: number | null }>(
+      `SELECT COUNT(*) AS n, SUM(CASE WHEN status = 'ok' THEN 1 ELSE 0 END) AS ok
+         FROM ai_run
+        WHERE feature = ?
+          AND created_at >= (SELECT MAX(created_at) FROM ai_run WHERE feature = ?) - ?`,
+      [feature, feature, ATTEMPT_WINDOW_MS],
+    )
+    if (!row || Number(row.n) === 0) return null
+    return Number(row.ok ?? 0) > 0
+  } catch {
+    return null
+  }
+}
+
 export type FeatureRunStats = {
   feature: FeatureKey
   ok: number
@@ -352,7 +386,7 @@ export type FeatureRunStats = {
   costMicros: number
 }
 
-/** Per-feature counts for the operator page. */
+/** Per-feature counts for the operator snapshot in `status.ts`. */
 export function runStatsSince(sinceMs: number): FeatureRunStats[] {
   if (!storeReady()) return []
   try {

@@ -38,9 +38,24 @@ const SRC = path.join(ROOT, 'src')
  * `next/headers` server module. A bare `node` run understands neither, so map
  * the alias onto the real files and stub the one Next module that `@/lib/auth`
  * imports but never calls outside a request.
+ *
+ * The stub carries every name `next/headers` publishes, not only the ones
+ * `@/lib/auth` happens to reach for today. An ES module import is checked name
+ * by name at link time, so a missing name is not a dormant risk: it is an
+ * immediate `SyntaxError` before a single row is written, and the seed dies on
+ * a request helper it was never going to call. Each one throws if it is ever
+ * called, which is the part that has to stay honest.
  */
 const NEXT_HEADERS_STUB =
-  'data:text/javascript,export function cookies(){throw new Error("next/headers is not available in the seed script")}'
+  'data:text/javascript,' +
+  encodeURIComponent(
+    ['cookies', 'headers', 'draftMode']
+      .map(
+        (name) =>
+          `export function ${name}(){throw new Error("next/headers ${name}() is not available in the seed script")}`,
+      )
+      .join('\n'),
+  )
 
 /** `./thing` and `@/lib/thing` both mean `thing.ts` in a Next codebase. */
 function withExtension(file: string): string {

@@ -45,10 +45,26 @@ function isProtected(pathname: string): boolean {
   if (segmentMatch(pathname, '/dashboard')) return true
   if (segmentMatch(pathname, '/settings')) return true
   if (segmentMatch(pathname, '/notifications')) return true
+  // The saved shelf is one person's private list and renders nothing at all to
+  // a reader who is not signed in.
+  if (segmentMatch(pathname, '/saved')) return true
   if (segmentMatch(pathname, '/new')) return true
   if (pathname === '/projects/new') return true
-  // The feedback composer, under both the canonical and the short project path.
-  if (/^\/(?:p|projects)\/[^/]+\/(?:feedback\/new|review)\/?$/.test(pathname)) return true
+  // Both composers that live outside `/new`. `/bounties/new` has a `loading.tsx`,
+  // so without this line Next streamed the shell and the skeleton before the
+  // page's own `redirect()` ran, and the redirect could then only be delivered
+  // as a one-second `<meta http-equiv="refresh">`: a 200 for the protected page
+  // and a timed redirect (WCAG 2.2.1) for anybody with JavaScript off.
+  if (pathname === '/bounties/new') return true
+  // The feedback composer and the project editor, under both the canonical and
+  // the short project path. The editor answers a stranger with `notFound()`,
+  // which is right for a signed-in one and useless to a creator whose session
+  // has expired: this sends them to sign in and back to the page they asked for.
+  if (/^\/(?:p|projects)\/[^/]+\/(?:feedback\/new|review|edit)\/?$/.test(pathname)) return true
+  // The paid-review request form, which redirects on its own today only because
+  // it has no `loading.tsx`. Listed here so that adding one later cannot turn
+  // this page into the streamed 200 `/bounties/new` was.
+  if (/^\/experts\/[^/]+\/request\/?$/.test(pathname)) return true
   return false
 }
 
@@ -120,8 +136,10 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     response.cookies.set(CSRF_COOKIE, csrfToken(), {
       httpOnly: false,
       sameSite: 'lax',
-      // By the request's real scheme, like the session cookie: see secureCookies.
-      secure: secureCookies(request.headers.get('x-forwarded-proto') ?? request.nextUrl.protocol),
+      // Decided from the deployment's own configuration, exactly as the session
+      // cookie is, so the two can never disagree: see secureCookies. The
+      // request's own scheme is the last resort, and only this file knows it.
+      secure: secureCookies(request.headers, request.nextUrl.protocol),
       path: '/',
       maxAge: CSRF_MAX_AGE_S,
     })

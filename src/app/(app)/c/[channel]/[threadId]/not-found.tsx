@@ -11,7 +11,7 @@ export default function ThreadNotFound() {
   // The shell already owns <main id="main">; this is the content column inside
   // it, so the skip link still lands in exactly one place.
   return (
-    <div className="pad-inline mx-auto w-full max-w-prose py-xl">
+    <div className="column-prose w-full py-xl">
       <h1>That thread is not here</h1>
       <p className="measure-ui mt-sm text-base text-text-2">
         The address does not match a thread in this channel, or the thread was deleted by its

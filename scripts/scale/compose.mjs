@@ -292,6 +292,30 @@ const sentenceKey = (s) =>
 const wordsOf = (t) => String(t ?? '').toLowerCase().replace(/[’]/g, "'").match(/[a-z0-9']+/g) ?? []
 
 /**
+ * How many words in a row make a repetition on one project page a tell.
+ *
+ * The ledger below budgets five-word runs across the whole corpus, which is the
+ * right ceiling for a phrase a reader meets once a week. One page is a
+ * different question: a run allowed a handful of times in thirty thousand notes
+ * can still land twice on the project somebody is reading, two notes apart,
+ * where it stops reading as a turn of phrase and starts reading as one writer
+ * with a tic. Eight, not five, because five catches ordinary English — "the
+ * rest of the page" is not a tell — and eight is long enough that two reviewers
+ * hitting it are reading off the same template.
+ *
+ * Exported because two places have to agree on it: the writer, which refuses a
+ * draw whose run the page has already spent, and the audit, which checks the
+ * built database for the same thing.
+ */
+export const PAGE_RUN = 8
+
+/** Every run of PAGE_RUN words in `text`, lower-cased and stripped of punctuation. */
+export function* runsOf(text) {
+  const w = wordsOf(text)
+  for (let i = 0; i + PAGE_RUN <= w.length; i++) yield w.slice(i, i + PAGE_RUN).join(' ')
+}
+
+/**
  * One budget per kind of text (points, headlines, posts...), all sharing one
  * sentence ledger, so a sentence cannot turn up four times in notes and four
  * more times in the forum either.

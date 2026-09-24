@@ -16,16 +16,20 @@ export default function ProfileNotFound() {
   return (
     <div className="flex flex-col items-start gap-lg">
       <h1>No account with that handle</h1>
+      {/* Search covers projects, discussions and listed reviewers — not people
+          in general — so this no longer promises that searching a name finds
+          anyone either way. It named the two cases it could not answer. */}
       <p className="measure-ui text-base text-text-2">
-        Handles change when someone renames their account, and a deactivated account stops
-        resolving entirely. Searching by name finds the person either way.
+        Handles change when someone renames their account, and a closed account stops resolving
+        entirely. If the person reviews for hire, the reviewer market lists them by name.
+        Otherwise, ask whoever shared the link for the new one.
       </p>
       <div className="flex flex-wrap items-center gap-lg">
-        <Button as="a" href="/search" variant="primary">
-          Search for a person
-        </Button>
-        <Link href="/experts" variant="standalone">
+        <Button as="a" href="/experts" variant="primary">
           Browse the reviewer market
+        </Button>
+        <Link href="/search?in=experts" variant="standalone">
+          Search reviewers by name
         </Link>
       </div>
     </div>

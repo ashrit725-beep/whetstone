@@ -21,11 +21,12 @@ import { THEME_FLOOR, weeklyBrief, type ThemeBoard } from '@/server/queries/dash
 import { Provenance } from './provenance'
 import { PromoteTheme } from './promote-theme'
 
+// 'unknown' is not rendered: the row is dropped instead. The key stays so the
+// map still covers every value `effortGuess` can carry.
 const EFFORT_WORD: Record<'small' | 'medium' | 'large' | 'unknown', string> = {
   small: 'Small, at a guess',
   medium: 'Medium, at a guess',
   large: 'Large, at a guess',
-  // Printed after the "Effort" label, so the word is not repeated.
   unknown: 'Not guessed',
 }
 
@@ -122,10 +123,17 @@ export async function FixFirst({ userId, projectId, actionable = true }: FixFirs
                         <span className="text-text-3"> of 100</span>
                       </dd>
                     </div>
-                    <div className="flex items-baseline gap-2xs">
-                      <dt className="text-xs text-text-3">Effort</dt>
-                      <dd className="m-0 text-sm text-text-1">{EFFORT_WORD[item.effortGuess]}</dd>
-                    </div>
+                    {/* Only when there is a guess to print. The deterministic
+                        ranking has none, so the pair was three rows of "Not
+                        guessed" on a page that shows real efforts two rail
+                        items away. The provenance line below already says the
+                        ranking was made here, without a model. */}
+                    {item.effortGuess === 'unknown' ? null : (
+                      <div className="flex items-baseline gap-2xs">
+                        <dt className="text-xs text-text-3">Effort</dt>
+                        <dd className="m-0 text-sm text-text-1">{EFFORT_WORD[item.effortGuess]}</dd>
+                      </div>
+                    )}
                   </dl>
                 </div>
 

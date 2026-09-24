@@ -138,11 +138,14 @@ export default async function ChannelPage({
                 aria-label="More threads"
                 className="mt-lg flex flex-wrap items-center justify-between gap-md border-t border-border-hair pt-md"
               >
+                {/* Both keep `standalone`'s accent. Painted text-2 they read as
+                    the sentence they sit under, which is how the register's
+                    pagination came to look like body copy while the same
+                    control on /experts and /bounties looked like a link. */}
                 {cursor !== null ? (
                   <Link
                     href={sort === DEFAULT_THREAD_SORT ? `/c/${channel.slug}` : `/c/${channel.slug}?sort=${sort}`}
                     variant="standalone"
-                    className="text-text-2"
                   >
                     Back to the top of the register
                   </Link>
@@ -150,7 +153,7 @@ export default async function ChannelPage({
                   <span />
                 )}
                 {nextHref ? (
-                  <Link href={nextHref} variant="standalone" className="text-text-2">
+                  <Link href={nextHref} variant="standalone">
                     Older threads
                   </Link>
                 ) : null}

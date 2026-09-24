@@ -3560,7 +3560,13 @@ export const FEEDBACK: readonly SeedFeedback[] = [
         category: 'controls',
         body: 'The parry felt cheap. I could not get the timing at all.',
         severity: 'major',
-        actionability: 'opinion',
+        // Directional, not a preference: the card prints 'opinion' as
+        // "Preference", which reads as a matter of taste, and this one names
+        // the thing that has to change — the parry timing — without naming how.
+        // A major stamped "Preference" says "this is serious" and "no change
+        // implied" in one block, which is the contradiction the audit's
+        // 'faults the same card calls a matter of preference' check is for.
+        actionability: 'suggestion',
         sentiment: -1,
         askIndex: 0,
         theme: 'parry-input-lag',

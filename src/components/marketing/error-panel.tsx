@@ -49,7 +49,7 @@ export function ErrorPanel({
           Try again
         </button>
         <NextLink href="/discover?open=1" className="btn btn-secondary">
-          Read the open asks
+          Browse open projects
         </NextLink>
       </div>
 

@@ -65,7 +65,18 @@ const sourceOf = (d) => d?.source ?? d?.suggestion?.source ?? d?.report?.source
 await run('themes on page load: fast now, model board in the background', async () => {
   // This runs on a copy, so the project's stored boards can go: the page then
   // has nothing to reuse and must take the background path.
-  db.prepare("DELETE FROM ai_artifact WHERE feature = 'themes' AND subject_id = ?").run(mine.id)
+  //
+  // The four ai_* tables belong to the AI layer and are created on its first
+  // use (src/server/ai/store.ts), not by the product schema, so a fresh copy of
+  // data/whetstone.db has none of them and this statement used to throw before
+  // the first test had measured anything. Skip the clear when there is nothing
+  // to clear.
+  const hasArtifacts = db
+    .prepare("SELECT 1 AS hit FROM sqlite_master WHERE type = 'table' AND name = 'ai_artifact'")
+    .get()
+  if (hasArtifacts) {
+    db.prepare("DELETE FROM ai_artifact WHERE feature = 'themes' AND subject_id = ?").run(mine.id)
+  }
   const second = mine
   const t = Date.now()
   // Timed to DOMContentLoaded: the page prefetches its sidebar links, and

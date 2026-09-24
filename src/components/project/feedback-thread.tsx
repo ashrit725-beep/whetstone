@@ -103,6 +103,8 @@ export function FeedbackThread({
         creatorMarkedHelpful: false,
         helpfulCount: 0,
         viewerVote: 0,
+        // It is the reader's own note, so the thread offers it no vote.
+        viewerIsReviewer: true,
         points: posted.map((note) => ({
           id: `pending-${note.axisKey}`,
           bodyMd: note.body,
@@ -240,7 +242,9 @@ export function FeedbackThread({
                 className="btn"
               >
                 {viewerIsCreator
-                  ? 'Post a new build'
+                  ? // The header and the form on the Builds tab call this
+                    // "Post a build"; one action, one verb phrase.
+                    'Post a build'
                   : composer
                     ? 'Write the first note'
                     : 'Sign in to review'}

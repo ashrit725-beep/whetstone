@@ -936,9 +936,9 @@ export interface GetProjectOptions {
  * Everything the project page renders: the project, its creator, media, links,
  * the ask, needs, per-axis rating aggregates and feedback counts.
  *
- * Slugs are unique per owner rather than globally (`ux_projects_owner_slug`).
- * With no owner handle supplied this resolves to the most recently published
- * match, which is what a bare `/p/<slug>` link has to do.
+ * Slugs are unique across the table (`ux_projects_slug`), so a bare `/p/<slug>`
+ * resolves to exactly one project; the owner handle only narrows it further
+ * when a caller has one in hand.
  */
 export function getProjectBySlug(slug: string, opts: GetProjectOptions = {}): ProjectDetail | undefined {
   const viewerId = opts.viewerId ?? null
@@ -1359,7 +1359,7 @@ export function createProject(input: NewProjectInput): string {
   const id = uid()
   const ts = now()
   return tx(() => {
-    const slug = uniqueSlug(input.ownerId, input.title)
+    const slug = uniqueSlug(input.title)
     run(
       `INSERT INTO projects
          (id, owner_id, project_type_id, slug, title, tagline, summary_md, stage_key,
@@ -1697,15 +1697,16 @@ export function recomputeHotScore(projectId?: string): void {
   )
 }
 
-/** `slugify` can collide within one owner; the unique index would reject it. */
-function uniqueSlug(ownerId: string, title: string): string {
+/**
+ * `slugify` collides whenever two members name their work the same thing, and
+ * `/p/<slug>` is one namespace for all of them, so the search is global: the
+ * unique index `ux_projects_slug` would reject anything narrower.
+ */
+function uniqueSlug(title: string): string {
   const base = slugify(title)
   let candidate = base
   for (let i = 2; i < 40; i++) {
-    const taken = get<Row>(`SELECT 1 AS hit FROM projects WHERE owner_id = ? AND slug = ?`, [
-      ownerId,
-      candidate,
-    ])
+    const taken = get<Row>(`SELECT 1 AS hit FROM projects WHERE slug = ?`, [candidate])
     if (!taken) return candidate
     candidate = `${base}-${i}`
   }

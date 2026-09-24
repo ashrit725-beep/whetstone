@@ -108,6 +108,30 @@ function allValues(raw: string | string[] | undefined): readonly string[] {
 
 const NEED_KEYS: readonly string[] = NEED_KINDS.map((n) => n.key)
 
+/**
+ * The query as it will be printed and searched.
+ *
+ * Control, format and surrogate code points cannot be typed into the field and
+ * have no glyph: a bidi override would reorder the sentence the chip sits in,
+ * a lone surrogate cannot be serialised, and a NUL used to reach SQLite's MATCH
+ * argument and take the page to its error state (`unterminated string`, since
+ * SQLite reads that argument as a C string). Each becomes U+FFFD, the standard
+ * stand-in for a character that cannot be shown, so the query stays the thing
+ * the reader asked for, the feed reports honestly that nothing matches it, and
+ * the server and the browser print the same string.
+ *
+ * The line breaks and tabs are the exception. They are separators wherever text
+ * comes from, so a phrase pasted out of a document searches for its words rather
+ * than for a phrase with a black diamond in the middle of it.
+ */
+export function printableQuery(raw: string): string {
+  return raw
+    .replace(/[\t\n\v\f\r\u0085\u2028\u2029]+/gu, ' ')
+    .replace(/\p{Cc}|\p{Cf}|\p{Cs}/gu, '�')
+    .trim()
+    .slice(0, 120)
+}
+
 /** Reads the URL. Anything unrecognised is dropped, never guessed at. */
 export function parseDiscoverParams(raw: RawSearchParams): DiscoverState {
   const typeRaw = firstValue(raw['type'])
@@ -131,7 +155,7 @@ export function parseDiscoverParams(raw: RawSearchParams): DiscoverState {
     needs: [...new Set(needs)],
     tags: [...new Set(tags)],
     openOnly: firstValue(raw['open']) === '1',
-    query: queryRaw.trim().slice(0, 120),
+    query: printableQuery(queryRaw),
     sort,
   }
 }
@@ -197,7 +221,7 @@ export function withSort(state: DiscoverState, sort: DiscoverSort): DiscoverStat
 }
 
 export function withQuery(state: DiscoverState, query: string): DiscoverState {
-  return { ...state, query: query.trim().slice(0, 120) }
+  return { ...state, query: printableQuery(query) }
 }
 
 /* ---------------------------------------------------------- active filter -- */

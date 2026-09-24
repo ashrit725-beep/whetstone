@@ -44,7 +44,18 @@ export function Table({ caption, captionVisible = false, children, className }: 
       aria-label={caption}
       tabIndex={0}
       data-scroll-region
-      className="w-full overflow-x-auto rounded-md border border-border-hair"
+      // The bar is drawn at rest rather than left to the platform's overlay
+      // scrollbars, which show nothing until a scroll is already under way: a
+      // nine-column table in a 768 window simply stopped, with no sign that
+      // there was another column past the edge. Both spellings are needed —
+      // Chromium takes the `::-webkit-` rules and ignores the standard pair
+      // once they are present, and Gecko does the opposite.
+      className={cn(
+        'w-full overflow-x-auto rounded-md border border-border-hair',
+        '[scrollbar-width:thin] [scrollbar-color:var(--color-border-control)_transparent]',
+        '[&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-transparent',
+        '[&::-webkit-scrollbar-thumb]:rounded-xs [&::-webkit-scrollbar-thumb]:bg-border-control',
+      )}
     >
       <table className={cn('w-full border-collapse text-left', className)}>
         <caption

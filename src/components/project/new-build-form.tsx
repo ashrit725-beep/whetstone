@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * The creator's "post a new build" form.
+ * The creator's "post a build" form.
  *
  * Keyboard contract: a plain form inside a native `<details>`. Enter or Space on
  * the summary opens it, Tab walks the three fields and the submit, and nothing
@@ -9,6 +9,11 @@
  * history, not the form. The header's "Post a build" and the empty state's
  * "Post the first build" arrive as `#new-build`, which opens it, so both land on
  * the form and not on a closed toggle.
+ *
+ * One wording for one action. Three surfaces name it — the header button, this
+ * summary and the thread's empty state — and each had named it for itself, so a
+ * reader met one verb phrase on the Overview tab and a second, longer one a
+ * click later, on the very form that button opens. Keep all three in step.
  */
 
 import { useRef } from 'react'
@@ -29,7 +34,7 @@ export function NewBuildForm({ slug, action, suggestedLabel }: NewBuildFormProps
   return (
     <details id="new-build" ref={ref} className="flex scroll-mt-24 flex-col gap-3">
       <ProjectStyles />
-      <summary className="ws-scaffold w-fit cursor-pointer text-sm">Post a new build</summary>
+      <summary className="ws-scaffold w-fit cursor-pointer text-sm">Post a build</summary>
 
       <div className="pt-4">
         <Form action={action} summaryTitle="This build was not posted.">

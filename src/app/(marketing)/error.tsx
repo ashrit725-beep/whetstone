@@ -19,7 +19,7 @@ export default function MarketingError({
       <div className="mx-auto max-w-page">
         <ErrorPanel
           title="This page could not be built just now"
-          body="The project feed behind it did not answer, so the live rows and the figures are missing. Try again, or go straight to the open asks, which are read separately."
+          body="The project feed behind it did not answer, so the live rows and the figures are missing. Try again, or go straight to the open projects, which are read separately."
           digest={error.digest}
           onRetry={reset}
         />

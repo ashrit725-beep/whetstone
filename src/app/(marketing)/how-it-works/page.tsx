@@ -6,15 +6,21 @@
  * real taxonomy rather than a diagram of one: ten kinds of project against the
  * five questions every review answers, read straight out of `src/lib/taxonomy`.
  *
+ * The matrix is a table from 40rem up and a list of disclosures below it. At
+ * 390 the table showed three of its six columns, sliced the fourth heading
+ * mid-word, and gave no sign there was more; a phone gets the same ten rows as
+ * ten things it can open instead.
+ *
  *   1 what it is    py-16    one column
- *   2 the loop      py-32   a dl with visible terms
- *   3 the matrix    py-12    one table, scrolling inside its own region
+ *   2 the loop      py-24    a dl with visible terms
+ *   3 the matrix    py-24    one table, or ten disclosures
  *   4 the scale     py-24    full bleed, five columns
  *   5 closing       py-16    two columns
  */
 
 import type { Metadata } from 'next'
 import NextLink from 'next/link'
+import { CtaPair } from '@/components/marketing/cta-pair'
 import { ScaleStrip } from '@/components/marketing/scale-strip'
 import { SectionLabel } from '@/components/marketing/section-label'
 import styles from '@/components/marketing/paper.module.css'
@@ -27,7 +33,7 @@ import {
   type AxisFamily,
   type ProjectTypeSlug,
 } from '@/lib/taxonomy'
-import { categoryTaxonomy, scaleSteps, siteCounts } from '../_data'
+import { howItWorksData } from '../_data'
 
 export const metadata: Metadata = {
   title: 'How it works',
@@ -43,10 +49,22 @@ function axisFor(slug: ProjectTypeSlug, family: AxisFamily): AxisDef | undefined
   return PROJECT_TYPES[slug].axes.find((axis) => axis.family === family)
 }
 
-export default function HowItWorksPage() {
-  const counts = siteCounts()
-  const steps = scaleSteps()
-  const taxonomy = categoryTaxonomy()
+/** "1 · Stopped early" and "5 · One more round": the anchors as the composer shows them. */
+function Anchors({ axis }: { axis: AxisDef }) {
+  return (
+    <>
+      <span className="block text-xs text-ink-3">
+        <span className="tnum">1</span> · {axis.lowLabel}
+      </span>
+      <span className="block text-xs text-ink-3">
+        <span className="tnum">5</span> · {axis.highLabel}
+      </span>
+    </>
+  )
+}
+
+export default async function HowItWorksPage() {
+  const { counts, taxonomy, steps } = await howItWorksData()
 
   return (
     <>
@@ -55,13 +73,13 @@ export default function HowItWorksPage() {
         <div className="mx-auto max-w-page">
           <SectionLabel>How it works</SectionLabel>
           <div className="mt-8 grid gap-8 md:grid-cols-12 md:gap-12">
-            <h1 className="track-safe text-3xl text-ink md:col-span-7" style={WGHT_800}>
+            <h1 className="track-safe text-2xl sm:text-3xl text-ink md:col-span-7" style={WGHT_800}>
               The week before you show it to strangers.
             </h1>
             <p className="voice track-safe text-voice md:col-span-5">
               You post the work, say how finished it is, and write the questions you want answered.
               Reviewers answer those questions against a fixed set of axes for your kind of project,
-              so the replies can be compared, counted and sorted instead of only read.
+              so the replies can be compared, counted and sorted.
             </p>
           </div>
         </div>
@@ -70,11 +88,11 @@ export default function HowItWorksPage() {
       {/* --------------------------------------------------------- 2. the loop */}
       <section
         aria-labelledby="loop"
-        className={`border-y border-rule bg-paper-sub pad-inline py-32 ${styles.groundSub}`}
+        className={`border-y border-rule bg-paper-sub pad-inline py-24 md:py-32 ${styles.groundSub}`}
       >
         <div className="mx-auto max-w-page">
           <SectionLabel>The loop</SectionLabel>
-          <h2 id="loop" className="mt-8 text-2xl text-ink" style={WGHT_800}>
+          <h2 id="loop" className="mt-8 text-xl sm:text-2xl text-ink" style={WGHT_800}>
             Four steps, and the last one is the point.
           </h2>
 
@@ -115,8 +133,8 @@ export default function HowItWorksPage() {
                 <span className="tnum text-ink">{counts.points.toLocaleString('en')}</span> points
                 have been filed so far across{' '}
                 <span className="tnum text-ink">{taxonomy.universal.length}</span> shared categories
-                and <span className="tnum text-ink">{taxonomy.typeSpecific}</span> type-specific
-                ones, which is why an inbox groups instead of piling up.
+                and about <span className="tnum text-ink">{taxonomy.typeSpecificPerType}</span> more
+                for each kind of work, which is why an inbox groups instead of piling up.
               </dd>
             </div>
 
@@ -137,20 +155,52 @@ export default function HowItWorksPage() {
       </section>
 
       {/* ------------------------------------------------------- 3. the matrix */}
-      <section aria-labelledby="matrix" className="pad-inline py-12">
+      <section aria-labelledby="matrix" className="pad-inline py-24 md:py-32">
         <div className="mx-auto max-w-page">
           <SectionLabel>What a reviewer is asked</SectionLabel>
           <div className="mt-8 grid gap-8 md:grid-cols-12 md:gap-12">
-            <h2 id="matrix" className="track-safe text-2xl text-ink md:col-span-6" style={WGHT_800}>
+            <h2
+              id="matrix"
+              className="track-safe text-xl sm:text-2xl text-ink md:col-span-6"
+              style={WGHT_800}
+            >
               Five questions, asked in the language of the work.
             </h2>
             <p className="voice track-safe text-voice md:col-span-5 md:col-start-8">
               Every review answers the same five questions. What changes between a game and an API
-              is what those questions are called and what a high mark means, which is how a rating
-              stays comparable without becoming generic.
+              is what those questions are called and what a high mark means, so a 4 on a game and a
+              4 on an API mean the same thing.
             </p>
           </div>
 
+          {/* Below 40rem: ten disclosures, one per kind of work. Which form
+              shows is decided in paper.module.css, not by a utility here: a
+              module rule that sets `display` outranks `sm:hidden`, and both
+              forms printed at once until the switch moved into the module. */}
+          <ul className={`${styles.axisList} mt-16`}>
+            {PROJECT_TYPE_SLUGS.map((slug) => (
+              <li key={slug}>
+                <details>
+                  <summary>{PROJECT_TYPES[slug].label}</summary>
+                  <dl>
+                    {AXIS_FAMILIES.map((family) => {
+                      const axis = axisFor(slug, family.key)
+                      return (
+                        <div key={family.key}>
+                          <dt>{axis ? axis.label : family.label}</dt>
+                          <dd>
+                            {axis ? <Anchors axis={axis} /> : 'Not asked for this kind of work.'}
+                          </dd>
+                        </div>
+                      )
+                    })}
+                  </dl>
+                </details>
+              </li>
+            ))}
+          </ul>
+
+          {/* From 40rem up: the matrix itself, scrolling inside its own region. */}
           <div
             className={`${styles.tableWrap} mt-16`}
             tabIndex={0}
@@ -183,9 +233,7 @@ export default function HowItWorksPage() {
                           {axis ? (
                             <>
                               <span className="block text-ink">{axis.label}</span>
-                              <span className="block text-xs text-ink-3">
-                                {axis.lowLabel} to {axis.highLabel}
-                              </span>
+                              <Anchors axis={axis} />
                             </>
                           ) : (
                             <span className="text-ink-3">Not asked</span>
@@ -218,13 +266,18 @@ export default function HowItWorksPage() {
           <div className="mx-auto max-w-page">
             <SectionLabel>One scale, 120 to 8000</SectionLabel>
             <div className="mt-8 grid gap-8 md:grid-cols-12 md:gap-12">
-              <h2 id="scale" className="track-safe text-2xl text-ink md:col-span-6" style={WGHT_800}>
+              <h2
+                id="scale"
+                className="track-safe text-xl sm:text-2xl text-ink md:col-span-6"
+                style={WGHT_800}
+              >
                 Grit is how finished it is, not how good.
               </h2>
               <p className="voice track-safe text-voice md:col-span-5 md:col-start-8">
-                A reviewer reads the number before they open anything, so a concept gets asked
-                whether the idea holds and a release candidate gets asked what would embarrass you.
-                Same scale for all {counts.projectTypes} kinds of project.
+                Grit, as on sandpaper: 120 is rough, 8000 is a polish. A reviewer reads the number
+                before they open anything, so a concept gets asked whether the idea holds and a
+                release candidate gets asked what would embarrass you. Same scale for all{' '}
+                {counts.projectTypes} kinds of project.
               </p>
             </div>
           </div>
@@ -236,9 +289,13 @@ export default function HowItWorksPage() {
       </section>
 
       {/* ---------------------------------------------------------- 5. closing */}
-      <section aria-labelledby="start" className="pad-inline py-16">
+      <section aria-labelledby="start" className="pad-inline py-16 md:py-24">
         <div className="mx-auto grid max-w-page gap-8 md:grid-cols-12 md:gap-12">
-          <h2 id="start" className="track-safe text-2xl text-ink md:col-span-6" style={WGHT_800}>
+          <h2
+            id="start"
+            className="track-safe text-xl sm:text-2xl text-ink md:col-span-6"
+            style={WGHT_800}
+          >
             Start with the ask.
           </h2>
           <div className="track-safe md:col-span-5 md:col-start-8">
@@ -246,14 +303,18 @@ export default function HowItWorksPage() {
               The question you write is the part that decides what comes back. Everything else on
               this page is machinery built to protect it.
             </p>
-            <div className="mt-6 flex flex-wrap items-center gap-4">
-              <NextLink href="/sign-up?next=%2Fnew" className="btn">
-                Post a project
-              </NextLink>
-              <NextLink href="/for-reviewers" className="btn btn-secondary">
-                Review something first
-              </NextLink>
+            <div className="mt-6">
+              <CtaPair
+                secondary={{ href: '/for-reviewers', label: 'Review something first' }}
+              />
             </div>
+            <p className="mt-6 text-sm text-ink-3">
+              Or read{' '}
+              <NextLink href="/for-reviewers" className="link text-ink-2">
+                what a review includes
+              </NextLink>{' '}
+              before you write one.
+            </p>
           </div>
         </div>
       </section>

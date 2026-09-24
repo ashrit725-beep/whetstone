@@ -74,7 +74,14 @@ export const CurrentPasswordSchema = z
   .min(1, 'Enter your password.')
   .max(PASSWORD_MAX, 'Passwords stop at 200 characters.')
 
-export const NextPathSchema = z.string().max(512).optional()
+/**
+ * The destination a form carries in a hidden field. `.catch` rather than a
+ * failure, because there is no field on screen for a reader to correct: a
+ * hand-made submit with a 600-character `next` used to fail the whole schema and
+ * answer "fix the entry below" about something invisible. Anything unusable
+ * becomes absent, and `safeNextPath` then falls back to Discover.
+ */
+export const NextPathSchema = z.string().max(512).optional().catch(undefined)
 
 /* ------------------------------------------------------------------ forms -- */
 
@@ -95,11 +102,13 @@ export const SignUpSchema = z.object({
 
 export const ForgotSchema = z.object({
   email: EmailSchema,
+  next: NextPathSchema,
 })
 
 export const ResetSchema = z.object({
   token: z.string().min(RESET_TOKEN_MIN, 'This reset link is incomplete. Ask for a new one.').max(256),
   password: NewPasswordSchema,
+  next: NextPathSchema,
 })
 
 export type SignInInput = z.infer<typeof SignInSchema>
@@ -223,12 +232,16 @@ export function passwordStrength(raw: string): PasswordStrength {
 
 /* ---------------------------------------------------------- redirect safety */
 
+/** Where a reader goes when nothing else was asked for. */
+export const DEFAULT_NEXT = '/discover'
+
 /**
  * Only a same-origin, relative path survives. `//evil.example`, `/\evil`, a
  * scheme, a backslash, a control character and anything over 512 characters are
- * all rejected, so `?next=` can never become an open redirect.
+ * all rejected, so `?next=` can never become an open redirect. Pass `''` as the
+ * fallback to ask "is there a destination", rather than "which one".
  */
-export function safeNextPath(raw: string | null | undefined, fallback = '/discover'): string {
+export function safeNextPath(raw: string | null | undefined, fallback: string = DEFAULT_NEXT): string {
   if (typeof raw !== 'string') return fallback
   const value = raw.trim()
   if (value.length === 0 || value.length > 512) return fallback
@@ -239,6 +252,20 @@ export function safeNextPath(raw: string | null | undefined, fallback = '/discov
   if (/[\u0000-\u001f\u007f]/.test(value)) return fallback
   if (/^\/[a-z][a-z0-9+.-]*:/i.test(value)) return fallback
   return value
+}
+
+/**
+ * `path` with the destination attached, when there is one worth attaching.
+ *
+ * Each of these four pages links to the others, and every one of those links has
+ * to carry the place the reader was headed or the trip through them loses it.
+ * This is the single place that decides what is worth carrying, so no link ends
+ * up saying `?next=/discover` — the value every one of these pages falls back to
+ * on its own.
+ */
+export function withNext(path: string, next: string | null | undefined): string {
+  if (!next || next === DEFAULT_NEXT) return path
+  return `${path}?next=${encodeURIComponent(next)}`
 }
 
 /* ------------------------------------------------------------ retry phrasing */

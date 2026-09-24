@@ -88,16 +88,26 @@ export default async function DashboardPage({
             : 'Across every project you own.'
         }
         aside={
-          <UiLink
-            href={
-              project
-                ? `/dashboard/inbox?project=${encodeURIComponent(project.id)}`
-                : '/dashboard/inbox?project=all'
-            }
-            variant="standalone"
-          >
-            Open the inbox
-          </UiLink>
+          <>
+            {/* The one way into the project editor from this side of the
+                product. Only with a project in scope: "every project" has no
+                one project to edit. */}
+            {project ? (
+              <UiLink href={`/p/${project.slug}/edit`} variant="standalone">
+                Edit the project
+              </UiLink>
+            ) : null}
+            <UiLink
+              href={
+                project
+                  ? `/dashboard/inbox?project=${encodeURIComponent(project.id)}`
+                  : '/dashboard/inbox?project=all'
+              }
+              variant="standalone"
+            >
+              Open the inbox
+            </UiLink>
+          </>
         }
       />
 

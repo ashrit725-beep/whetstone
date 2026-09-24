@@ -70,8 +70,10 @@ const ReplySchema = z.object({
 export async function postReplyAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const claims = await currentClaimsLive()
   if (!claims) return SIGNED_OUT
-  const held = actionRefusal('reply', claims.uid)
-  if (held) return { status: 'error', message: held }
+  // On the way in: the submit costs an attempt whatever becomes of it. The
+  // reply allowance itself is charged below, once the text has validated.
+  const attempt = actionRefusal('attempt', claims.uid)
+  if (attempt) return { status: 'error', message: attempt }
 
   const rawParent = formData.get('parentPostId')
   const parsed = ReplySchema.safeParse({
@@ -92,6 +94,13 @@ export async function postReplyAction(_prev: FormState, formData: FormData): Pro
       fieldErrors,
     }
   }
+
+  // Charged here, after the schema and before the lookups, which is the order
+  // `actionRefusal` states. Charged first, a one-character reply armed the
+  // two-second floor and took an hourly token, so correcting the typo and
+  // pressing Post again was refused as spam with nothing posted.
+  const held = actionRefusal('reply', claims.uid)
+  if (held) return { status: 'error', message: held }
 
   const thread = getThreadWriteContext(parsed.data.threadId)
   if (!thread) {
@@ -153,8 +162,8 @@ const ThreadSchema = z.object({
 export async function createThreadAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const claims = await currentClaimsLive()
   if (!claims) return SIGNED_OUT
-  const held = actionRefusal('thread', claims.uid)
-  if (held) return { status: 'error', message: held }
+  const attempt = actionRefusal('attempt', claims.uid)
+  if (attempt) return { status: 'error', message: attempt }
 
   const parsed = ThreadSchema.safeParse({
     channelSlug: String(formData.get('channelSlug') ?? ''),
@@ -175,6 +184,12 @@ export async function createThreadAction(_prev: FormState, formData: FormData): 
       fieldErrors,
     }
   }
+
+  // As in `postReplyAction`. Charged first, five rejected submits drained a new
+  // account's whole hourly thread allowance and locked it out of the channel for
+  // eleven minutes with nothing posted.
+  const held = actionRefusal('thread', claims.uid)
+  if (held) return { status: 'error', message: held }
 
   const channel = getChannel(parsed.data.channelSlug)
   if (!channel) {
@@ -300,8 +315,8 @@ const ReportSchema = z.object({
 export async function reportContentAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const claims = await currentClaimsLive()
   if (!claims) return SIGNED_OUT
-  const held = actionRefusal('report', claims.uid)
-  if (held) return { status: 'error', message: held }
+  const attempt = actionRefusal('attempt', claims.uid)
+  if (attempt) return { status: 'error', message: attempt }
 
   const parsed = ReportSchema.safeParse({
     targetType: String(formData.get('targetType') ?? ''),
@@ -327,6 +342,11 @@ export async function reportContentAction(_prev: FormState, formData: FormData):
     }
   }
 
+  // Reports are metered where the report is filed, for the same reason: a reason
+  // nobody picked must not cost the twenty a person gets in an hour.
+  const held = actionRefusal('report', claims.uid)
+  if (held) return { status: 'error', message: held }
+
   const outcome = fileContentReport({
     reporterId: claims.uid,
     targetType: parsed.data.targetType,
@@ -348,12 +368,18 @@ export async function reportContentAction(_prev: FormState, formData: FormData):
     }
   }
   if (outcome === 'duplicate') {
+    // Not a confirmation: nothing was written. Drawn as one, a second report
+    // read as a second report filed, which is the opposite of what happened.
     return {
-      status: 'success',
+      status: 'error',
       message: 'You already reported this, and that report is still open with the moderators.',
     }
   }
 
+  // No revalidation here. The page behind the dialog would re-render with the
+  // flag disabled, which unmounts the dialog and takes the confirmation with
+  // it. The flag reads `alreadyReported` on the next load, as the thread's own
+  // control has always done.
   return {
     status: 'success',
     message: 'A moderator reads every report in the order it arrived. Nothing is posted publicly.',

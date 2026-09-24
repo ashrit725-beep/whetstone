@@ -22,7 +22,8 @@ import { SubscribeButton } from '@/components/discussions/subscribe-button'
 import { ThreadConversation } from '@/components/discussions/thread-conversation'
 import { THREAD_KIND_LABEL } from '@/components/discussions/labels'
 import { getDiscussion, incrementThreadViews } from '@/server/repos/discussions'
-import { getViewerCard, hasOpenReport } from '@/server/queries/discussions'
+import { getViewerCard, hasOpenReport, openReportTargetIds } from '@/server/queries/discussions'
+import type { DiscussionPostView } from '@/lib/types'
 // Reads identity to decide what to render. It uses the revocation-aware check
 // so a cookie that has been signed out elsewhere stops looking signed in here,
 // rather than rendering a signed-in page whose every write would be refused.
@@ -56,6 +57,11 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   }
 }
 
+/** Every reply on the page, flattened, in one list. */
+function postIds(posts: readonly DiscussionPostView[]): string[] {
+  return posts.flatMap((post) => [post.id, ...postIds(post.children)])
+}
+
 export default async function ThreadPage({ params }: { params: Params }) {
   const { channel, threadId } = await params
   const { thread, viewerId } = await threadAt(channel, threadId)
@@ -73,12 +79,19 @@ export default async function ThreadPage({ params }: { params: Params }) {
   const viewer = viewerId ? (getViewerCard(viewerId) ?? null) : null
   const alreadyReported =
     viewerId !== null && hasOpenReport(viewerId, 'discussion_thread', thread.id)
+  // The same question the thread's own flag answers, asked once for every reply
+  // on the page: a flag that is still live after a report has been filed offers
+  // the reader a round trip that files nothing.
+  const reportedPostIds =
+    viewerId !== null
+      ? openReportTargetIds(viewerId, 'discussion_post', postIds(thread.posts))
+      : new Set<string>()
   const locked = thread.status === 'locked' || thread.status === 'archived'
 
   // The shell already owns <main id="main">; this is the content column inside
   // it, so the skip link still lands in exactly one place.
   return (
-    <div className="pad-inline mx-auto w-full max-w-prose py-xl">
+    <div className="column-prose w-full py-xl">
       <DiscussionStyles />
 
       <Breadcrumbs
@@ -178,6 +191,7 @@ export default async function ThreadPage({ params }: { params: Params }) {
         posts={thread.posts}
         viewer={viewer}
         viewerIsThreadAuthor={thread.viewerIsAuthor}
+        reportedPostIds={reportedPostIds}
         signInHref={`/sign-in?next=${encodeURIComponent(`/c/${thread.channel.slug}/${thread.id}?reply`)}`}
       />
     </div>

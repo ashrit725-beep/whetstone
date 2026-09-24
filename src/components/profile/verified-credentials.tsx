@@ -56,10 +56,15 @@ export function VerifiedCredentials({
     <dl className="flex flex-col gap-sm">
       {credentials.map((credential) => (
         <div key={credential.id} className="flex flex-col gap-3xs">
-          <dt className="flex items-center gap-2xs text-sm text-text-1">
-            <BadgeCheck size={20} strokeWidth={1.5} aria-hidden="true" className="text-positive" />
+          {/* The marker trails the label, as "Declared" does below. Leading, it
+              indented the verified labels by the icon and its gap while the
+              declared ones and every description started at the container edge,
+              so the list had no left edge to read down. */}
+          <dt className="flex flex-wrap items-center gap-2xs text-sm text-text-1">
             <span>{credential.expertiseLabel ?? 'General review practice'}</span>
-            <span className="sr-only">verified</span>
+            <Badge tone="positive" icon={BadgeCheck}>
+              Verified
+            </Badge>
           </dt>
           <dd className="text-xs text-text-2">
             {credentialWording(credential.credential)}
@@ -79,10 +84,11 @@ export function VerifiedCredentials({
 
       {verifiedOnly.map((area) => (
         <div key={area.slug} className="flex flex-col gap-3xs">
-          <dt className="flex items-center gap-2xs text-sm text-text-1">
-            <BadgeCheck size={20} strokeWidth={1.5} aria-hidden="true" className="text-positive" />
+          <dt className="flex flex-wrap items-center gap-2xs text-sm text-text-1">
             <span>{area.label}</span>
-            <span className="sr-only">verified</span>
+            <Badge tone="positive" icon={BadgeCheck}>
+              Verified
+            </Badge>
           </dt>
           <dd className="text-xs text-text-2">{LEVEL_WORDING[area.level]}. Verified by Whetstone.</dd>
         </div>
@@ -90,7 +96,7 @@ export function VerifiedCredentials({
 
       {declaredOnly.map((area) => (
         <div key={area.slug} className="flex flex-col gap-3xs">
-          <dt className="flex items-center gap-2xs text-sm text-text-2">
+          <dt className="flex flex-wrap items-center gap-2xs text-sm text-text-2">
             <span>{area.label}</span>
             <Badge tone="neutral">Declared</Badge>
           </dt>

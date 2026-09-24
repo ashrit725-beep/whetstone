@@ -28,10 +28,10 @@
  */
 
 import Link from 'next/link'
-import { Check } from 'lucide-react'
 import { allProjectTypes, NEED_KINDS } from '@/lib/taxonomy'
 import type { FacetCounts } from '@/lib/types'
 import { GritFilterRail } from './grit-filter-rail'
+import { OptionMark, usePicked } from './option-mark'
 import { SavedSearches, type SavedSearchItem } from './saved-searches'
 import {
   SORT_OPTIONS,
@@ -57,10 +57,23 @@ interface OptionLinkProps {
   count?: number
   /** Completes the accessible name, e.g. "4 projects". */
   detail?: string
+  /** This is the option the reader picked and the page has not arrived yet. */
+  pending?: boolean
+  /** Records the pick, so the glyph slot can say the click was heard. */
+  onPick?: (href: string) => void
   onNavigate?: () => void
 }
 
-function OptionLink({ href, selected, label, count, detail, onNavigate }: OptionLinkProps) {
+function OptionLink({
+  href,
+  selected,
+  label,
+  count,
+  detail,
+  pending = false,
+  onPick,
+  onNavigate,
+}: OptionLinkProps) {
   // A zero is still printed, because the rail's counts are the shape of the
   // feed, but it is not offered as a destination. Every count is taken against
   // the other filters, so following a zero would empty the page, or, for a need
@@ -84,10 +97,16 @@ function OptionLink({ href, selected, label, count, detail, onNavigate }: Option
         href={href}
         prefetch={false}
         aria-current={selected ? 'true' : undefined}
-        onClick={onNavigate}
+        onClick={() => {
+          onPick?.(href)
+          onNavigate?.()
+        }}
         className="ws-option"
       >
-        <span aria-hidden="true">{selected ? <Check size={16} strokeWidth={1.5} /> : null}</span>
+        {/* The tick, or the wait: see option-mark. */}
+        <span aria-hidden="true">
+          <OptionMark selected={selected} pending={pending} />
+        </span>
         <span className="min-w-0">{label}</span>
         {typeof count === 'number' ? (
           <span className="tnum text-xs text-text-3">{count.toLocaleString('en')}</span>
@@ -123,6 +142,10 @@ export function FilterRail({
   const typeCounts = countsByKey(facets.types)
   const needCounts = countsByKey(facets.needs)
   const sortDetail = SORT_OPTIONS.find((o) => o.value === state.sort)?.detail ?? ''
+  /* One pick at a time, cleared by the arrival of the page it asked for. Both
+     rails share it, so two options can never both say they are waiting. */
+  const address = toQueryString(state)
+  const [picked, pick] = usePicked(address)
 
   return (
     <div className="flex flex-col gap-xl">
@@ -138,6 +161,8 @@ export function FilterRail({
                 href={hrefFor(withSort(state, option.value))}
                 selected={state.sort === option.value}
                 label={option.label}
+                pending={picked === hrefFor(withSort(state, option.value))}
+                onPick={pick}
                 onNavigate={onNavigate}
               />
             ))}
@@ -149,6 +174,8 @@ export function FilterRail({
           state={state}
           counts={stageCounts}
           headingId={`${idPrefix}-grit`}
+          picked={picked}
+          onPick={pick}
           onNavigate={onNavigate}
         />
 
@@ -167,6 +194,8 @@ export function FilterRail({
                   label={type.label}
                   count={count}
                   detail={count === 1 ? '1 project' : `${String(count)} projects`}
+                  pending={picked === hrefFor(withType(state, type.slug))}
+                  onPick={pick}
                   onNavigate={onNavigate}
                 />
               )
@@ -189,6 +218,8 @@ export function FilterRail({
                   label={need.label}
                   count={count}
                   detail={count === 1 ? '1 project' : `${String(count)} projects`}
+                  pending={picked === hrefFor(withNeedToggled(state, need.key))}
+                  onPick={pick}
                   onNavigate={onNavigate}
                 />
               )
@@ -205,6 +236,8 @@ export function FilterRail({
               href={hrefFor(withOpenOnly(state, !state.openOnly))}
               selected={state.openOnly}
               label="Open for feedback"
+              pending={picked === hrefFor(withOpenOnly(state, !state.openOnly))}
+              onPick={pick}
               detail={
                 state.openOnly
                   ? 'selected. Activate to include projects that have closed their round.'

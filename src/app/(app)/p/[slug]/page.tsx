@@ -163,6 +163,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pa
       creatorMarkedHelpful: view.creatorMarkedHelpful,
       helpfulCount: view.counts.helpful,
       viewerVote: view.viewer.vote,
+      viewerIsReviewer: viewerId !== null && view.reviewer.id === viewerId,
       points: view.points.map((point) => ({
         id: point.id,
         bodyMd: point.bodyMd,
@@ -244,7 +245,32 @@ export default async function ProjectPage({ params, searchParams }: { params: Pa
         </Wrap>
       ) : null}
 
-      {readings.length > 0 ? (
+      {/* The consensus is behind the same gate as the notes. It is the strongest
+          anchor on the page — every reviewer by name, the step each one chose
+          and which note to read first — and step two of the composer asks this
+          reviewer to place the same work on the same scales. Showing them the
+          answer first contaminates the only quantity the plots are built from. */}
+      {blind && readings.length > 0 ? (
+        <div className="border-y-[1.5px] border-ink bg-paper-sub">
+          <Wrap className="py-24 lg:py-32">
+            <div className="grid gap-x-16 gap-y-4 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
+              <div>
+                <span className="eyebrow text-ink-3">
+                  {`${String(readings.length)} ${plural(readings.length, 'area', 'areas')} rated, held back`}
+                </span>
+                <h2 className="mt-3 text-lg lg:text-xl">Where they put it, after you.</h2>
+              </div>
+              <p className="voice text-base">
+                Your review asks you to place this work on these same scales. Reading everyone else's
+                placement first would make your reading theirs, so the spread opens with the notes, in
+                one move, below.
+              </p>
+            </div>
+          </Wrap>
+        </div>
+      ) : null}
+
+      {!blind && readings.length > 0 ? (
         <div className="border-y-[1.5px] border-ink bg-paper-sub">
           <Wrap className="py-24 lg:py-32">
             <div className="flex flex-col gap-32">
@@ -348,7 +374,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pa
 
       <div className="border-t border-rule">
         <Wrap className="pt-16 pb-16">
-          <ProgressLadder project={project} ledger={ledger} />
+          <ProgressLadder project={project} ledger={ledger} blind={blind} />
         </Wrap>
       </div>
 

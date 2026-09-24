@@ -5,6 +5,8 @@
 import { all, get, run, tx } from '@/server/db/client'
 import { now, uid } from '@/lib/utils'
 import { tierFor } from '@/lib/taxonomy'
+import { notify } from './notifications'
+import { profileUrl } from './notification-targets'
 import type {
   BadgeView,
   ExpertCard,
@@ -204,6 +206,14 @@ export function updateProfile(userId: string, patch: ProfilePatch): void {
   run(`UPDATE profiles SET ${sets.join(', ')} WHERE user_id = ?`, params)
 }
 
+/** A member's own links, in the order the profile prints them. */
+export function listProfileLinks(userId: string): readonly ProfileLinkRow[] {
+  return all<ProfileLinkRow>(
+    `SELECT * FROM profile_links WHERE user_id = ? ORDER BY sort_order, created_at`,
+    [userId],
+  )
+}
+
 export function replaceProfileLinks(
   userId: string,
   links: readonly { label: string; url: string; platform?: ProfileLinkRow['platform'] }[],
@@ -261,14 +271,42 @@ export function isFollowing(followerId: string, followeeId: string): boolean {
   )
 }
 
-/** Idempotent. Returns the state after the call, which is what a toggle needs. */
+/**
+ * Idempotent. Returns the state after the call, which is what a toggle needs.
+ *
+ * The notification lives here rather than in the action, because both follow
+ * paths — the profile button's Server Action and `PUT /api/users/:handle/follow`
+ * — come through this one insert, and neither used to tell the person they had
+ * been followed. `ON CONFLICT DO NOTHING` makes the insert a reliable "this is
+ * new": a re-follow reports no changes and rings no bell.
+ */
 export function followUser(followerId: string, followeeId: string): boolean {
   if (followerId === followeeId) return false
-  run(
+  const { changes } = run(
     `INSERT INTO user_follows (follower_id, followee_id, created_at) VALUES (?, ?, ?)
      ON CONFLICT (follower_id, followee_id) DO NOTHING`,
     [followerId, followeeId, now()],
   )
+  if (changes > 0) {
+    const actor = get<Row>(
+      `SELECT u.handle AS handle, pr.display_name AS display_name
+         FROM users u JOIN profiles pr ON pr.user_id = u.id
+        WHERE u.id = ?`,
+      [followerId],
+    )
+    if (actor) {
+      notify({
+        userId: followeeId,
+        kind: 'new_follower',
+        actorId: followerId,
+        subjectType: 'user',
+        subjectId: followerId,
+        title: `${str(actor, 'display_name')} followed you`,
+        url: profileUrl(str(actor, 'handle')),
+        groupKey: `follow:${followerId}:${followeeId}`,
+      })
+    }
+  }
   return true
 }
 
@@ -368,9 +406,19 @@ export interface ExpertFilters {
  * one would put a reviewer under a heading their own row does not support.
  * Search reads the same evidence: the name, the handle, the headline, and the
  * areas someone checked, so "accessibility" finds the person verified in it.
+ *
+ * `is_searchable` is the member's own switch on /settings/profile, and this is
+ * where it is kept: unchecking it took the row out of nothing at all before.
+ * `COALESCE` keeps a member with no profile row listed, and the reviewer's own
+ * page stays readable from a direct link, which is what the setting promises.
  */
 function expertWhere(filters: ExpertFilters): { where: string[]; params: unknown[] } {
-  const where: string[] = ['ep.is_listed = 1', 'u.deleted_at IS NULL', "u.status = 'active'"]
+  const where: string[] = [
+    'ep.is_listed = 1',
+    'u.deleted_at IS NULL',
+    "u.status = 'active'",
+    'COALESCE(pr.is_searchable, 1) = 1',
+  ]
   const params: unknown[] = []
 
   if (filters.expertiseSlug) {

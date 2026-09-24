@@ -7,7 +7,7 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { Link } from '@/components/ui'
 import { currentUser } from '@/server/queries/auth'
-import { firstParam, safeNextPath, type RawSearchParams } from '../schema'
+import { firstParam, safeNextPath, withNext, type RawSearchParams } from '../schema'
 import { SignUpForm } from '../_components/sign-up-form'
 
 export const metadata: Metadata = {
@@ -42,7 +42,7 @@ export default async function SignUpPage({
 
       <p className="measure-ui text-sm text-text-2">
         Already have an account?{' '}
-        <Link href={`/sign-in?next=${encodeURIComponent(next)}`}>Sign in</Link>.
+        <Link href={withNext('/sign-in', next)}>Sign in</Link>.
       </p>
     </div>
   )

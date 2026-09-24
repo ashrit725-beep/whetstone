@@ -84,9 +84,11 @@ const CSS = `
   .ws-composer[open]::backdrop { background-color: transparent; }
 }
 
-/* SC 2.4.11: nothing focusable ends up under the sticky footer. */
+/* SC 2.4.11: nothing focusable ends up under the sticky footer. The composer
+   measures its own footer into --ws-focus-gap, because at 390 that footer
+   wraps to two lines and is taller than the 5rem this assumed. */
 .ws-composer-scope :is(a, button, input, select, textarea, summary, [tabindex]) {
-  scroll-margin-block: 5rem;
+  scroll-margin-block: var(--ws-focus-gap, 5rem);
 }
 
 /* ----------------------------------------------------- hand-built controls -- */
@@ -402,7 +404,8 @@ const CSS = `
 
 .ws-plot-bracket { display: none; }
 
-/* A reading restated in prose, hung off the same 7rem register as the rows.
+/* A reading restated in prose, hung off the page's own label register above
+   60rem (see the override below) and stacked in one column beneath it.
    Baseline-aligned, so the label sits on the paragraph's first line. */
 .ws-plot-words {
   display: grid;
@@ -485,9 +488,14 @@ const CSS = `
   .ws-plot-bracket-bar::before { inset-inline-start: 0; }
   .ws-plot-bracket-bar::after { inset-inline-end: 0; }
 
+  /* The page has one hanging-label register: Spine, in project-overview.tsx,
+     is a 180px label track and a 64px gap, so its body column starts at 244px.
+     This band used to set 112px + 48px, which put its body at 160px — the left
+     edge of the page visibly stepped 84px when a reader scrolled out of the ask
+     and into the disagreement band. */
   .ws-plot-words {
-    grid-template-columns: 7rem minmax(0, 1fr);
-    gap: calc(var(--spacing) * 12);
+    grid-template-columns: 180px minmax(0, 1fr);
+    gap: calc(var(--spacing) * 16);
   }
 }
 

@@ -20,6 +20,18 @@
 /** Looks a thread id up to its channel, so `/c/[channel]/[id]` can be built. */
 export type ChannelLookup = (threadId: string) => string | null
 
+/**
+ * Home for this reader: Discover when signed in, the front page when not.
+ *
+ * Every wordmark on a page is a link called "Whetstone, home", so they must all
+ * resolve home the same way. Working it out in two places is how the nav came
+ * to point a member at `/discover` while the footer under it sent the same
+ * member out to the marketing page (SC 3.2.4, Consistent Identification).
+ */
+export function homeHref(signedIn: boolean): string {
+  return signedIn ? '/discover' : '/'
+}
+
 /** A route that exists in `src/app` and needs no translation. */
 const PASSES: readonly RegExp[] = [
   /^\/discover(?:\?|$)/,

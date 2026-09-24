@@ -87,7 +87,9 @@ export function FeedRowItem({ row, current = false, tabIndex = 0 }: FeedRowItemP
 
         <dl className="ws-meta">
           <div>
-            <dt>Wants</dt>
+            {/* The term follows the value: a closed project wants nothing, so
+                "Wants — Closed to new notes" contradicted itself. */}
+            <dt>{stateWord ? 'Feedback' : 'Wants'}</dt>
             <dd>{stateWord ?? row.wants ?? 'Any read'}</dd>
           </div>
           <div>

@@ -60,6 +60,8 @@ export function FeedbackNote({
 }: FeedbackNoteProps) {
   const [replying, setReplying] = useState(false)
   const shipped = note.points.find((p) => p.shippedInVersion !== null)
+  // Nobody replies to themselves, so the reviewer's own note says only "Reply".
+  const replyLabel = note.viewerIsReviewer ? 'Reply' : `Reply to ${note.reviewerName}`
 
   // An <article>, not an <li>: `AnimatedList` already wraps each child in a
   // list item, so rendering one here produced `li > li`, which is invalid and
@@ -146,7 +148,14 @@ export function FeedbackNote({
                 </div>
 
                 <div className="mt-6 flex flex-wrap items-center gap-3">
-                  <PointVote point={point} slug={slug} disabled={!viewerSignedIn} action={pointVoteAction} />
+                  {/* Seconding your own point is refused by the server, so the
+                      count is read out as a sentence instead of a dead button. */}
+                  <PointVote
+                    point={point}
+                    slug={slug}
+                    disabled={!viewerSignedIn || note.viewerIsReviewer}
+                    action={pointVoteAction}
+                  />
                   {/* Praise is a thing to keep, not a change to ship. */}
                   {viewerIsCreator && point.shippedInVersion === null && point.severityKey !== 'praise' ? (
                     <ShipDisclosure
@@ -203,7 +212,7 @@ export function FeedbackNote({
 
       {/* the thread's own controls */}
       <div className="flex flex-wrap items-center gap-3 border-t border-rule px-6 py-4">
-        {viewerSignedIn ? (
+        {viewerSignedIn && !note.viewerIsReviewer ? (
           <form action={voteAction}>
             <input type="hidden" name="feedbackId" value={note.id} />
             <input type="hidden" name="slug" value={slug} />
@@ -214,13 +223,26 @@ export function FeedbackNote({
             </button>
           </form>
         ) : (
+          // The count as a sentence, for a signed-out reader and for the
+          // reviewer's own note. Zero is never said out loud: "0 people found
+          // this helpful" is arithmetically true and reads as a verdict.
           <p className="text-xs text-ink-3">
-            <span className="tnum">{note.helpfulCount}</span>{' '}
-            {plural(note.helpfulCount, 'person found this helpful', 'people found this helpful')}
+            {note.helpfulCount === 0 ? (
+              'Nobody has marked this helpful yet'
+            ) : (
+              <>
+                <span className="tnum">{note.helpfulCount}</span>{' '}
+                {plural(note.helpfulCount, 'person found this helpful', 'people found this helpful')}
+              </>
+            )}
           </p>
         )}
 
-        {viewerIsCreator ? (
+        {/* Answering is open to any signed-in reader, which is what
+            `replyToFeedback` authorises: a reviewer can answer the creator's
+            reply, and two reviewers can compare notes. Not on a note that is
+            still posting: it has no id on the server to reply to yet. */}
+        {viewerSignedIn && !note.pending ? (
           <button
             type="button"
             className="ws-scaffold text-xs"
@@ -229,7 +251,7 @@ export function FeedbackNote({
               setReplying((r) => !r)
             }}
           >
-            {replying ? 'Close the reply' : `Reply to ${note.reviewerName}`}
+            {replying ? 'Close the reply' : replyLabel}
           </button>
         ) : null}
 
@@ -238,7 +260,7 @@ export function FeedbackNote({
         ) : null}
       </div>
 
-      {viewerIsCreator && replying ? (
+      {viewerSignedIn && replying ? (
         <div className="border-t border-rule px-6 py-6">
           <Form action={replyAction} summaryTitle="This reply was not posted.">
             {({ state }) => (
@@ -247,7 +269,7 @@ export function FeedbackNote({
                 <input type="hidden" name="slug" value={slug} />
                 <Field
                   id={`reply-${note.id}`}
-                  label={`Reply to ${note.reviewerName}`}
+                  label={note.viewerIsReviewer ? 'Your reply' : replyLabel}
                   error={state.fieldErrors?.['body'] ?? null}
                 >
                   {({ id, describedBy, invalid }) => (
@@ -355,7 +377,10 @@ function ShipDisclosure({
               <input type="hidden" name="pointId" value={point.id} />
               <input type="hidden" name="slug" value={slug} />
               <input type="hidden" name="versionId" value={currentVersionId ?? ''} />
-              <input type="hidden" name="title" value={point.bodyMd.slice(0, 90)} />
+              {/* The whole point, so the action can cut its own title on a word
+                  boundary. Cutting it here produced a tracker card that stopped
+                  mid-sentence with nothing to say it had been shortened. */}
+              <input type="hidden" name="title" value={point.bodyMd} />
               <Field
                 id={`ship-${point.id}`}
                 label="What you changed"

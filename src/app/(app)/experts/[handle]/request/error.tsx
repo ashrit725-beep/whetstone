@@ -10,10 +10,7 @@ export default function RequestError({
   reset: () => void
 }) {
   return (
-    <div
-      className="pad-inline mx-auto w-full py-xl"
-      style={{ maxInlineSize: 'var(--container-prose)' }}
-    >
+    <div className="column-prose w-full py-xl">
       <ErrorState
         title="The request form did not load"
         body="Nothing was sent and nothing was committed. Reload the page, and if it fails again the reviewer’s rate card has the same amount and turnaround on it."

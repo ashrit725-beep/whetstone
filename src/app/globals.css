@@ -645,6 +645,16 @@
 }
 
 @utility pad-inline { padding-inline: var(--pad-inline); }
+/* A reading column that caps the measure rather than the border box. `pad-inline
+   mx-auto max-w-prose` took the gutter out of the inside of a 42rem cap, so the
+   column got *narrower* as --pad-inline grew with the viewport: 599px of usable
+   width at 768 and 548px at 1440, which ellipsised a breadcrumb on the wide
+   window and not on the narrow one. The gutter is added outside the cap here. */
+@utility column-prose {
+  margin-inline: auto;
+  padding-inline: var(--pad-inline);
+  max-inline-size: calc(var(--container-prose) + 2 * var(--pad-inline));
+}
 @utility measure { max-inline-size: 66ch; }
 @utility measure-ui { max-inline-size: 56ch; }
 /* Two more measures the component layer reads by the old build's names. With

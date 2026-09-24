@@ -36,7 +36,15 @@
     "**/*.tsx",
     ".next-dev/types/**/*.ts",
     ".next/types/**/*.ts",
-    "next-env.d.ts"
+    "/tmp/devdist-auth/types/**/*.ts",
+    "/tmp/devdist-composer/types/**/*.ts",
+    "/tmp/devdist-dashboard/types/**/*.ts",
+    "/tmp/devdist-discover/types/**/*.ts",
+    "/tmp/devdist-market/types/**/*.ts",
+    "/tmp/devdist-marketing/types/**/*.ts",
+    "/tmp/devdist-project/types/**/*.ts",
+    "next-env.d.ts",
+    "/tmp/devdist-community/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
