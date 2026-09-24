@@ -109,7 +109,7 @@ export async function AppNav() {
         />
 
         <div className="me-sm flex shrink-0 items-center">
-          <Wordmark size="lg" href="/discover" />
+          <Wordmark size="lg" href={user ? '/discover' : '/'} />
         </div>
 
         <nav aria-label="Primary" className="hidden h-full md:block">

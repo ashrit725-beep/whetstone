@@ -1,6 +1,8 @@
 node_modules
 .next
 .next-dev
+# Builds made with NEXT_DIST_DIR=.next-<name> for side-by-side checks.
+.next-*
 # A dev server given NEXT_DIST_DIR=/tmp/... builds into ./tmp/ (the path is
 # resolved against the project), so keep any such output out of the repo.
 /tmp/
@@ -24,3 +26,6 @@ shots
 # Throwaway probe scripts and measurement output from verification runs.
 scripts/.probe/
 scripts/.content/
+
+# Working notes recovered from agent runs; not part of the product.
+.notes/

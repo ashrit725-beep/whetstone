@@ -23,6 +23,7 @@
  * state is not colour alone.
  */
 
+import { HomeLink } from '@/components/chrome/home-link'
 import NextLink from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -77,9 +78,8 @@ export function MarketingNav() {
         aria-label="Whetstone"
         className="mx-auto flex max-w-page flex-wrap items-center gap-x-8 gap-y-3 border-b border-rule py-4"
       >
-        <NextLink
+        <HomeLink
           href="/"
-          aria-label="Whetstone, home"
           className="tap-44 inline-flex items-center text-md text-ink"
           style={{ fontVariationSettings: '"wght" 800', letterSpacing: '-0.03em' }}
         >
@@ -87,7 +87,7 @@ export function MarketingNav() {
           <span aria-hidden="true" className="text-ink-3">
             stone
           </span>
-        </NextLink>
+        </HomeLink>
 
         <ul className="flex basis-full flex-wrap items-center gap-x-6 gap-y-2 text-sm sm:basis-auto sm:gap-x-8">
           {ITEMS.map((item) => {

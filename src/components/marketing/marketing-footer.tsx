@@ -10,6 +10,7 @@
  * is the consistent help mechanism WCAG 2.2 SC 3.2.6 asks for.
  */
 
+import { HomeLink } from '@/components/chrome/home-link'
 import NextLink from 'next/link'
 import { ThemeToggle } from '@/components/ui'
 import styles from './paper.module.css'
@@ -33,9 +34,9 @@ export function MarketingFooter() {
   return (
     <footer className="pad-inline">
       <div className="mx-auto flex max-w-page flex-wrap items-center gap-x-8 gap-y-3 border-t border-rule py-6">
-        <span className="text-sm text-ink" style={{ fontVariationSettings: '"wght" 700' }}>
+        <HomeLink href="/" className="tap-44 inline-flex items-center text-sm text-ink" style={{ fontVariationSettings: '"wght" 700' }}>
           Whetstone
-        </span>
+        </HomeLink>
 
         <ul className="flex basis-full flex-wrap items-center gap-x-6 gap-y-2 text-xs sm:basis-auto sm:gap-x-8">
           {LINKS.map((link) => (

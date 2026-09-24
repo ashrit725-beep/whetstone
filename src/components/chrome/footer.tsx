@@ -40,7 +40,7 @@ export function Footer() {
   return (
     <footer className="pad-inline border-t border-border-hair bg-surface-2 text-text-3">
       <div className="mx-auto flex w-full max-w-detail flex-wrap items-center gap-x-md gap-y-xs py-md">
-        <Wordmark size="sm" as="text" />
+        <Wordmark size="sm" href="/" />
 
         <nav aria-label="Footer">
           <ul className="m-0 flex list-none flex-wrap items-center gap-x-md gap-y-3xs p-0">

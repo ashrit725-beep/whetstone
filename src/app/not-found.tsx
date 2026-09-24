@@ -35,7 +35,7 @@ export default function NotFound() {
           className="mx-auto flex w-full max-w-detail items-center"
           style={{ blockSize: 'var(--nav-h)' }}
         >
-          <Wordmark size="lg" href="/discover" />
+          <Wordmark size="lg" href="/" />
         </div>
       </div>
 

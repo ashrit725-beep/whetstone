@@ -4,7 +4,7 @@
  * visibly the same tool. There is no lockup, no glyph, and no image.
  */
 
-import NextLink from 'next/link'
+import { HomeLink } from './home-link'
 import { cn } from '@/lib/utils'
 
 const WORDMARK_AXES = { fontVariationSettings: '"wdth" 112, "wght" 700' } as const
@@ -12,14 +12,15 @@ const WORDMARK_AXES = { fontVariationSettings: '"wdth" 112, "wght" 700' } as con
 export interface WordmarkProps {
   /** `lg` in the nav, `sm` in the footer. */
   size?: 'sm' | 'lg'
-  /** Renders as plain text rather than a link, for the page a link would
-   *  point back at. */
+  /** Renders as plain text rather than a link. Nothing uses it today: the
+   *  wordmark is the way home on every surface, footers included. */
   as?: 'link' | 'text'
+  /** Home for this reader: Discover when signed in, the front page when not. */
   href?: string
   className?: string
 }
 
-export function Wordmark({ size = 'lg', as = 'link', href = '/discover', className }: WordmarkProps) {
+export function Wordmark({ size = 'lg', as = 'link', href = '/', className }: WordmarkProps) {
   const shell = cn(
     'inline-flex items-center whitespace-nowrap text-text-1',
     size === 'lg' ? 'text-md' : 'text-sm',
@@ -35,15 +36,15 @@ export function Wordmark({ size = 'lg', as = 'link', href = '/discover', classNa
   }
 
   return (
-    <NextLink
+    <HomeLink
       href={href}
       className={cn(
         shell,
-        'rounded-sm px-2xs transition-[color] duration-[120ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:text-accent',
+        'tap-44 rounded-sm px-2xs transition-[color] duration-[120ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:text-accent',
       )}
       style={{ ...WORDMARK_AXES, letterSpacing: '-0.02em' }}
     >
       Whetstone
-    </NextLink>
+    </HomeLink>
   )
 }

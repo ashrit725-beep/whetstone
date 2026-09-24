@@ -26,7 +26,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 // uses CompressionStream and makes every Edge build print a warning for code
 // this file never calls.
 import { jwtVerify } from 'jose/jwt/verify'
-import { env } from '@/lib/env'
+import { env, secureCookies } from '@/lib/env'
 
 /** Mirrors `SESSION_COOKIE` in `src/lib/auth.ts`, which cannot be imported here
  *  because that module pulls in `node:crypto`. */
@@ -120,7 +120,8 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     response.cookies.set(CSRF_COOKIE, csrfToken(), {
       httpOnly: false,
       sameSite: 'lax',
-      secure: env.isProduction,
+      // By the request's real scheme, like the session cookie: see secureCookies.
+      secure: secureCookies(request.headers.get('x-forwarded-proto') ?? request.nextUrl.protocol),
       path: '/',
       maxAge: CSRF_MAX_AGE_S,
     })

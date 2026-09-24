@@ -2,8 +2,8 @@ import { scrypt as _scrypt, randomBytes, timingSafeEqual } from 'node:crypto'
 import type { ScryptOptions } from 'node:crypto'
 import { promisify } from 'node:util'
 import { SignJWT, jwtVerify } from 'jose'
-import { cookies } from 'next/headers'
-import { env } from '@/lib/env'
+import { cookies, headers } from 'next/headers'
+import { env, secureCookies } from '@/lib/env'
 
 const scrypt = promisify(_scrypt) as (
   p: string | Buffer,
@@ -139,9 +139,10 @@ export async function readSession(token: string | undefined): Promise<SessionCla
  */
 export async function setSessionCookie(token: string, persist = true): Promise<void> {
   const jar = await cookies()
+  const secure = secureCookies((await headers()).get('x-forwarded-proto'))
   jar.set(COOKIE, token, {
     httpOnly: true,
-    secure: env.isProduction,
+    secure,
     sameSite: 'lax',
     path: '/',
     ...(persist ? { maxAge: LONG_SESSION_S } : {}),
@@ -150,7 +151,8 @@ export async function setSessionCookie(token: string, persist = true): Promise<v
 
 export async function clearSessionCookie(): Promise<void> {
   const jar = await cookies()
-  jar.set(COOKIE, '', { httpOnly: true, secure: env.isProduction, sameSite: 'lax', path: '/', maxAge: 0 })
+  const secure = secureCookies((await headers()).get('x-forwarded-proto'))
+  jar.set(COOKIE, '', { httpOnly: true, secure, sameSite: 'lax', path: '/', maxAge: 0 })
 }
 
 export async function currentClaims(): Promise<SessionClaims | null> {

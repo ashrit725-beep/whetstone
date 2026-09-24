@@ -33,6 +33,23 @@ function siteUrl(): string | undefined {
   }
 }
 
+/**
+ * Whether a cookie set on this request should be HTTPS-only.
+ *
+ * Deciding it from NODE_ENV alone marked the session and CSRF cookies Secure
+ * on every production build, including one opened over plain http (the
+ * machine's network address, or Safari on localhost). The browser then drops
+ * them without a word: sign-in and sign-up appear to succeed and leave the
+ * reader signed out, and every button that posts through the API fails its
+ * CSRF check. So: a deployment whose SITE_URL is https always gets Secure
+ * cookies (that is every real deployment, since mail links need SITE_URL),
+ * and otherwise the request's own scheme decides.
+ */
+export function secureCookies(scheme: string | null | undefined): boolean {
+  if (siteUrl()?.startsWith('https:')) return true
+  return scheme?.split(',')[0]?.trim().replace(/:$/, '') === 'https'
+}
+
 export type MailProvider = 'resend' | 'postmark'
 
 /**
