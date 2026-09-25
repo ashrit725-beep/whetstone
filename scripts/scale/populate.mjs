@@ -541,20 +541,30 @@ function writeNote(p, r, at, { id, origin = 'organic', bountyId = null, expert =
     frames = new Set()
     framesByProject.set(p.id, frames)
   }
-  const written = plan.map((pl) => writer.point(p.wp, persona, { tone: pl.tone, severity: pl.severity, label: labelById.get(pl.cat) ?? '', avoid, frames }))
-  const note = writer.note(p.wp, persona, sentiment, minutes, written)
+  // A point the writer gives up on — every sentence it had left was one this
+  // project's page has already printed — is left out rather than printed twice.
+  // Its plan goes with it, so severities, categories and counts stay aligned.
+  const drafted = []
+  for (const pl of plan) {
+    const w = writer.point(p.wp, persona, { tone: pl.tone, severity: pl.severity, label: labelById.get(pl.cat) ?? '', avoid, frames, note: id })
+    if (w !== null) drafted.push({ pl, w })
+  }
+  if (drafted.length === 0) return
+  const kept = drafted.map((d) => d.pl)
+  const written = drafted.map((d) => d.w)
+  const note = writer.note(p.wp, persona, sentiment, minutes, written, id)
   noteInfo.set(id, note)
 
   // A point's sentiment follows its severity, and the note's score is the
   // mean of its points', the way the seed scores the hand-written ones.
-  const pointSentiment = plan.map((pl) => (pl.severity === 'praise' ? 1 : pl.severity === 'blocker' || pl.severity === 'major' ? -1 : 0))
-  const score = plan.length === 0 ? null : Math.round((pointSentiment.reduce((a, b) => a + b, 0) / plan.length) * 100) / 100
-  const blockerCount = plan.filter((pl) => pl.severity === 'blocker').length
+  const pointSentiment = kept.map((pl) => (pl.severity === 'praise' ? 1 : pl.severity === 'blocker' || pl.severity === 'major' ? -1 : 0))
+  const score = kept.length === 0 ? null : Math.round((pointSentiment.reduce((a, b) => a + b, 0) / kept.length) * 100) / 100
+  const blockerCount = kept.filter((pl) => pl.severity === 'blocker').length
 
   ins.feedback.run(
     id, p.id, p.typeId, r.id, bountyId, origin, 'submitted', 'public',
     note.headline, note.summary,
-    minutes, plan.length, blockerCount, score, sentiment,
+    minutes, kept.length, blockerCount, score, sentiment,
     // helpful_count, reply_count and inbox_state are left at their resting
     // values and computed from the votes and replies that actually get
     // written, further down.
@@ -564,13 +574,13 @@ function writeNote(p, r, at, { id, origin = 'organic', bountyId = null, expert =
   )
   madeNotes++
 
-  for (let q = 0; q < plan.length; q++) {
+  for (let q = 0; q < kept.length; q++) {
     const pid = idFor('point', `${id}:${String(q)}`)
-    ins.point.run(pid, id, p.typeId, plan[q].cat, q, written[q].text, plan[q].severity, plan[q].actionability, pointSentiment[q], at, at)
+    ins.point.run(pid, id, p.typeId, kept[q].cat, q, written[q].text, kept[q].severity, kept[q].actionability, pointSentiment[q], at, at)
     pointSeeds.push({ id: pid, at, reviewer: r.id, owner: p.ownerId, project: p.id })
     madePoints++
   }
-  rate(p, r.id, sentiment, plan, at, id)
+  rate(p, r.id, sentiment, kept, at, id)
 }
 
 db.exec('BEGIN IMMEDIATE')
@@ -717,7 +727,7 @@ for (const n of notes) {
   const rootId = idFor('reply', `${n.id}:0`)
   const wp = writtenProject.get(n.project_id)
   const info = noteInfo.get(n.id) ?? null
-  insReply.run(rootId, n.id, null, null, owner, writer.reply(wp, personaOf(owner), 0, info), 1, firstAt, firstAt)
+  insReply.run(rootId, n.id, null, null, owner, writer.reply(wp, personaOf(owner), 0, info, n.id), 1, firstAt, firstAt)
   madeReplies++
   answered++
 
@@ -728,7 +738,7 @@ for (const n of notes) {
     if (backAt <= NOW) {
       insReply.run(
         idFor('reply', `${n.id}:1`), n.id, null, rootId, n.reviewer_id,
-        writer.reply(wp, personaOf(n.reviewer_id), 1, info), 0, backAt, backAt,
+        writer.reply(wp, personaOf(n.reviewer_id), 1, info, n.id), 0, backAt, backAt,
       )
       madeReplies++
       if (chance(0.18)) {
@@ -736,7 +746,7 @@ for (const n of notes) {
         if (lastAt <= NOW) {
           insReply.run(
             idFor('reply', `${n.id}:2`), n.id, null, rootId, owner,
-            writer.reply(wp, personaOf(owner), 2, info), 1, lastAt, lastAt,
+            writer.reply(wp, personaOf(owner), 2, info, n.id), 1, lastAt, lastAt,
           )
           madeReplies++
         }
@@ -786,15 +796,43 @@ db.exec('COMMIT')
 // Points answer asks. Without this every ask on every project reads "Open",
 // which on a project with thirty notes against it is plainly untrue.
 db.exec('BEGIN IMMEDIATE')
-db.exec(`
-  UPDATE feedback_points SET ask_id = (
-    SELECT pa.id FROM project_asks pa
-      JOIN feedback f ON f.id = feedback_points.feedback_id
-     WHERE pa.project_id = f.project_id
-     ORDER BY (pa.sort_order + feedback_points.ordinal) % 3, pa.sort_order
-     LIMIT 1)
-  WHERE ask_id IS NULL AND (rowid % 5) < 3
-`)
+// Written as a loop rather than one UPDATE with a correlated subquery: the
+// pick reads the row being updated (`feedback_points.ordinal`) from inside the
+// subquery's ORDER BY, and older SQLite builds than the one on this laptop
+// refuse to resolve that — "no such column: feedback_points.ordinal", which
+// failed the first deploy on a machine carrying SQLite from Node 24.
+{
+  const asksByProject = new Map()
+  for (const ask of db.prepare('SELECT id, project_id, sort_order FROM project_asks ORDER BY project_id, sort_order').all()) {
+    const list = asksByProject.get(ask.project_id)
+    if (list) list.push(ask)
+    else asksByProject.set(ask.project_id, [ask])
+  }
+  const setAsk = db.prepare('UPDATE feedback_points SET ask_id = ? WHERE id = ?')
+  const rows = db.prepare(`
+    SELECT fp.id, fp.ordinal, f.project_id
+      FROM feedback_points fp
+      JOIN feedback f ON f.id = fp.feedback_id
+     WHERE fp.ask_id IS NULL AND (fp.rowid % 5) < 3
+     ORDER BY fp.id
+  `).all()
+  for (const row of rows) {
+    const asks = asksByProject.get(row.project_id)
+    if (!asks || asks.length === 0) continue
+    // Same deterministic choice the SQL made: the ask whose sort order and the
+    // point's ordinal agree modulo three, earliest ask first.
+    let best = asks[0]
+    let bestKey = [(best.sort_order + row.ordinal) % 3, best.sort_order]
+    for (const ask of asks.slice(1)) {
+      const key = [(ask.sort_order + row.ordinal) % 3, ask.sort_order]
+      if (key[0] < bestKey[0] || (key[0] === bestKey[0] && key[1] < bestKey[1])) {
+        best = ask
+        bestKey = key
+      }
+    }
+    setAsk.run(best.id, row.id)
+  }
+}
 db.exec(`
   UPDATE project_asks SET answer_count = (
     SELECT COUNT(*) FROM feedback_points fp WHERE fp.ask_id = project_asks.id)

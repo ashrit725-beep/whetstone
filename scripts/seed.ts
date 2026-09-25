@@ -1755,17 +1755,23 @@ function seedEverything(
     for (const handle of handles) set.add(handle)
     projectFollowers.set(slug, set)
   }
+  /** Who follows what, and since when, so a build can tell the right people. */
+  const followsByProject = new Map<string, { handle: string; since: number }[]>()
   for (const [slug, followers] of projectFollowers) {
     const project = projectBySlug.get(slug)
     if (!project) continue
     for (const follower of followers) {
       if (follower === project.ownerHandle) continue
+      const since = at(5 + (hash32(`pfollow:${slug}:${follower}`) % 60), `pfollow:${slug}:${follower}`)
       run(`INSERT INTO project_follows (user_id, project_id, notify, created_at) VALUES (?, ?, ?, ?)`, [
         userId(follower),
         projectId(slug),
         hash32(`notify:${slug}:${follower}`) % 3 === 0 ? 'versions' : 'all',
-        at(5 + (hash32(`pfollow:${slug}:${follower}`) % 60), `pfollow:${slug}:${follower}`),
+        since,
       ])
+      const list = followsByProject.get(slug) ?? []
+      list.push({ handle: follower, since })
+      followsByProject.set(slug, list)
       followerCount.set(slug, (followerCount.get(slug) ?? 0) + 1)
     }
   }
@@ -2433,6 +2439,38 @@ function seedEverything(
         })
       }
     })
+  }
+
+  // A follow is the promise to hear about the next build, and posting one fans a
+  // `new_version` row out to everyone already following when it landed. These
+  // builds were written straight into the table rather than posted through the
+  // form, so the same fan-out has to be written here; without it a world full of
+  // builds landed in nobody's inbox. Ordered the way it happened — the build's
+  // own release time, not today — and skipping anyone who started following
+  // afterwards, since there was nothing to tell them yet.
+  for (const project of SEED.PROJECTS) {
+    const followers = followsByProject.get(project.slug) ?? []
+    for (const version of project.versions) {
+      const released = releasedAt.get(`${project.slug}:${version.label}`)
+      if (released === undefined) continue
+      for (const follower of followers) {
+        if (follower.since > released) continue
+        notify({
+          user: follower.handle,
+          actor: project.ownerHandle,
+          kind: 'new_version',
+          subjectType: 'project_version',
+          subjectId: versionId(project.slug, version.label),
+          title: `${project.title} has a new build: ${version.label}`,
+          body: null,
+          url: `/p/${project.slug}/versions`,
+          ts: released,
+          // Most get opened; a build from months ago that never was stays unread.
+          read: hash32(`versionread:${project.slug}:${version.label}:${follower.handle}`) % 5 !== 0,
+          key: `newversion:${project.slug}:${version.label}:${follower.handle}`,
+        })
+      }
+    }
   }
 
   for (const user of SEED.USERS) {

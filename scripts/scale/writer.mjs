@@ -146,16 +146,68 @@ export class Writer {
    * words as printed, which is what catches the fixed tail of a shape nothing
    * tracks: the follow-on sentence, the session opener, the closing line.
    */
-  freshOnPage(p, text) {
-    p.runs ??= new Set()
-    for (const run of runsOf(text)) if (p.runs.has(run)) return false
+  freshOnPage(p, text, note = null) {
+    p.runs ??= new Map()
+    for (const run of runsOf(text)) {
+      const owner = p.runs.get(run)
+      if (owner !== undefined && owner !== note) return false
+    }
     return true
   }
 
-  /** Spend this text's runs on the page, once the draw is kept. */
-  spendOnPage(p, text) {
-    p.runs ??= new Set()
-    for (const run of runsOf(text)) p.runs.add(run)
+  /**
+   * Spend this text's runs on the page, once the draw is kept, under the note
+   * that printed them.
+   *
+   * The owner is the point of it. A note's summary names what its own worst
+   * point was about, and its replies quote the line they are answering — that is
+   * one exchange, and reading it back is how a reader follows the page. Asking
+   * a note to avoid its own words made summaries vanish for no gain, because
+   * the thing worth refusing is the same sentence under two different notes.
+   */
+  spendOnPage(p, text, note = null) {
+    p.runs ??= new Map()
+    for (const run of runsOf(text)) if (!p.runs.has(run)) p.runs.set(run, note)
+  }
+
+  /**
+   * The last line of defence, for when every attempt came back saying something
+   * the page had already said.
+   *
+   * A note is sentences. Keeping the ones whose words are new to the page leaves
+   * a shorter note in the same voice — which is what a terser reviewer would
+   * have written — and a page reads far worse for one sentence printed twice
+   * than for one note being three lines instead of four. Runs are measured on
+   * the joined text at every step, so a run straddling two sentences counts.
+   *
+   * Returns null when even the opening sentence is a repeat; the caller decides
+   * what to leave out then, because what can be dropped differs by surface.
+   */
+  trimToFresh(p, text, note = null) {
+    if (this.freshOnPage(p, text, note)) return text
+    const kept = []
+    for (const part of splitSentences(text)) {
+      if (this.freshOnPage(p, [...kept, part].join(' '), note)) kept.push(part)
+    }
+    return kept.length === 0 ? null : tidy(kept.join(' '))
+  }
+
+  /**
+   * A sentence shape this page has not printed yet, chosen at the draw rather
+   * than rejected after it.
+   *
+   * The run ledger already refuses a draw that repeats eight words the page has
+   * spent, but refusing is all it can do: a busy project collects forty notes
+   * against pools of eighteen frames, every draw comes back a repeat, and the
+   * budget gives up and prints one anyway. Reaching for an unspent shape first
+   * turns that from the common case into the rare one. When the pool really is
+   * spent it comes back whole, because a page that long has to say something.
+   */
+  pickShape(pool, spent) {
+    if (pool.length === 0) return this.R.pick(pool)
+    if (spent === null || spent === undefined) return this.R.pick(pool)
+    const left = pool.filter((f) => !spent.has(f))
+    return this.R.pick(left.length > 0 ? left : pool)
   }
 
   /* --------------------------------------------------------------- people */
@@ -266,8 +318,9 @@ export class Writer {
     }
     const p = { type: typeSlug, T, world, title, currency, owner, stage, askSentences: new Set(),
       headlines: new Set(), summaries: new Set(), points: new Set(), replies: new Set(), changes: new Set(), suggestions: new Set(),
-      // Every run of words this project's page has already printed. See freshOnPage.
-      runs: new Set() }
+      // Every run of words this project's page has printed, and which note
+      // printed it. See freshOnPage.
+      runs: new Map() }
     p.ctx = this.baseCtx(p)
     // Two projects with the same one-line description is the same tell as two with the same name.
     this.taglines ??= new Set()
@@ -440,7 +493,7 @@ export class Writer {
    * words, adds the follow-up sentences this reviewer would add, and returns
    * the noun phrase the note summary can refer back to.
    */
-  point(p, persona, { tone, severity, label, avoid = null, frames = null }) {
+  point(p, persona, { tone, severity, label, avoid = null, frames = null, note = null }) {
     const R = this.R
     const T = p.T
     const fit = (list) => this.fit(list, T)
@@ -454,6 +507,18 @@ export class Writer {
     let about = fresh()
     let noun = about.text
     let tplUsed = null
+    // Every shape this page has printed, across all three branches below. The
+    // `frames` set the caller holds is the harder rule and covers one of them;
+    // this is the preference, and a bug or a missing-feature frame is a tic on
+    // a page just as much as an ordinary one.
+    const shapes = (p.shapes ??= new Set())
+    const shapesOf = new Map()
+    let drawn = []
+    const take = (pool) => {
+      const f = this.pickShape(pool, shapes)
+      if (f !== undefined) drawn.push(f)
+      return f
+    }
     // Evidence ("happened three times in twenty minutes") is only something a
     // reviewer can say about a thing that runs.
     const reproducible = T.interactive && ['bug', 'perf', 'flow', 'feel', 'system', 'access', 'confusion', 'power'].includes(about.kind)
@@ -461,6 +526,7 @@ export class Writer {
       if (attempt > 0 && attempt % 8 === 0) about = fresh()
       noun = about.text
       tplUsed = null
+      drawn = []
       const K = KINDS[about.kind] ?? KINDS.flow
       const ctx = this.withNumbers(p.ctx, persona, {
         subj: about.text, plural: about.plural, bug: about.text,
@@ -482,48 +548,59 @@ export class Writer {
       if (about.kind === 'bug') {
         // A short name for the bug, for the summary and the replies to use.
         noun = about.text.length <= 48 ? `the bug where ${about.text}` : `the bug ${this.render(R.pick(T.places), ctx)}`
-        const tpl = tone === 'issue' ? R.pick(fit(strong ? BUG_FRAMES.strong : BUG_FRAMES.mild))
-          : tone === 'praise' ? R.pick(fit(BUG_PRAISE)) : R.pick(fit(BUG_NEUTRAL))
+        const tpl = take(tone === 'issue' ? fit(strong ? BUG_FRAMES.strong : BUG_FRAMES.mild)
+          : tone === 'praise' ? fit(BUG_PRAISE) : fit(BUG_NEUTRAL))
         if (tone !== 'issue') noun = p.ctx.spot
         parts.push(this.render(tpl, ctx))
-        if (tone === 'issue' && reproducible && R.chance(0.35)) parts.push(this.render(R.pick(fit(FOLLOW.evidence)), ctx))
+        if (tone === 'issue' && reproducible && R.chance(0.35)) parts.push(this.render(take(fit(FOLLOW.evidence)), ctx))
       } else if (about.kind === 'missing') {
         const pool = tone === 'issue' ? (strong && (severity === 'blocker' || R.chance(0.6)) ? MISSING_FRAMES.strong : MISSING_FRAMES.issue)
           : tone === 'praise' ? MISSING_PRAISE : MISSING_FRAMES.neutral
         noun = tone === 'issue' ? `the lack of ${about.text}` : about.text
-        parts.push(this.render(R.pick(fit(pool)), { ...ctx, effect: () => this.render(R.pick(fit(KINDS.flow.effect)), ctx) }))
+        const tpl = take(fit(pool))
+        parts.push(this.render(tpl, { ...ctx, effect: () => this.render(R.pick(fit(KINDS.flow.effect)), ctx) }))
       } else {
         let pool = tone === 'issue' ? (strong && K.strong && R.chance(0.7) ? fit(K.strong) : fit(K.issue)) : fit(K[tone] ?? [])
         if (pool.length === 0 || R.chance(0.22)) pool = fit(GENERIC[tone])
-        let tpl = R.pick(pool)
+        let tpl = take(pool)
         tplUsed = tpl
         const leads = tpl.startsWith('{Subj}') && R.chance(0.3)
         if (leads) {
           // "On the pricing page, the tagline..." only works for things you meet somewhere in particular.
           const placed = !['pitch', 'money', 'reason', 'tone', 'craft', 'balance'].includes(about.kind)
           const lead = placed ? R.weighted([[4, LEAD_IN.where], [2, LEAD_IN.device], [2, LEAD_IN.when], [3, LEAD_IN.plain]]) : LEAD_IN.plain
-          tpl = R.pick(lead) + tpl.replace(/^\{Subj\}/, '{subj}')
+          tpl = take(lead) + tpl.replace(/^\{Subj\}/, '{subj}')
         }
         parts.push(`${this.render(tpl, ctx)}.`)
         const chatty = 1 - persona.terse
         if (tone === 'issue') {
-          if (R.chance(0.3 + chatty * 0.35)) parts.push(this.render(R.pick(fit(FOLLOW.suggest)), ctx))
+          if (R.chance(0.3 + chatty * 0.35)) parts.push(this.render(take(fit(FOLLOW.suggest)), ctx))
           if (R.chance(0.15 + chatty * 0.2)) {
-            parts.push(this.render(R.pick(reproducible && R.chance(0.4) ? fit(FOLLOW.evidence) : fit(FOLLOW.effect)), ctx))
+            parts.push(this.render(take(reproducible && R.chance(0.4) ? fit(FOLLOW.evidence) : fit(FOLLOW.effect)), ctx))
           }
         } else if (tone === 'praise') {
-          if (R.chance(0.2 + chatty * 0.3)) parts.push(this.render(R.pick(R.chance(0.55) ? fit(FOLLOW.win) : fit(FOLLOW.keep)), ctx))
+          if (R.chance(0.2 + chatty * 0.3)) parts.push(this.render(take(R.chance(0.55) ? fit(FOLLOW.win) : fit(FOLLOW.keep)), ctx))
         } else if (R.chance(0.15 + chatty * 0.3)) {
-          parts.push(this.render(R.pick(fit(FOLLOW.observe)), ctx))
+          parts.push(this.render(take(fit(FOLLOW.observe)), ctx))
         }
       }
-      if (R.chance(persona.hedge * 0.3)) parts.push(this.render(R.pick(fit(FOLLOW.hedge)), ctx))
+      if (R.chance(persona.hedge * 0.3)) parts.push(this.render(take(fit(FOLLOW.hedge)), ctx))
       const kept = attempt > 24 ? parts.slice(0, 1) : parts
-      return voice(tidy(kept.join(' ')), persona, R)
-    }, 48, (t) => !p.points.has(t) && !this.repeatsWorld(p, t) && this.freshOnPage(p, t)
+      const out = voice(tidy(kept.join(' ')), persona, R)
+      // Which shapes this candidate was built from. The budget can return a
+      // draw from an earlier attempt, so the answer is kept per text.
+      shapesOf.set(out, drawn)
+      return out
+    }, 48, (t) => !p.points.has(t) && !this.repeatsWorld(p, t) && this.freshOnPage(p, t, note)
       && !(frames !== null && tplUsed !== null && frames.has(tplUsed)))
-    p.points.add(text)
-    this.spendOnPage(p, text)
+    // Nothing left to say that the page has not said: the caller leaves the
+    // point out. A note carrying two points instead of three is ordinary, and a
+    // hundred points about one project genuinely do run out of new ground.
+    const trimmed = this.trimToFresh(p, text, note)
+    if (trimmed === null) return null
+    p.points.add(trimmed)
+    this.spendOnPage(p, trimmed, note)
+    for (const shape of shapesOf.get(text) ?? []) shapes.add(shape)
     // The subject set is this note's: two points in one note about the same
     // thing read as one point said twice, but two reviewers landing on the same
     // thing is the whole reason a creator reads a page of notes.
@@ -531,13 +608,13 @@ export class Writer {
     // The frame set is the project's. A sentence shape is a tic, and a reader
     // meets every note on one page, so a shape spent here is spent for the page.
     if (tplUsed !== null) frames?.add(tplUsed)
-    return { text, noun, tone, severity, kind: about.kind, subj: about.text }
+    return { text: trimmed, noun, tone, severity, kind: about.kind, subj: about.text }
   }
 
   /* ---------------------------------------------------------------- notes */
 
   /** Headline and summary for a note whose points are already written. */
-  note(p, persona, sentiment, minutes, points) {
+  note(p, persona, sentiment, minutes, points, note = null) {
     const R = this.R
     const RANK = { blocker: 0, major: 1, minor: 2, nit: 3, praise: 4 }
     const issues = points.filter((x) => x.tone === 'issue').sort((a, b) => (RANK[a.severity] ?? 5) - (RANK[b.severity] ?? 5))
@@ -554,49 +631,81 @@ export class Writer {
     })
     const short = (s) => s !== null && s.length <= 36 && !/`/.test(s)
     const headlineFrames = S.HEADLINE[sentiment] ?? S.HEADLINE.mixed
+    const headlineShapes = (p.shapes ??= new Set())
+    const headlineOf = new Map()
     const headline = this.b.headline.draw((attempt) => {
       const usable = headlineFrames.filter((f) => (!f.includes('{Main}') && !f.includes('{main}') || short(main))
         && (!f.includes('{Praise}') && !f.includes('{praise}') || short(praise)))
-      let h = this.render(R.pick(usable), ctx)
+      const frame = this.pickShape(usable, headlineShapes)
+      let h = this.render(frame, ctx)
       if (attempt < 20 && R.chance(0.14) && !/[,;]/.test(h)) h += this.render(R.pick(S.HEADLINE_TAIL), ctx)
-      return voice(tidy(h).replace(/`/g, '').replace(/\.$/, ''), persona, R)
-    }, 40, (t) => !p.headlines.has(t) && this.freshOnPage(p, t))
+      const out = voice(tidy(h).replace(/`/g, '').replace(/\.$/, ''), persona, R)
+      headlineOf.set(out, frame)
+      return out
+    }, 40, (t) => !p.headlines.has(t) && this.freshOnPage(p, t, note))
     p.headlines.add(headline)
-    this.spendOnPage(p, headline)
+    this.spendOnPage(p, headline, note)
+    const headlineShape = headlineOf.get(headline)
+    if (headlineShape !== undefined) headlineShapes.add(headlineShape)
 
+    // A summary is two to four sentences off a handful of shapes, and the
+    // opening one is the same length on every note, so it is the sentence a page
+    // repeats first: "Had about 40 minutes, so I stuck to the tutorial" twice
+    // under one project reads as one reviewer with two accounts. Shapes the page
+    // has already printed are avoided at the draw, and a late attempt gives up
+    // the opener and the sign-off rather than reprint one — a reviewer who says
+    // only what they found is ordinary, two who open identically are not.
+    const summaryShapes = (p.shapes ??= new Set())
+    const shapesOf = new Map()
     const summary = this.b.noteSummary.draw((attempt) => {
+      const drawn = []
+      const take = (pool) => {
+        const f = this.pickShape(pool, summaryShapes)
+        if (f !== undefined) drawn.push(f)
+        return f
+      }
       const parts = []
-      const opener = R.chance(0.12) ? null : this.render(R.pick(R.chance(0.55) ? this.fit(S.SESSION, p.T) : p.T.session), ctx)
+      const openerPool = R.chance(0.55) ? this.fit(S.SESSION, p.T) : p.T.session
+      const opener = attempt > 16 || R.chance(0.12) ? null : this.render(take(openerPool), ctx)
       const verdictFirst = persona.leadsWithVerdict && attempt < 10
       const has = (f) => (!/\{[Pp]raise\}/.test(f) || praise) && (!/\{[Mm]ain\}/.test(f) || main)
       let finding
       const frames = S.FINDING[sentiment].filter(has)
-      if (frames.length > 0 && (sentiment === 'positive' ? praise || main : main)) finding = R.pick(frames)
-      else if (sentiment !== 'positive' && !main) finding = R.pick(S.FINDING.vague[sentiment])
-      else if (obs) finding = R.pick(S.FINDING.observe)
-      else finding = R.pick(S.FINDING.none)
+      if (frames.length > 0 && (sentiment === 'positive' ? praise || main : main)) finding = take(frames)
+      else if (sentiment !== 'positive' && !main) finding = take(S.FINDING.vague[sentiment])
+      else if (obs) finding = take(S.FINDING.observe)
+      else finding = take(S.FINDING.none)
       if (opener === null) parts.push(finding)
       else if (verdictFirst) parts.push(finding, opener)
       else parts.push(opener, finding)
       const chatty = 1 - persona.terse
-      if (attempt < 25 && R.chance(0.25 + chatty * 0.3)) {
-        if (sentiment !== 'positive' && praise) parts.push(R.pick(S.SECOND.praiseAfterIssue))
-        else if (sentiment === 'positive' && main && !finding.includes('{main}') && !finding.includes('{Main}')) parts.push(R.pick(S.SECOND.issueAfterPraise))
+      if (attempt < 20 && R.chance(0.25 + chatty * 0.3)) {
+        if (sentiment !== 'positive' && praise) parts.push(take(S.SECOND.praiseAfterIssue))
+        else if (sentiment === 'positive' && main && !finding.includes('{main}') && !finding.includes('{Main}')) parts.push(take(S.SECOND.issueAfterPraise))
       }
-      if (attempt < 25 && persona.signs && R.chance(0.7)) {
+      if (attempt < 20 && persona.signs && R.chance(0.7)) {
         const closes = S.CLOSE[sentiment].filter((f) => !f.includes('{main}') || main)
-        parts.push(R.pick(closes))
+        parts.push(take(closes))
       }
-      return voice(tidy(parts.map((x) => this.render(x, ctx)).join(' ')), persona, R)
-    }, 40, (t) => !p.summaries.has(t) && this.freshOnPage(p, t))
-    p.summaries.add(summary)
-    this.spendOnPage(p, summary)
-    return { headline, summary, main, praise, mainKind: issues[0]?.kind ?? null }
+      const out = voice(tidy(parts.map((x) => this.render(x, ctx)).join(' ')), persona, R)
+      shapesOf.set(out, drawn)
+      return out
+    }, 56, (t) => !p.summaries.has(t) && this.freshOnPage(p, t, note))
+    // A note with no summary is ordinary — a reviewer who filed their points and
+    // nothing else — so that is what a summary with nothing new left to say
+    // becomes, rather than a second copy of a sentence already on the page.
+    const trimmedSummary = this.trimToFresh(p, summary, note)
+    if (trimmedSummary !== null) {
+      p.summaries.add(trimmedSummary)
+      this.spendOnPage(p, trimmedSummary, note)
+    }
+    for (const shape of shapesOf.get(summary) ?? []) summaryShapes.add(shape)
+    return { headline, summary: trimmedSummary, main, praise, mainKind: issues[0]?.kind ?? null }
 
   }
 
   /** A reply on a note. `turn` is 0 for the creator's first word, 1 for the reviewer, 2 for the creator again. */
-  reply(p, persona, turn, noteInfo) {
+  reply(p, persona, turn, noteInfo, note = null) {
     const R = this.R
     const T = p.T
     const main = noteInfo?.main ?? null
@@ -633,10 +742,14 @@ export class Writer {
       // ledger: "a change to the allergen labels would help" under two
       // different notes is the creator with a tic, exactly as it would be in a
       // note. p.replies had been declared and never used; this is what it is for.
-    }, 40, (t) => !this.repeatsWorld(p, t) && !p.replies.has(t) && this.freshOnPage(p, t))
-    p.replies.add(text)
-    this.spendOnPage(p, text)
-    return text
+    }, 40, (t) => !this.repeatsWorld(p, t) && !p.replies.has(t) && this.freshOnPage(p, t, note))
+    // A reply is one side of an exchange, so it cannot be dropped the way a
+    // point can — the answer below it would be talking to nothing. Trimmed to
+    // what is new on the page, and its opening line kept whatever happens.
+    const trimmed = this.trimToFresh(p, text, note) ?? splitSentences(text)[0] ?? text
+    p.replies.add(trimmed)
+    this.spendOnPage(p, trimmed, note)
+    return trimmed
   }
 
   /* ---------------------------------------------------------- discussions */
