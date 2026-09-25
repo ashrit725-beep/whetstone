@@ -6,11 +6,12 @@
   "scripts": {
     "dev": "NEXT_DIST_DIR=.next-dev next dev -p 4300",
     "build": "next build",
-    "start": "next start -p 4311",
+    "start": "next start -p ${PORT:-4311}",
     "typecheck": "tsc --noEmit",
     "lint": "next lint",
     "db:seed": "node --experimental-strip-types scripts/seed.ts",
     "db:populate": "node scripts/scale/populate.mjs",
+    "db:bake": "npm run db:seed && npm run db:populate && node --experimental-strip-types scripts/recompute-specificity.mts && node --experimental-strip-types scripts/recompute-hot.mts && node --experimental-strip-types scripts/recompute-reputation.mts",
     "db:rebuild": "npm run db:seed && npm run db:populate && node --experimental-strip-types scripts/recompute-specificity.mts && node --experimental-strip-types scripts/recompute-hot.mts && node --experimental-strip-types scripts/recompute-reputation.mts && node scripts/audit.mjs",
     "audit": "node scripts/audit.mjs",
     "check:ai": "node --experimental-strip-types scripts/check-ai-schemas.mts",
@@ -48,5 +49,8 @@
     "puppeteer-core": "^25.10.0",
     "tailwindcss": "^4.1.13",
     "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=24.0.0"
   }
 }
